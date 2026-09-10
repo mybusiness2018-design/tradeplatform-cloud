@@ -3342,11 +3342,16 @@ function authGate(){
   }
   function getCfg(){try{var c=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');if(c.url)c.url=normUrl(c.url);return c;}catch(e){return {};}}
   function setCfg(o){if(o&&o.url)o.url=normUrl(o.url);localStorage.setItem(CFG_KEY,JSON.stringify(o));}
-  function getSess(){try{return JSON.parse(localStorage.getItem('wb_auth_sess')||'null');}catch(e){return null;}}
-  function setSess(s){if(s)localStorage.setItem('wb_auth_sess',JSON.stringify(s));else localStorage.removeItem('wb_auth_sess');}
   function snap(){var o={},k;for(var i=0;i<localStorage.length;i++){k=localStorage.key(i);if(k&&k.indexOf(KEY)===0)o[k]=localStorage.getItem(k);}return o;}
-  function restore(s){if(!s)return;var k;for(k in s){localStorage.setItem(k,s[k]);}if(typeof refreshAll==='function'){refreshAll();}else location.reload();}
+  function applySnapshot(s){if(!s)return;var k;for(k in s){localStorage.setItem(k,s[k]);}}
   function client(){var cfg=getCfg();if(!cfg.url||!cfg.key)return null;if(window.__sbErr||!window.supabase)return null;try{return supabase.createClient(cfg.url,cfg.key);}catch(e){return null;}}
+
+  function toast(msg,ok){
+    var t=document.getElementById('sbToast');
+    if(!t){t=el('div');t.id='sbToast';t.style.cssText='position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:100001;background:#0f172a;color:#fff;padding:8px 14px;border-radius:10px;font:13px/1.4 system-ui;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transition:opacity .2s;pointer-events:none;max-width:84vw;text-align:center';document.body.appendChild(t);}
+    t.textContent=msg;t.style.color=ok===false?'#fca5a5':(ok===true?'#86efac':'#fff');t.style.opacity='1';
+    clearTimeout(t._tm);t._tm=setTimeout(function(){t.style.opacity='0';},2400);
+  }
 
   var ov=el('div');ov.id='authOverlay';
   ov.style.cssText='position:fixed;inset:0;z-index:10000;background:#0f172a;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,\'Microsoft YaHei\',sans-serif';
@@ -3390,11 +3395,11 @@ function authGate(){
 
   function friendly(m){
     m=(m||'请求失败').trim();
-    if(/Invalid path/i.test(m))return 'Supabase URL 填错了：只填 https://你的项目.supabase.co，不要带 /rest/v1、/auth/v1 这类路径。点下面“修改 Supabase 配置”改一下即可。';
+    if(/Invalid path/i.test(m))return 'Supabase URL 填错了：只填 https://你的项目.supabase.co，不要带 /rest/v1、/auth/v1 这类路径。点下面"修改 Supabase 配置"改一下即可。';
     if(/Invalid API key|No API key|JWT/i.test(m))return 'Anon Key 填错了，请重新复制 anon public key 再试。';
-    if(/Email not confirmed/i.test(m))return '邮箱还没确认：请在 Supabase 关掉 “Confirm email”，或先点确认邮件再登录。';
-    if(/Invalid login credentials/i.test(m))return '邮箱或密码不对。新账号请先点“注册”。';
-    if(/User already registered/i.test(m))return '这个邮箱已注册过，请直接点“登录”。';
+    if(/Email not confirmed/i.test(m))return '邮箱还没确认：请在 Supabase 关掉 "Confirm email"，或先点确认邮件再登录。';
+    if(/Invalid login credentials/i.test(m))return '邮箱或密码不对。新账号请先点"注册"。';
+    if(/User already registered/i.test(m))return '这个邮箱已注册过，请直接点"登录"。';
     if(/Failed to fetch|NetworkError|Load failed/i.test(m))return '连不上 Supabase：检查网络，并确认 Supabase 的 CORS 允许来源里已加上本网页地址。';
     return m;
   }
@@ -3415,30 +3420,48 @@ function authGate(){
   }
 
   function enterSession(sb,u,sess){
-    setSess({uid:u.id,name:u.email});
     KEY='wb_ftloop_'+u.id+'_';
+    localStorage.setItem('wb_auth_sess',JSON.stringify({uid:u.id,name:u.email}));
     wbShowUserBar(u.email);
     ov.style.display='none';
+    var lo=document.getElementById('wbLogout');
+    if(lo){lo.onclick=function(){sb.auth.signOut().then(function(){location.reload();});};}
     sb.from('app_sync').select('data').eq('id',u.id).single().then(function(r){
-      if(r.data&&r.data.data)restore(r.data.data);
+      if(r.data&&r.data.data)applySnapshot(r.data.data);
       boot();
+      addUserControls(sb,u.id);
       startAuto(sb,u.id);
-    }).catch(function(){ boot(); startAuto(sb,u.id); });
-    setTimeout(function(){ addUserControls(sb,u.id); },400);
+    }).catch(function(){ boot(); addUserControls(sb,u.id); startAuto(sb,u.id); });
   }
 
   function addUserControls(sb,uid){
-    var bar=document.getElementById('userBar');if(!bar)return;
-    var syncBtn=el('button');syncBtn.textContent='☁ 立即同步';syncBtn.style.cssText='margin-left:10px;background:#1e3a8a;color:#fff;border:0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer';
-    syncBtn.onclick=function(){push(sb,uid);};
-    var outBtn=el('button');outBtn.textContent='退出';outBtn.style.cssText='margin-left:6px;background:#ef4444;color:#fff;border:0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer';
-    outBtn.onclick=function(){sb.auth.signOut().then(function(){setSess(null);location.reload();});};
-    bar.appendChild(syncBtn);bar.appendChild(outBtn);
+    var bar=document.getElementById('wbUserBar');if(!bar)return;
+    if(bar.querySelector('#sbUp'))return;
+    var up=el('button');up.id='sbUp';up.textContent='☁ 上传';up.style.cssText='margin-left:8px;background:#1e3a8a;color:#fff;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer';
+    up.onclick=function(){push(sb,uid,true);};
+    var down=el('button');down.id='sbDown';down.textContent='☁ 下载';down.style.cssText='margin-left:6px;background:#0e7490;color:#fff;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer';
+    down.onclick=function(){pull(sb,uid);};
+    var auto=el('button');auto.id='sbAuto';auto.textContent=(localStorage.getItem(AUTO_KEY)==='1'?'⏱ 自动:开':'⏱ 自动:关');auto.style.cssText='margin-left:6px;background:#475569;color:#fff;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer';
+    auto.onclick=function(){var on=localStorage.getItem(AUTO_KEY)!=='1';localStorage.setItem(AUTO_KEY,on?'1':'0');auto.textContent=on?'⏱ 自动:开':'⏱ 自动:关';if(on)startAuto(sb,uid);else stopAuto();toast(on?'已开启自动同步（每30秒）':'已关闭自动同步');};
+    bar.appendChild(up);bar.appendChild(down);bar.appendChild(auto);
   }
 
-  function push(sb,uid){sb.from('app_sync').upsert({id:uid,data:snap(),updated_at:new Date().toISOString()}).then(function(r){if(r.error)console.warn('sync fail',r.error.message);});}
+  function push(sb,uid,feedback){
+    var data=snap();
+    sb.from('app_sync').upsert({id:uid,data:data,updated_at:new Date().toISOString()}).then(function(r){
+      if(r.error){if(feedback)toast('上传失败：'+friendly(r.error.message),false);else console.warn('sync fail',r.error.message);}
+      else if(feedback)toast('已上传到云端 ✓');
+    }).catch(function(e){if(feedback)toast('上传失败：'+(e&&e.message||'网络错误'),false);});
+  }
+  function pull(sb,uid){
+    sb.from('app_sync').select('data').eq('id',uid).single().then(function(r){
+      if(r.error){toast('下载失败：'+friendly(r.error.message),false);return;}
+      if(r.data&&r.data.data){applySnapshot(r.data.data);if(typeof refreshAll==='function')refreshAll();else boot();toast('已从云端下载 ✓');}
+      else toast('云端还没有数据，请先在一台电脑点「☁ 上传」');
+    }).catch(function(e){toast('下载失败：'+(e&&e.message||'网络错误'),false);});
+  }
   var timer=null;
-  function startAuto(sb,uid){stopAuto();if(localStorage.getItem(AUTO_KEY)!=='1')return;timer=setInterval(function(){push(sb,uid);},30000);}
+  function startAuto(sb,uid){stopAuto();if(localStorage.getItem(AUTO_KEY)!=='1')return;timer=setInterval(function(){push(sb,uid,false);},30000);}
   function stopAuto(){if(timer){clearInterval(timer);timer=null;}}
 
   function getSessionThen(sb){
