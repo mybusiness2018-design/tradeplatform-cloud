@@ -3329,8 +3329,19 @@ function authGate(){
   var CFG_KEY='sync_cfg', AUTO_KEY='sync_auto';
   function $(s){return document.querySelector(s);}
   function el(t,c){var e=document.createElement(t);if(c)e.className=c;return e;}
-  function getCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}');}catch(e){return {};}}
-  function setCfg(o){localStorage.setItem(CFG_KEY,JSON.stringify(o));}
+  function normUrl(u){
+    u=(u||'').trim();if(!u)return '';
+    u=u.replace(/\s+/g,'');
+    if(!/^https?:\/\//i.test(u))u='https://'+u;
+    try{
+      var p=new URL(u);
+      var m=p.pathname.match(/project\/([a-zA-Z0-9]+)/);
+      if(/supabase\.com$/i.test(p.hostname)&&m)return 'https://'+m[1]+'.supabase.co';
+      return p.origin;
+    }catch(e){return u.replace(/\/+$/,'');}
+  }
+  function getCfg(){try{var c=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');if(c.url)c.url=normUrl(c.url);return c;}catch(e){return {};}}
+  function setCfg(o){if(o&&o.url)o.url=normUrl(o.url);localStorage.setItem(CFG_KEY,JSON.stringify(o));}
   function getSess(){try{return JSON.parse(localStorage.getItem('wb_auth_sess')||'null');}catch(e){return null;}}
   function setSess(s){if(s)localStorage.setItem('wb_auth_sess',JSON.stringify(s));else localStorage.removeItem('wb_auth_sess');}
   function snap(){var o={},k;for(var i=0;i<localStorage.length;i++){k=localStorage.key(i);if(k&&k.indexOf(KEY)===0)o[k]=localStorage.getItem(k);}return o;}
@@ -3345,13 +3356,19 @@ function authGate(){
     ov.style.display='flex';
     ov.innerHTML='<div style="width:440px;max-width:92vw;background:#fff;border-radius:16px;padding:24px;color:#0f172a">'+
       '<h2 style="margin:0 0 6px;font-size:20px">云同步版 · 首次设置</h2>'+
-      '<p style="color:#64748b;font-size:13px;line-height:1.6;margin:0 0 14px">先填入你的 Supabase 项目信息（Project Settings → API 里的 URL 与 anon public key）。资料按邮箱账号隔离存储，别人看不到你的数据。</p>'+
+      '<p style="color:#64748b;font-size:13px;line-height:1.6;margin:0 0 14px">先填入你的 Supabase 项目信息（左侧 <b>Data API</b> 页的 Project URL，加上 <b>API Keys</b> 页的 anon public key）。<br><b style="color:#b45309">URL 只填到 https://xxxx.supabase.co 为止，不要带后面的 /rest/v1、/auth/v1 等路径。</b><br>资料按邮箱账号隔离存储，别人看不到你的数据。</p>'+
       '<label style="font-size:13px;font-weight:600">Supabase URL</label><input id="sbUrl" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 10px" placeholder="https://xxxx.supabase.co">'+
       '<label style="font-size:13px;font-weight:600">Anon Key</label><input id="sbKey" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 14px" placeholder="eyJhbGci...">'+
       '<button id="sbSave" style="width:100%;background:#1e3a8a;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">保存并继续</button>'+
       '<p id="cfgMsg" style="font-size:12px;color:#dc2626;min-height:16px;margin:8px 0 0"></p></div>';
     var cfg=getCfg();if(cfg.url)$('#sbUrl').value=cfg.url;if(cfg.key)$('#sbKey').value=cfg.key;
-    $('#sbSave').onclick=function(){var u=$('#sbUrl').value.trim(),k=$('#sbKey').value.trim();if(!u||!k){$('#cfgMsg').textContent='两项都要填';return;}setCfg({url:u,key:k});loginUI();};
+    $('#sbSave').onclick=function(){
+      var u=normUrl($('#sbUrl').value),k=$('#sbKey').value.trim();
+      if(!u||!k){$('#cfgMsg').textContent='两项都要填';return;}
+      $('#sbUrl').value=u;
+      if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(u)){$('#cfgMsg').textContent='URL 看起来不对：应为 https://你的项目.supabase.co（不要带后面的路径）。';return;}
+      setCfg({url:u,key:k});loginUI();
+    };
   }
 
   function loginUI(){
@@ -3371,6 +3388,17 @@ function authGate(){
 
   function setMsg(t,ok){var m=$('#authMsg');if(!m)return;m.textContent=t;m.style.color=ok===false?'#dc2626':(ok===true?'#16a34a':'#475569');}
 
+  function friendly(m){
+    m=(m||'请求失败').trim();
+    if(/Invalid path/i.test(m))return 'Supabase URL 填错了：只填 https://你的项目.supabase.co，不要带 /rest/v1、/auth/v1 这类路径。点下面“修改 Supabase 配置”改一下即可。';
+    if(/Invalid API key|No API key|JWT/i.test(m))return 'Anon Key 填错了，请重新复制 anon public key 再试。';
+    if(/Email not confirmed/i.test(m))return '邮箱还没确认：请在 Supabase 关掉 “Confirm email”，或先点确认邮件再登录。';
+    if(/Invalid login credentials/i.test(m))return '邮箱或密码不对。新账号请先点“注册”。';
+    if(/User already registered/i.test(m))return '这个邮箱已注册过，请直接点“登录”。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m))return '连不上 Supabase：检查网络，并确认 Supabase 的 CORS 允许来源里已加上本网页地址。';
+    return m;
+  }
+
   function doAuth(isSignup){
     var sb=client();if(!sb){setMsg('Supabase 未配置或库未加载（需联网）',false);return;}
     var em=$('#em').value.trim(),pw=$('#pw').value;if(!em||!pw){setMsg('请填写邮箱和密码',false);return;}
@@ -3378,12 +3406,12 @@ function authGate(){
     setMsg(isSignup?'注册中…':'登录中…');
     var p=isSignup?sb.auth.signUp({email:em,password:pw}):sb.auth.signInWithPassword({email:em,password:pw});
     p.then(function(r){
-      if(r.error){setMsg(r.error.message,false);return;}
+      if(r.error){setMsg(friendly(r.error.message),false);return;}
       var u=r.data&&r.data.user,sess=r.data&&r.data.session;
       if(isSignup&&!sess){setMsg('注册成功，请查收确认邮件后登录（或关闭邮箱确认后重试）',true);return;}
       if(!u||!sess){setMsg('未返回用户，请重试',false);return;}
       enterSession(sb,u,sess);
-    }).catch(function(e){setMsg((e&&e.message)||'请求失败',false);});
+    }).catch(function(e){setMsg(friendly(e&&e.message),false);});
   }
 
   function enterSession(sb,u,sess){
