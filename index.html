@@ -687,6 +687,17 @@ function viewPos(){
  h+='<button class="btn" data-action="genPos">'+TX('生成定位卡','Generate card')+'</button><div class="hint">'+TX('生成后可一键复制，发给客户或团队。','Copy with one tap, send to clients or team.')+'</div></div>';
  h+='<div class="card"><h3 style="margin:0 0 10px;font-size:15px">'+TX('定位卡预览','Card preview')+'</h3><div class="out" id="posOut">'+TX('填写左侧并点"生成定位卡"。','Fill left and click Generate.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="posOut" style="margin-top:10px">'+TX('复制定位卡','Copy card')+'</button></div>';
  h+='</div>';
+ h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 6px;font-size:16px;color:var(--main)">'+TX('外贸产品供应链知识','Supply Chain 101')+'</h3>';
+ h+='<p class="hint" style="margin:0 0 12px">'+TX('从卖什么到货到客户手里的全链路。先有定位选品，才有供应链；供应链决定你的成本、交期和信任——它是把定位选品、找客户、客户驾驶舱三块连起来的引擎。','From what to sell to goods in hand. Supply chain decides cost, lead time and trust.')+'</p>';
+ h+='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px">';
+ var scSteps=['选品定位','找厂/验厂','打样确认','谈价/定MOQ','下单生产','品控验货','仓储集货','出口物流','交付清关','售后/复购'];
+ for(var si=0;si<scSteps.length;si++){ if(si) h+='<b style="color:var(--main);font-size:14px">→</b>'; h+='<span style="display:inline-block;padding:6px 9px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:12.5px;white-space:nowrap">'+(si+1)+'. '+scSteps[si]+'</span>'; }
+ h+='</div>';
+ h+='<div class="grid g2">';
+ h+='<div class="card" style="background:#f8fafc"><h4 style="margin:0 0 8px;font-size:14px">'+TX('一、什么是外贸产品供应链','What is it')+'</h4><p class="hint" style="margin:0">'+TX('供应链 = 从原材料到客户手中的整条链路与协作网络。外贸里你不一定 own 工厂，但必须 own 整条链的可控性：谁能生产、什么价、多久交、质量稳不稳。可控性越强，报价越敢加利润。','Chain from material to customer. You may not own the factory, but must own controllability.')+'</p></div>';
+ h+='<div class="card" style="background:#f8fafc"><h4 style="margin:0 0 8px;font-size:14px">'+TX('二、怎么形成（4 步）','How to build (4 steps)')+'</h4><ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:#334155"><li>'+TX('找对厂：1688/Alibaba 筛 3-5 家，看年限、交易额、认证（ISO/BSCI）','Find 3-5 factories, check years, GMV, certs')+'</li><li>'+TX('验厂验样：小单打样，测质量加交期，大单前可第三方验厂','Sample and audit before bulk')+'</li><li>'+TX('谈条件：MOQ、单价阶梯、付款（30%定金加T/T尾款）、违约条款','Negotiate MOQ, price tiers, payment terms')+'</li><li>'+TX('养关系：稳定返单等于优先产能加更好价，把供应商变成你的隐形团队','Reorders earn priority capacity')+'</li></ol></div>';
+ h+='</div>';
+ h+='<div class="card" style="background:#fff7ed;margin-top:12px"><h4 style="margin:0 0 8px;font-size:14px;color:#c2410c">'+TX('三、新手常踩的 5 个坑','5 pitfalls')+'</h4><ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:#7c2d12"><li>'+TX('只看单价不看全成本：物流、关税、损耗吃掉利润','Unit price only ignores landed cost')+'</li><li>'+TX('MOQ 卡死现金流：小单拼厂或找现货','MOQ locks cash flow')+'</li><li>'+TX('不打样直接大货：必货不对板','No sample means mismatch')+'</li><li>'+TX('只一家供应商：断供即断单，至少备 2 家','Single supplier risk')+'</li><li>'+TX('忽略交期波动：节前或旺季提前 2-4 周排产','Lead time spikes before holidays')+'</li></ul></div>';
  h+=cpSection();
  return h;
 }
