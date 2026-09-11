@@ -179,10 +179,19 @@ svg{display:block}
 .stat .k{font-size:12px;color:var(--sub)}
 .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
 .modal-mask.show{display:flex}
-.modal{background:#fff;border-radius:16px;padding:20px;max-width:480px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.modal{background:#fff;border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.2)}
 .modal-form label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px;font-weight:600}
 .modal-form label input,.modal-form label select{width:100%;margin-top:2px}
 .modal h3{margin:0 0 12px;font-size:17px}
+.sc-node{cursor:pointer;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;padding:7px 10px;border-radius:10px;font-size:12.5px;white-space:nowrap;font-family:inherit;transition:.15s}
+.sc-node:hover{background:#e0e7ff;border-color:#818cf8;transform:translateY(-1px)}
+.sc-sec{margin-top:14px}
+.sc-sec h4{margin:0 0 6px;font-size:14px;color:var(--main)}
+.sc-sec p{margin:0;font-size:13.5px;line-height:1.7;color:#334155}
+.sc-sec ul{margin:0;padding-left:0;list-style:none}
+.sc-sec li{font-size:13px;line-height:1.6;color:#334155;padding:8px 10px;margin-bottom:8px;background:#f8fafc;border-left:3px solid #c7d2fe;border-radius:8px}
+.sc-sec li b{color:#1e293b;display:block;margin-bottom:3px}
+.sc-sec li span{color:#475569}
 .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#1f2937;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.25s;z-index:99;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .big-cta{font-size:16px;padding:13px}
@@ -689,9 +698,9 @@ function viewPos(){
  h+='</div>';
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 6px;font-size:16px;color:var(--main)">'+TX('外贸产品供应链知识','Supply Chain 101')+'</h3>';
  h+='<p class="hint" style="margin:0 0 12px">'+TX('从卖什么到货到客户手里的全链路。先有定位选品，才有供应链；供应链决定你的成本、交期和信任——它是把定位选品、找客户、客户驾驶舱三块连起来的引擎。','From what to sell to goods in hand. Supply chain decides cost, lead time and trust.')+'</p>';
- h+='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px">';
- var scSteps=['选品定位','找厂/验厂','打样确认','谈价/定MOQ','下单生产','品控验货','仓储集货','出口物流','交付清关','售后/复购'];
- for(var si=0;si<scSteps.length;si++){ if(si) h+='<b style="color:var(--main);font-size:14px">→</b>'; h+='<span style="display:inline-block;padding:6px 9px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:12.5px;white-space:nowrap">'+(si+1)+'. '+scSteps[si]+'</span>'; }
+ h+='<p class="hint" style="margin:0 0 8px;font-size:12.5px">'+TX('↳ 点任意环节，查看「过程阐述 + 常见问题怎么解决」。','Tap any node to see the walkthrough & how to fix common problems.')+'</p>';
+ h+='<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0 14px">';
+ for(var si=0;si<scData.length;si++){ if(si) h+='<b style="color:var(--main);font-size:13px;margin:0 1px">→</b>'; h+='<button type="button" class="sc-node" data-action="scOpen" data-i="'+si+'">'+(si+1)+'. '+TX(scData[si].t[0],scData[si].t[1])+'</button>'; }
  h+='</div>';
  h+='<div class="grid g2">';
  h+='<div class="card" style="background:#f8fafc"><h4 style="margin:0 0 8px;font-size:14px">'+TX('一、什么是外贸产品供应链','What is it')+'</h4><p class="hint" style="margin:0">'+TX('供应链 = 从原材料到客户手中的整条链路与协作网络。外贸里你不一定 own 工厂，但必须 own 整条链的可控性：谁能生产、什么价、多久交、质量稳不稳。可控性越强，报价越敢加利润。','Chain from material to customer. You may not own the factory, but must own controllability.')+'</p></div>';
@@ -700,6 +709,89 @@ function viewPos(){
  h+='<div class="card" style="background:#fff7ed;margin-top:12px"><h4 style="margin:0 0 8px;font-size:14px;color:#c2410c">'+TX('三、新手常踩的 5 个坑','5 pitfalls')+'</h4><ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:#7c2d12"><li>'+TX('只看单价不看全成本：物流、关税、损耗吃掉利润','Unit price only ignores landed cost')+'</li><li>'+TX('MOQ 卡死现金流：小单拼厂或找现货','MOQ locks cash flow')+'</li><li>'+TX('不打样直接大货：必货不对板','No sample means mismatch')+'</li><li>'+TX('只一家供应商：断供即断单，至少备 2 家','Single supplier risk')+'</li><li>'+TX('忽略交期波动：节前或旺季提前 2-4 周排产','Lead time spikes before holidays')+'</li></ul></div>';
  h+=cpSection();
  return h;
+}
+/* ============ 供应链 10 环：可点击详情 ============ */
+var scData=[
+ {t:['选品定位','Sourcing & Positioning'],
+  desc:['先有定位选品，才有后面整条链。结合「定位卡」只留 1 个引流款+2 个利润款，用竞品价格带、每日热销榜的数据说话，而不是凭感觉。选品决定了后面的打法、MOQ 和利润空间。','Positioning comes first. Use the tier card (1 drain + 2 profit tiers) and real data (price bands, best-seller lists), not gut feel. Your pick decides MOQ, playbook and margin.'],
+  probs:[
+   {q:['不知道选什么 / 选太多太散','Don’t know what to pick / too scattered'],a:['用定位卡只留 1 引流+2 利润款；从已成交客户和复购记录反推刚需品。','Keep 1 drain + 2 profit tiers; reverse-engineer from existing buyers and reorders.']},
+   {q:['选了却没利润','Picked but no margin'],a:['先把 landed cost（含物流、关税、损耗、售后）算进去再定价；用 10 倍价差做引流/利润分层。','Price after landed cost (freight+duty+loss+after-sales); use a 10x drain/profit gap.']},
+   {q:['跟风爆款一过季就压货','Trend item dies, stock stuck'],a:['保留常青刚需款（斋月/朝觐礼品类）；爆款只小批量试，不压库存。','Keep evergreen needs (Ramadan/Hajj); test trends in small batches only.']}
+  ]},
+ {t:['找厂/验厂','Find & Audit Factory'],
+  desc:['1688 / Alibaba 筛 3-5 家，看年限、交易额、认证（ISO/BSCI）、回复速度。验厂看产能、工序、质检流程、配合度。关键：至少备 2 家互相备份，别把命脉交给一家。','Screen 3-5 factories on 1688/Alibaba by years, GMV, certs (ISO/BSCI), reply speed. Audit capacity, process, QC, cooperativeness. Keep >=2 backups.'],
+  probs:[
+   {q:['找不到靠谱厂','Can’t find a reliable factory'],a:['看「深度验厂」标、实地或第三方验厂报告；先下小单测配合度与交期。','Look for verified-audit badges / 3rd-party reports; test with a small order first.']},
+   {q:['工厂资料造假','Factory fakes its profile'],a:['要营业执照+开户许可+车间视频；视频通话看产线；看阿里诚信通年限与纠纷率。','Ask for license+bank info+shop video; video-call the line; check years & dispute rate.']},
+   {q:['只有一家独家供应','Single-source risk'],a:['同款找 2-3 家备用，关键料设二供，防断供即断单。','Line up 2-3 alternates; dual-source key materials.']}
+  ]},
+ {t:['打样确认','Sampling'],
+  desc:['下打样单，书面写明材质/尺寸/工艺/包装/Logo 位置，要求留样封存。确认色差、手感、功能（3C 类要测参数）。封样 = 大货验收的尺子。','Place a sample order with written specs (material/size/craft/pack/logo). Confirm color, feel, function (test specs for 3C). Sealed sample = the ruler for bulk QC.'],
+  probs:[
+   {q:['大货和样不一样','Bulk differs from sample'],a:['签「封样」协议，大货对标封样；留 1-2 套样做仲裁依据。','Sign a sealed-sample agreement; keep 1-2 sets as arbitration proof.']},
+   {q:['打样收费贵/慢','Sampling costly/slow'],a:['说明后续大货量，谈免费打样或打样费抵扣首单；把打样费计入首单成本。','Trade sample fee against bulk volume; roll it into the first order.']},
+   {q:['反复改样拖交期','Endless sample revisions'],a:['一次给齐确认清单（PDF 规格书），封样后不随便改；改样走书面变更。','Send one full spec sheet; freeze after sealing; changes in writing.']}
+  ]},
+ {t:['谈价/定MOQ','Negotiate Price & MOQ'],
+  desc:['谈阶梯价（量越大越便宜）、压 MOQ、定付款（30% 定金 + T/T 尾款）、写违约条款。用全年预估量换更好价，别只在单价上死磕。','Negotiate price tiers, lower MOQ, payment (30% deposit + T/T balance), penalty clauses. Trade annual volume for better price.'],
+  probs:[
+   {q:['MOQ 太高压现金流','MOQ too high, cash stuck'],a:['拼单/混批、找支持小批量的厂、或走现货分销商先小步快跑。','Consolidate/mix SKUs, find low-MOQ factories, or use in-stock distributors.']},
+   {q:['单价谈不下来','Can’t move the unit price'],a:['用预估年量+付款方式（全款预付）换价；拿 3 家底价比价压。','Trade volume + prepayment for price; benchmark 3 quotes.']},
+   {q:['被临时涨价','Hit with a surprise price hike'],a:['合同锁价（有效期 30-60 天），注明原料波动超 X% 才可调。','Lock price in contract (valid 30-60d); allow adjust only if material >X%.']}
+  ]},
+ {t:['下单生产','Place Order & Production'],
+  desc:['签 PI/合同，写清规格、数量、交期、包装、验货标准；付定金后跟进排产表。合同是后面所有环节的护身符。','Sign PI/contract with specs, qty, lead time, packing, inspection standard; follow the production schedule after deposit.'],
+  probs:[
+   {q:['交期拖延','Lead time slips'],a:['合同写延期罚则；每周要生产进度照；旺季提前 2-4 周排产。','Penalty clause in contract; weekly progress photos; schedule 2-4 wks early in peak.']},
+   {q:['中途改单乱','Mid-order changes chaos'],a:['封样+书面变更单，改单走邮件确认，不口头。','Sealed sample + written change orders; confirm by email, not verbally.']},
+   {q:['工厂中途加价','Factory raises price mid-way'],a:['PI 锁价；尾款前验收，不符可扣款。','PI locks price; inspect before balance; deduct if non-conforming.']}
+  ]},
+ {t:['品控验货','QC & Inspection'],
+  desc:['生产中/出货前请第三方验货（中检、SGS、验厂管家），按 AQL 抽样。3C 类必须做安规/功能测试。验货不通过，尾款就别付。','Use 3rd-party inspection (CCIC/SGS) with AQL sampling before shipment. 3C must pass safety/function tests. No pass, no balance.'],
+  probs:[
+   {q:['工厂不让验货','Factory blocks inspection'],a:['合同写明买方有权验货，不符可拒收；尾款与验收绑定。','Contract grants inspection right; reject if fail; tie balance to pass.']},
+   {q:['验出次品率高','High defect rate found'],a:['按 AQL 2.5；超标整批返工或折价，费用由厂承担。','AQL 2.5; rework or discount the batch at factory’s cost.']},
+   {q:['自己不会验','Don’t know how to inspect'],a:['请第三方验货（几百元）；给验货清单：尺寸/功能/外观/包装。','Hire 3rd-party (few hundred); use a checklist: size/function/look/pack.']}
+  ]},
+ {t:['仓储集货','Warehouse & Consolidation'],
+  desc:['工厂交货到仓（EXW/FOB），拼柜集货、贴标、换箱、分拣。爆品可前置海外仓备货，缩短到货时间。','Factories deliver to warehouse (EXW/FOB); consolidate, label, repack, sort. Pre-stock overseas warehouse for best-sellers.'],
+  probs:[
+   {q:['多家货到不齐拼不了柜','Suppliers miss the cut-off'],a:['设统一截单日；先用散货拼箱 LCL，齐了再整柜 FCL。','Set one cut-off; use LCL first, then FCL when complete.']},
+   {q:['仓库乱/丢件','Warehouse chaos / loss'],a:['用进销存或表格登记；拍照留底；选有保险的仓。','Track in a system; photo evidence; pick an insured warehouse.']},
+   {q:['海外仓压货','Stock stuck overseas'],a:['先小批量测销再补；海外仓只放畅销款。','Test with small batch; stock only best-sellers overseas.']}
+  ]},
+ {t:['出口物流','Export Logistics'],
+  desc:['订舱、报关、装箱、拿提单。选 FOB/CIF/DDU 条款；海运/空运按时效与成本权衡。物流是交期的最大变量。','Book space, customs file, load, get B/L. Choose FOB/CIF/DDU; weigh sea vs air by time/cost. Logistics = biggest lead-time variable.'],
+  probs:[
+   {q:['爆舱/涨价','No space / rate spike'],a:['提前 2-3 周订舱；长期合作货代锁价；旺季用铁路/空运补充。','Book 2-3 wks early; lock rate with forwarder; rail/air in peak.']},
+   {q:['报关卡住','Customs filing stuck'],a:['HS 编码准确、单据齐全（发票/箱单/报关单）；找专业报关行。','Correct HS code, full docs (inv/packing/decl); use a pro broker.']},
+   {q:['货损/丢件','Cargo damage / loss'],a:['买运输保险；外箱加固；选可 track 的承运。','Buy cargo insurance; reinforce cartons; use trackable carriers.']}
+  ]},
+ {t:['交付清关','Delivery & Customs Clearance'],
+  desc:['到港通知、清关（买家或代理）、缴税、派送。给买家齐套清关文件：提单/发票/箱单/产地证/CE 等认证。文件齐，清关才快。','Arrival notice, clearance (buyer/agent), duty, delivery. Hand over full docs: B/L, invoice, packing, CO, CE. Complete docs = fast clearance.'],
+  probs:[
+   {q:['买家清关被卡/退运','Buyer stuck / goods returned'],a:['提前确认目的国认证（CE/FCC/清真认证）；文件齐；写清关税由谁付。','Confirm destination certs (CE/FCC/Halal); complete docs; state who pays duty.']},
+   {q:['关税比预期高','Duty higher than expected'],a:['报价时注明 DDU/DDP 责任；给 HS 编码让买家先估税。','State DDU/DDP in quote; give HS code so buyer pre-estimates duty.']},
+   {q:['到货破损争议','Damage dispute on arrival'],a:['到货 48h 内拍照举证；走保险理赔；留装箱照。','Photo evidence within 48h; claim insurance; keep loading photos.']}
+  ]},
+ {t:['售后/复购','After-sales & Reorder'],
+  desc:['到货跟进、问题处理、维护关系。稳定返单 = 优先产能 + 更好价。把客户反馈反哺到选品和品控，形成闭环。','Follow up after arrival, fix issues, maintain relationships. Steady reorders = priority capacity + better price. Feed feedback back to sourcing & QC.'],
+  probs:[
+   {q:['客诉/差评','Complaint / bad review'],a:['24h 响应，补发/部分退款换口碑；记录问题反哺品控。','Respond in 24h; reship/partial refund for reputation; log to QC.']},
+   {q:['不返单','No reorder'],a:['节前主动问候+推新款；给 VIP 价；小样免费送测。','Proactive festival outreach + new items; VIP price; free samples.']},
+   {q:['大客户被撬','Key account poached'],a:['用独家定制/小批量快反绑定；不只拼价，拼服务与速度。','Bind with exclusives / fast small-batch; compete on service & speed, not price.']}
+  ]}
+];
+function scOpen(i){
+ var d=scData[i]; if(!d)return;
+ var p=d.probs.map(function(x){return '<li><b>'+TX(x.q[0],x.q[1])+'</b><span>'+TX(x.a[0],x.a[1])+'</span></li>';}).join('');
+ var body='<h3 style="color:var(--main)">'+(i+1)+'. '+TX(d.t[0],d.t[1])+'</h3>'
+  +'<div class="sc-sec"><h4>'+TX('一、过程阐述','Walkthrough')+'</h4><p>'+TX(d.desc[0],d.desc[1])+'</p></div>'
+  +'<div class="sc-sec"><h4>'+TX('二、遇到问题怎么解决','How to fix common problems')+'</h4><ul>'+p+'</ul></div>'
+  +'<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-action="closeModal">'+TX('关闭','Close')+'</button></div>';
+ $('modalBody').innerHTML=body;
+ $('modal').classList.add('show');
 }
 function genPos(){
  var v={drain:$('f_drain').value,proA:$('f_proA').value,proB:$('f_proB').value,mkt:$('f_mkt').value};
@@ -2831,6 +2923,7 @@ document.addEventListener('click',function(e){
  else if(a==='tplStage'){S._tplStage=el.dataset.stage;var lw2=$('libWrap');if(lw2)lw2.innerHTML=libInner();}
  else if(a==='tplSave'){tplSave(el.dataset.i);}
  else if(a==='closeModal'){closeModal();}
+ else if(a==='scOpen'){scOpen(parseInt(el.dataset.i,10));}
 });
 function toggleNav(forceClose){var s=$('side'),m=$('mask');if(forceClose){s.classList.remove('open');m.classList.remove('show');return;}s.classList.toggle('open');m.classList.toggle('show');}
 $('mask').addEventListener('click',function(){toggleNav(true);});
