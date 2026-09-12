@@ -308,7 +308,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','leads','trash','tasks','scripts','coach','docs','deals','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab'];
+var PERSIST_KEYS=['view','lang','me','leads','trash','tasks','scripts','coach','docs','deals','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -331,7 +331,7 @@ var S={
  _cpMore:false,
  _cpMode:'',_cpCand:[],_cpBusy:false,_cpErr:'',_cpUrl:'',
  cpq:load('cpq',[]),
- _hotInd:load('_hotInd','3c'),_hotShift:0,hotFav:load('hotFav',[]),_cpqOpen:load('_cpqOpen',false),_hotQ:'',
+ _hotInd:load('_hotInd','3c'),_hotShift:0,hotFav:load('hotFav',[]),_cpqOpen:load('_cpqOpen',false),_hotQ:'',_hotUser:load('_hotUser',[]),_hotAuto:load('_hotAuto',true),_hotLastDate:load('_hotLastDate',''),
  _wsQ:'',_wsPlat:'all',_wsRes:[],_wsBusy:false,_wsErr:'',_wsHist:load('_wsHist',[]),_wsMore:false,_fcQ:'',_fcMarket:'全球',_fcRes:[],_fcBusy:false,_fcErr:'',_fcHist:load('_fcHist',[]),_fcMore:false
 };
 function load(k,def){
@@ -403,7 +403,7 @@ function buildState(){
   _cpMore:false,
   _cpMode:'',_cpCand:[],_cpBusy:false,_cpErr:'',_cpUrl:'',
   cpq:load('cpq',[]),
-  _hotInd:load('_hotInd','3c'),_hotShift:0,hotFav:load('hotFav',[]),_cpqOpen:load('_cpqOpen',false),_hotQ:'',
+  _hotInd:load('_hotInd','3c'),_hotShift:0,hotFav:load('hotFav',[]),_cpqOpen:load('_cpqOpen',false),_hotQ:'',_hotUser:load('_hotUser',[]),_hotAuto:load('_hotAuto',true),_hotLastDate:load('_hotLastDate',''),
   _wsQ:'',_wsPlat:'all',_wsRes:[],_wsBusy:false,_wsErr:'',_wsHist:load('_wsHist',[]),_wsMore:false,_fcQ:'',_fcMarket:'全球',_fcRes:[],_fcBusy:false,_fcErr:'',_fcHist:load('_fcHist',[]),_fcMore:false
  };
  if(S.leads===null){
@@ -1107,11 +1107,19 @@ var HOT_BOARD=[
 ];
 function hashStr(t){var h=2166136261;for(var i=0;i<t.length;i++){h^=t.charCodeAt(i);h=(h*16777619)>>>0;}return h>>>0;}
 function hotSmartInd(){var m=S.me||{};var txt=((m.market||'')+' '+(m.product||'')).toLowerCase();if(/中东|非洲|阿拉伯|muslim|pray|halal|伊斯兰|家居|礼品|gift|home/.test(txt))return 'home';if(/东南亚/.test(txt))return 'home';if(/欧美|europe|america|us|eu|west|3c|电子/.test(txt))return '3c';if(/美妆|beauty|妆/.test(txt))return 'beauty';if(/玩具|母婴|baby|toy/.test(txt))return 'baby';if(/户外|outdoor|露营|camp/.test(txt))return 'outdoor';return '3c';}
-function hotPick(ind,cnt){
+function hotDayRot(){var n=hashStr('day|'+todayStr())%97;return n;}
+function hotPool(ind){
  var pool=[],i;
- for(i=0;i<HOT_DB.length;i++){if(ind==='all'||HOT_DB[i].ind===ind)pool.push(HOT_DB[i]);}
+ for(i=0;i<HOT_DB.length;i++)pool.push(HOT_DB[i]);
+ var u=S._hotUser||[];
+ for(i=0;i<u.length;i++)pool.push(u[i]);
+ if(ind==='all')return pool;
+ return pool.filter(function(x){return x.ind===ind||x.ind==='all';});
+}
+function hotPick(ind,cnt){
+ var pool=hotPool(ind);
  if(!pool.length)return [];
- var base=todayStr()+'|'+ind+'|'+(S._hotShift||0);
+ var base=todayStr()+'|'+ind+'|'+hotDayRot()+'|'+(S._hotShift||0);
  var out=[],used={},want=cnt<pool.length?cnt:pool.length;
  for(i=0;i<pool.length*4&&out.length<want;i++){
   var idx=hashStr(base+'#'+i)%pool.length;
@@ -1145,6 +1153,51 @@ function hotExport(){
  var csv='\ufeff'+rows.map(function(r){return r.map(csvCell).join(',');}).join('\r\n');
  dlFile(csv,TX('我的选品收藏','my-product-picks')+'_'+todayStr()+'.csv','text/csv;charset=utf-8');
  toast(TX('已导出','Exported'));
+}
+function hotDailyCheck(){
+ var t=todayStr();
+ if(S._hotLastDate!==t){S._hotLastDate=t;S._hotShift=hashStr('day|'+t)%97;save('_hotLastDate',t);save('_hotShift',S._hotShift);}
+}
+function hotStartTimer(){
+ if(window.__hotTimer)return;
+ window.__hotTimer=setInterval(function(){
+  var box=document.getElementById('hot_qr');if(!box)return;
+  if(!S._hotAuto)return;
+  S._hotShift=(S._hotShift||0)+1;save('_hotShift',S._hotShift);
+  try{box.innerHTML=hotCardsHTML();}catch(e){}
+ },240000);
+}
+function hotImportModal(){
+ var ex=TX('产品名,中文词,英文词,参考价,MOQ,目标市场(逗号),行业(3c/home/outdoor/beauty/baby),为什么热','Name,CN keyword,EN keyword,Ref price,MOQ,Markets(, ),Industry,Why');
+ var h='<h3>'+TX('导入我的私藏选品','Import your private picks')+'</h3>';
+ h+='<p class="hint" style="font-size:13px;line-height:1.6;margin:0 0 6px">'+TX('把你在 1688 / Amazon / 阿里国际站研究过的热品粘进来（CSV，或一行一个，逗号 / Tab 分隔）；也支持上传 .csv 文件。导入后它们会并入选品池、参与每天自动轮换。','Paste products you researched on 1688 / Amazon / Alibaba (CSV, or one per line, comma / Tab separated); .csv upload supported. Imported items merge into the pool and join daily auto-rotation.')+'</p>';
+ h+='<div style="font-size:12px;color:var(--sub);margin:4px 0">'+TX('表头示例','Header')+': <code style="word-break:break-all">'+esc(ex)+'</code></div>';
+ h+='<textarea id="hot_imp" style="width:100%;height:150px;box-sizing:border-box;padding:8px;font-size:13px;font-family:inherit;border:1px solid var(--line);border-radius:8px" placeholder="'+esc(ex)+'"></textarea>';
+ h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><input id="hot_imp_file" type="file" accept=".csv,text/csv" style="flex:1;min-width:160px"><button class="btn ghost mini" data-action="hotImpFile">'+TX('读取文件','Read file')+'</button></div>';
+ h+='<div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="hotImpOk">'+TX('导入','Import')+'</button></div>';
+ $('modalBody').innerHTML=h;$('modal').classList.add('show');
+ $('hotImpOk').onclick=function(){hotImportApply(($('hot_imp')?$('hot_imp').value:''));closeModal();};
+}
+function hotImportApply(text){
+ text=String(text||'');
+ var lines=text.split(/\r?\n/);var added=0;var u=S._hotUser||[];
+ for(var i=0;i<lines.length;i++){
+  var line=lines[i].trim();if(!line)continue;
+  var head=line.toLowerCase();
+  if(i===0&&(head.indexOf('产品')>=0||head.indexOf('name')>=0||head.indexOf('product')>=0))continue;
+  var cells=line.indexOf('\t')>=0?line.split('\t'):line.split(',');
+  cells=cells.map(function(c){return c.trim();});
+  if(cells.length<2)continue;
+  var n=cells[0]||'';
+  if(!n)continue;
+  var ind=(cells[6]||'all').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(['3c','home','outdoor','beauty','baby'].indexOf(ind)<0)ind='all';
+  var mk=(cells[5]||'').split(/[,，;]/).map(function(s){return s.trim();}).filter(Boolean);
+  u.push({k:'u_'+Date.now()+'_'+i,n:n,cn:cells[1]||'',ind:ind,p:cells[3]||'',moq:cells[4]||'',mk:mk,why:cells[7]||'',kw:cells[2]||'',src:'我导入'});
+  added++;
+ }
+ if(!added){toast(TX('没有解析到可导入的条目','No valid rows found'));return;}
+ S._hotUser=u;save('_hotUser',S._hotUser);toast(TX('已导入 ','Imported ')+added+TX(' 个私藏',' picks'));refreshAll();
 }
 
 function hotSearch(q){
@@ -1211,12 +1264,13 @@ function hotQIn(v){
 }
 
 function hotSection(){
+ hotDailyCheck();
  var ind=S._hotInd||hotSmartInd();var _autoInd=(!S._hotInd);
  var list=hotPick(ind,6);
  var myMkt=(S.me&&S.me.market)?S.me.market:'';
  var h='<div class="card" style="margin-bottom:12px;border:1px solid var(--main)">';
- h+='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">'+TX('热销选品库','Hot Product Library')+'</h3><span class="muted" style="font-size:12px">'+TX('静态参考库，非每日实时更新','Static reference library, not updated daily')+'</span>';
- h+='<span class="hint" style="margin:0">'+esc(todayStr())+' · '+TX('每天 0 点自动换一批','New batch every day')+'</span></div>';
+ h+='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">'+TX('热销选品库','Hot Product Library')+'</h3><span class="muted" style="font-size:12px">'+TX('内置选品池 + 你导入的私藏，每天/自动轮换','Built-in pool + your imports, auto-rotates daily')+'</span>';
+ h+='<span class="hint" style="margin:0">'+esc(todayStr())+(S._hotLastDate===todayStr()?' · '+TX('今日已更新','Updated today'):'')+' · '+TX('每天自动换一批，开着会自己轮换','Auto-refreshes daily; rotates while open')+'</span></div>';
  h+='<div class="hint" style="margin:6px 0 8px">'+TX('按行业给你推值得看的产品：参考价、MOQ、目标市场、为什么热。价格为参考区间，成交以平台实时报价为准。','Daily picks by industry: ref price, MOQ, target market, why it sells. Prices are reference ranges - confirm on the platform.')+'</div>';
  if(!myMkt)h+='<div class="hint" style="margin:0 0 8px;color:#b45309">'+TX('还没设目标市场：去「我的资料」填主打市场，这里会自动按你的市场标红推荐。','No target market set: fill "Main market" in My Profile, then picks here auto-highlight in red for your market.')+'</div>';
  if(_autoInd)h+='<div class="hint" style="margin:0 0 8px">'+TX('已按你的资料智能推荐「'+IND_NAME[ind]+'」行业；点上面的行业标签可手动切换。','Auto-recommended "'+IND_NAME[ind]+'" from your profile; tap an industry tag to switch.')+'</div>';
@@ -1228,6 +1282,13 @@ function hotSection(){
   h+='<button class="btn '+(on?'':'ghost')+' mini" data-action="hotInd" data-ind="'+inds[i]+'" style="margin:0 6px 6px 0">'+esc(IND_NAME[inds[i]])+'</button>';
  }
  h+='<button class="btn ghost mini" data-action="hotShift" style="margin:0 0 6px">'+TX('换一批','Shuffle')+'</button>';
+ h+='</div>';
+ var uc=(S._hotUser||[]).length;
+ h+='<div class="row" style="flex-wrap:wrap;margin-bottom:8px">';
+ h+='<button class="btn '+(S._hotAuto?'':'ghost')+' mini" data-action="hotAuto" style="margin:0 6px 6px 0">'+TX('自动轮换：'+(S._hotAuto?TX('开','On'):TX('关','Off')),'Auto-rotate: '+(S._hotAuto?'On':'Off'))+'</button>';
+ h+='<button class="btn ghost mini" data-action="hotRefresh" style="margin:0 6px 6px 0">'+TX('立即刷新今日精选','Refresh now')+'</button>';
+ h+='<button class="btn ghost mini" data-action="hotImport" style="margin:0 6px 6px 0">'+TX('导入我的私藏（'+uc+'）','Import picks ('+uc+')')+'</button>';
+ if(uc)h+='<button class="btn ghost mini" data-action="hotClearUser" style="margin:0 6px 6px 0">'+TX('清空私藏','Clear mine')+'</button>';
  h+='</div>';
  h+='<div class="hint" style="margin:0 0 8px">'+TX('看平台实时榜单（真实数据，直接打开）：','Live platform rankings (real data, opens directly):')+'</div><div style="margin-bottom:10px">';
  for(var b=0;b<HOT_BOARD.length;b++){
@@ -2952,6 +3013,11 @@ document.addEventListener('click',function(e){
  else if(a==='hotGo'){hotGo(el.dataset.p,el.dataset.k);}
  else if(a==='hotFav'){hotFavToggle(el.dataset.k);}
  else if(a==='hotExport'){hotExport();}
+ else if(a==='hotAuto'){S._hotAuto=!S._hotAuto;save('_hotAuto',S._hotAuto);refreshAll();}
+ else if(a==='hotRefresh'){S._hotShift=(S._hotShift||0)+1;save('_hotShift',S._hotShift);refreshAll();toast(TX('已刷新今日精选','Refreshed'));}
+ else if(a==='hotImport'){hotImportModal();}
+ else if(a==='hotImpFile'){var f=document.getElementById('hot_imp_file');if(f&&f.files&&f.files[0]){var r=new FileReader();r.onload=function(){var ta=document.getElementById('hot_imp');if(ta)ta.value=r.result;};r.readAsText(f.files[0]);}}
+ else if(a==='hotClearUser'){openModal(TX('清空我的私藏','Clear my picks'),TX('确定删除你导入的全部私藏选品吗？此操作不可撤销。','Delete all your imported picks? This cannot be undone.'),function(){S._hotUser=[];save('_hotUser',S._hotUser);refreshAll();toast(TX('已清空','Cleared'));});}
  else if(a==='hotBoard'){var u=el.dataset.u;if(typeof window!=='undefined'&&window.open)window.open(u,'_blank');}
  else if(a==='addLead'){addLead();}
  else if(a==='leadAdv'){leadAdv(el.dataset.id);}
@@ -3426,7 +3492,7 @@ function docChkPanel(d){
  return h;
 }
 /* ============ 初始化 ============ */
-function init(){refreshAll();}
+function init(){hotDailyCheck();hotStartTimer();refreshAll();}
 
 /* ===== 本地身份门禁（纯前端：账号与数据仅存本机浏览器，非云端账号） ===== */
 function wbHash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(16);}
@@ -3504,170 +3570,11 @@ function wbRenderAuth(){
   };
 }
 function authGate(){
-  if(window.cloudAuthGate){ return cloudAuthGate(); }
   if(wbHasSess()){ KEY=wbSessKey(); wbShowUserBar((wbSess().name||'用户')); boot(); return; }
   wbRenderAuth();
 }
 
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__sbErr=true"></script>
-<script>
-(function(){
-  var CFG_KEY='sync_cfg', AUTO_KEY='sync_auto';
-  function $(s){return document.querySelector(s);}
-  function el(t,c){var e=document.createElement(t);if(c)e.className=c;return e;}
-  function normUrl(u){
-    u=(u||'').trim();if(!u)return '';
-    u=u.replace(/\s+/g,'');
-    if(!/^https?:\/\//i.test(u))u='https://'+u;
-    try{
-      var p=new URL(u);
-      var m=p.pathname.match(/project\/([a-zA-Z0-9]+)/);
-      if(/supabase\.com$/i.test(p.hostname)&&m)return 'https://'+m[1]+'.supabase.co';
-      return p.origin;
-    }catch(e){return u.replace(/\/+$/,'');}
-  }
-  function getCfg(){try{var c=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');if(c.url)c.url=normUrl(c.url);return c;}catch(e){return {};}}
-  function setCfg(o){if(o&&o.url)o.url=normUrl(o.url);localStorage.setItem(CFG_KEY,JSON.stringify(o));}
-  function snap(){var o={},k;for(var i=0;i<localStorage.length;i++){k=localStorage.key(i);if(k&&k.indexOf(KEY)===0)o[k]=localStorage.getItem(k);}return o;}
-  function applySnapshot(s){if(!s)return;var k;for(k in s){localStorage.setItem(k,s[k]);}}
-  function client(){var cfg=getCfg();if(!cfg.url||!cfg.key)return null;if(window.__sbErr||!window.supabase)return null;try{return supabase.createClient(cfg.url,cfg.key);}catch(e){return null;}}
-
-  function toast(msg,ok){
-    var t=document.getElementById('sbToast');
-    if(!t){t=el('div');t.id='sbToast';t.style.cssText='position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:100001;background:#0f172a;color:#fff;padding:8px 14px;border-radius:10px;font:13px/1.4 system-ui;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transition:opacity .2s;pointer-events:none;max-width:84vw;text-align:center';document.body.appendChild(t);}
-    t.textContent=msg;t.style.color=ok===false?'#fca5a5':(ok===true?'#86efac':'#fff');t.style.opacity='1';
-    clearTimeout(t._tm);t._tm=setTimeout(function(){t.style.opacity='0';},2400);
-  }
-
-  var ov=el('div');ov.id='authOverlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:10000;background:#0f172a;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,\'Microsoft YaHei\',sans-serif';
-  document.body.appendChild(ov);
-
-  function cfgUI(){
-    ov.style.display='flex';
-    ov.innerHTML='<div style="width:440px;max-width:92vw;background:#fff;border-radius:16px;padding:24px;color:#0f172a">'+
-      '<h2 style="margin:0 0 6px;font-size:20px">云同步版 · 首次设置</h2>'+
-      '<p style="color:#64748b;font-size:13px;line-height:1.6;margin:0 0 14px">先填入你的 Supabase 项目信息（左侧 <b>Data API</b> 页的 Project URL，加上 <b>API Keys</b> 页的 anon public key）。<br><b style="color:#b45309">URL 只填到 https://xxxx.supabase.co 为止，不要带后面的 /rest/v1、/auth/v1 等路径。</b><br>资料按邮箱账号隔离存储，别人看不到你的数据。</p>'+
-      '<label style="font-size:13px;font-weight:600">Supabase URL</label><input id="sbUrl" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 10px" placeholder="https://xxxx.supabase.co">'+
-      '<label style="font-size:13px;font-weight:600">Anon Key</label><input id="sbKey" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 14px" placeholder="eyJhbGci...">'+
-      '<button id="sbSave" style="width:100%;background:#1e3a8a;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">保存并继续</button>'+
-      '<p id="cfgMsg" style="font-size:12px;color:#dc2626;min-height:16px;margin:8px 0 0"></p></div>';
-    var cfg=getCfg();if(cfg.url)$('#sbUrl').value=cfg.url;if(cfg.key)$('#sbKey').value=cfg.key;
-    $('#sbSave').onclick=function(){
-      var u=normUrl($('#sbUrl').value),k=$('#sbKey').value.trim();
-      if(!u||!k){$('#cfgMsg').textContent='两项都要填';return;}
-      $('#sbUrl').value=u;
-      if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(u)){$('#cfgMsg').textContent='URL 看起来不对：应为 https://你的项目.supabase.co（不要带后面的路径）。';return;}
-      setCfg({url:u,key:k});loginUI();
-    };
-  }
-
-  function loginUI(){
-    ov.style.display='flex';
-    ov.innerHTML='<div style="width:440px;max-width:92vw;background:#fff;border-radius:16px;padding:24px;color:#0f172a">'+
-      '<h2 style="margin:0 0 4px;font-size:20px">登录 / 注册</h2>'+
-      '<p style="color:#64748b;font-size:13px;margin:0 0 14px">用邮箱+密码登录，任意电脑用同一邮箱都能看到你的资料。</p>'+
-      '<label style="font-size:13px;font-weight:600">邮箱</label><input id="em" type="email" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 10px" placeholder="you@example.com">'+
-      '<label style="font-size:13px;font-weight:600">密码（至少6位）</label><input id="pw" type="password" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 14px" placeholder="••••••">'+
-      '<div style="display:flex;gap:8px"><button id="signin" style="flex:1;background:#1e3a8a;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">登录</button><button id="signup" style="flex:1;background:#16a34a;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">注册</button></div>'+
-      '<p id="authMsg" style="font-size:12px;min-height:16px;margin:8px 0 0"></p>'+
-      '<button id="cfgBtn" style="margin-top:10px;background:none;border:0;color:#2563eb;font-size:12px;cursor:pointer;text-decoration:underline">修改 Supabase 配置</button></div>';
-    $('#signin').onclick=function(){doAuth(false);};
-    $('#signup').onclick=function(){doAuth(true);};
-    $('#cfgBtn').onclick=cfgUI;
-  }
-
-  function setMsg(t,ok){var m=$('#authMsg');if(!m)return;m.textContent=t;m.style.color=ok===false?'#dc2626':(ok===true?'#16a34a':'#475569');}
-
-  function friendly(m){
-    m=(m||'请求失败').trim();
-    if(/Invalid path/i.test(m))return 'Supabase URL 填错了：只填 https://你的项目.supabase.co，不要带 /rest/v1、/auth/v1 这类路径。点下面"修改 Supabase 配置"改一下即可。';
-    if(/Invalid API key|No API key|JWT/i.test(m))return 'Anon Key 填错了，请重新复制 anon public key 再试。';
-    if(/Email not confirmed/i.test(m))return '邮箱还没确认：请在 Supabase 关掉 "Confirm email"，或先点确认邮件再登录。';
-    if(/Invalid login credentials/i.test(m))return '邮箱或密码不对。新账号请先点"注册"。';
-    if(/User already registered/i.test(m))return '这个邮箱已注册过，请直接点"登录"。';
-    if(/Failed to fetch|NetworkError|Load failed/i.test(m))return '连不上 Supabase：检查网络，并确认 Supabase 的 CORS 允许来源里已加上本网页地址。';
-    return m;
-  }
-
-  function doAuth(isSignup){
-    var sb=client();if(!sb){setMsg('Supabase 未配置或库未加载（需联网）',false);return;}
-    var em=$('#em').value.trim(),pw=$('#pw').value;if(!em||!pw){setMsg('请填写邮箱和密码',false);return;}
-    if(pw.length<6){setMsg('密码至少6位',false);return;}
-    setMsg(isSignup?'注册中…':'登录中…');
-    var p=isSignup?sb.auth.signUp({email:em,password:pw}):sb.auth.signInWithPassword({email:em,password:pw});
-    p.then(function(r){
-      if(r.error){setMsg(friendly(r.error.message),false);return;}
-      var u=r.data&&r.data.user,sess=r.data&&r.data.session;
-      if(isSignup&&!sess){setMsg('注册成功，请查收确认邮件后登录（或关闭邮箱确认后重试）',true);return;}
-      if(!u||!sess){setMsg('未返回用户，请重试',false);return;}
-      enterSession(sb,u,sess);
-    }).catch(function(e){setMsg(friendly(e&&e.message),false);});
-  }
-
-  function enterSession(sb,u,sess){
-    KEY='wb_ftloop_'+u.id+'_';
-    localStorage.setItem('wb_auth_sess',JSON.stringify({uid:u.id,name:u.email}));
-    wbShowUserBar(u.email);
-    ov.style.display='none';
-    var lo=document.getElementById('wbLogout');
-    if(lo){lo.onclick=function(){sb.auth.signOut().then(function(){location.reload();});};}
-    sb.from('app_sync').select('data').eq('id',u.id).single().then(function(r){
-      if(r.data&&r.data.data)applySnapshot(r.data.data);
-      boot();
-      addUserControls(sb,u.id);
-      startAuto(sb,u.id);
-    }).catch(function(){ boot(); addUserControls(sb,u.id); startAuto(sb,u.id); });
-  }
-
-  function addUserControls(sb,uid){
-    var bar=document.getElementById('wbUserBar');if(!bar)return;
-    if(bar.querySelector('#sbUp'))return;
-    var up=el('button');up.id='sbUp';up.textContent='☁ 上传';up.style.cssText='margin-left:8px;background:#1e3a8a;color:#fff;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer';
-    up.onclick=function(){push(sb,uid,true);};
-    var down=el('button');down.id='sbDown';down.textContent='☁ 下载';down.style.cssText='margin-left:6px;background:#0e7490;color:#fff;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer';
-    down.onclick=function(){pull(sb,uid);};
-    var auto=el('button');auto.id='sbAuto';auto.textContent=(localStorage.getItem(AUTO_KEY)==='1'?'⏱ 自动:开':'⏱ 自动:关');auto.style.cssText='margin-left:6px;background:#475569;color:#fff;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer';
-    auto.onclick=function(){var on=localStorage.getItem(AUTO_KEY)!=='1';localStorage.setItem(AUTO_KEY,on?'1':'0');auto.textContent=on?'⏱ 自动:开':'⏱ 自动:关';if(on)startAuto(sb,uid);else stopAuto();toast(on?'已开启自动同步（每30秒）':'已关闭自动同步');};
-    bar.appendChild(up);bar.appendChild(down);bar.appendChild(auto);
-  }
-
-  function push(sb,uid,feedback){
-    var data=snap();
-    sb.from('app_sync').upsert({id:uid,data:data,updated_at:new Date().toISOString()}).then(function(r){
-      if(r.error){if(feedback)toast('上传失败：'+friendly(r.error.message),false);else console.warn('sync fail',r.error.message);}
-      else if(feedback)toast('已上传到云端 ✓');
-    }).catch(function(e){if(feedback)toast('上传失败：'+(e&&e.message||'网络错误'),false);});
-  }
-  function pull(sb,uid){
-    sb.from('app_sync').select('data').eq('id',uid).single().then(function(r){
-      if(r.error){toast('下载失败：'+friendly(r.error.message),false);return;}
-      if(r.data&&r.data.data){applySnapshot(r.data.data);if(typeof refreshAll==='function')refreshAll();else boot();toast('已从云端下载 ✓');}
-      else toast('云端还没有数据，请先在一台电脑点「☁ 上传」');
-    }).catch(function(e){toast('下载失败：'+(e&&e.message||'网络错误'),false);});
-  }
-  var timer=null;
-  function startAuto(sb,uid){stopAuto();if(localStorage.getItem(AUTO_KEY)!=='1')return;timer=setInterval(function(){push(sb,uid,false);},30000);}
-  function stopAuto(){if(timer){clearInterval(timer);timer=null;}}
-
-  function getSessionThen(sb){
-    return sb.auth.getSession().then(function(r){
-      var sess=r.data&&r.data.session;
-      if(sess&&sess.user)return enterSession(sb,sess.user,sess);
-      loginUI();
-    });
-  }
-
-  window.cloudAuthGate=function(){
-    var cfg=getCfg();if(!cfg.url||!cfg.key){cfgUI();return;}
-    if(window.__sbErr||!window.supabase){loginUI();return;}
-    var sb;try{sb=supabase.createClient(cfg.url,cfg.key);}catch(e){cfgUI();return;}
-    getSessionThen(sb).catch(function(){loginUI();});
-  };
-  cloudAuthGate();
-})();
+authGate();
 </script>
 
 </body>
