@@ -1618,7 +1618,7 @@ function custJump(where,id,mkt){
 function clearClient(){S._activeClient='';refreshAll();toast(TX('已退出客户上下文','Client context cleared'));}
 function custSheetCustomers(ins){
  if(!ins.lines.length)return '<div class="muted" style="padding:16px;text-align:center">'+TX('暂无线索，去「找客户」加一条。','No leads yet; add one in Find Leads.')+'</div>';
- var head=[TX('#','#'),TX('客户','Client'),TX('市场','Market'),TX('阶段','Stage'),TX('AI评分','Score'),TX('金额($)','Amount'),TX('最后跟进','Last touch'),TX('跟进状态','Follow-up'),TX('待办','Tasks'),TX('单证进度','Docs'),TX('AI 下一步','AI next')];
+ var head=[TX('#','#'),TX('客户','Client'),TX('市场','Market'),TX('阶段','Stage'),TX('AI评分','Score'),TX('金额($)','Amount'),TX('最后跟进','Last touch'),TX('跟进状态','Follow-up'),TX('待办','Tasks'),TX('单证进度','Docs'),TX('AI 下一步','AI next'),TX('操作','Ops')];
  var h='<table class="xls"><thead><tr>';
  head.forEach(function(x){h+='<th>'+x+'</th>';});
  h+='</tr></thead><tbody>';
@@ -1626,16 +1626,17 @@ function custSheetCustomers(ins){
   var w=custNextWhere(x);
   h+='<tr>';
   h+='<td class="rownum">'+(i+1)+'</td>';
-  h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+x.id+'"><b>'+esc(x.name)+'</b></td>';
-  h+='<td class="cell" data-action="custJump" data-where="find" data-id="'+x.id+'" data-mkt="'+esc(x.market||'')+'">'+esc(x.market||'—')+'</td>';
-  h+='<td class="cell" data-action="custJump" data-where="find" data-id="'+x.id+'">'+esc(x.stage)+'</td>';
+  h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+x.id+'" title="'+TX('点击查看客户360','Open 360')+'"><b>'+esc(x.name)+'</b></td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="market" data-id="'+x.id+'" title="'+TX('点击编辑市场','Edit market')+'">'+esc(x.market||'—')+'</td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="stage" data-id="'+x.id+'" title="'+TX('点击编辑阶段','Edit stage')+'">'+esc(x.stage)+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+x.id+'"><span class="tagmini">'+x.score+'</span></td>';
-  h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+x.id+'">'+(x.amount?('$'+esc(x.amount)):'—')+'</td>';
-  h+='<td class="cell" data-action="custJump" data-where="today" data-id="'+x.id+'">'+esc(x.last||'—')+'</td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="amount" data-id="'+x.id+'" title="'+TX('点击编辑金额','Edit amount')+'">'+(x.amount?('$'+esc(x.amount)):'—')+'</td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="last" data-id="'+x.id+'" title="'+TX('点击编辑跟进日期','Edit last-touch date')+'">'+esc(x.last||'—')+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="today" data-id="'+x.id+'">'+(x.follow?('<span class="tagmini r">'+TX('逾期','Overdue')+' '+x.days+'</span>'):('<span class="tagmini">'+TX('正常','OK')+'</span>'))+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="today" data-id="'+x.id+'">'+((x.tasksO)?('<b style="color:#dc2626">'+x.tasksO+'</b>'):'0')+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="docs" data-id="'+x.id+'">'+(x.docPct!==null?('<span class="bar"><i style="width:'+x.docPct+'%"></i></span> '+x.docPct+'%'+(x.dealNo?(' · '+esc(x.dealNo)):'')):('<span class="muted">'+TX('无交易','no deal')+'</span>'))+'</td>';
   h+='<td class="cell ai" data-action="custJump" data-where="'+w+'" data-id="'+x.id+'">'+TX('▸ ','▸ ')+esc(x.action)+'</td>';
+  h+='<td class="ops"><button class="btn ghost mini" data-action="custJump" data-where="cust360" data-id="'+x.id+'">'+TX('360','360')+'</button> <button class="btn ghost mini" data-action="leadEdit" data-id="'+x.id+'">'+TX('编辑','Edit')+'</button> <button class="btn danger mini" data-action="leadDel" data-id="'+x.id+'">'+TX('删','Del')+'</button></td>';
   h+='</tr>';
  });
  h+='</tbody></table>';
@@ -1702,9 +1703,31 @@ function custCard(x){
     +'<span class="dot '+docCls+'">'+(x.docPct!==null?(TX('单证','Doc')+' '+x.docPct+'%'):TX('无单','No doc'))+'</span>'
     +'<span class="dot '+taskCls+'">'+(x.tasksO?(TX('待办','Task')+' '+x.tasksO):TX('无待办','No task'))+'</span>'
   +'</div>'
-  +'<div class="cc-ai"><span class="ai" title="'+esc(x.action)+'">AI ▸ '+esc(x.action)+'</span><button class="btn amber mini" data-action="custJump" data-where="'+w+'" data-id="'+x.id+'">'+TX('去办','Do it')+'</button></div>'
+  +'<div class="cc-ai"><span class="ai" title="'+esc(x.action)+'">AI ▸ '+esc(x.action)+'</span><button class="btn amber mini" data-action="custJump" data-where="'+w+'" data-id="'+x.id+'">'+TX('去办','Do it')+'</button> <button class="btn ghost mini" data-action="leadEdit" data-id="'+x.id+'">'+TX('编辑','Edit')+'</button> <button class="btn danger mini" data-action="leadDel" data-id="'+x.id+'">'+TX('删','Del')+'</button></div>'
   +'</div>';
 }
+function custCellEdit(id,field){
+ var l=S.leads.find(function(x){return x.id===id;});if(!l)return;
+ var T={name:TX('客户名','Name'),market:TX('市场','Market'),stage:TX('阶段','Stage'),amount:TX('金额($)','Amount'),last:TX('最后跟进','Last touch'),country:TX('国家','Country'),product:TX('产品','Product'),wa:TX('WhatsApp','WhatsApp'),email:TX('邮箱','Email'),note:TX('备注','Note'),source:TX('来源','Source')};
+ var cur=(l[field]==null?'':l[field]);var ed='';
+ if(field==='market')ed='<select id="ce_val">'+MARKETS.map(function(m){return '<option'+(m===cur?' selected':'')+'>'+m+'</option>';}).join('')+'</select>';
+ else if(field==='stage')ed='<select id="ce_val">'+PIPE.map(function(p){return '<option'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('')+'</select>';
+ else if(field==='source')ed='<select id="ce_val">'+SOURCES.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
+ else if(field==='amount')ed='<input id="ce_val" type="number" value="'+esc(cur)+'">';
+ else if(field==='last')ed='<input id="ce_val" type="date" value="'+esc(cur)+'">';
+ else ed='<input id="ce_val" value="'+esc(cur)+'">';
+ var body='<div class="modal-form"><label>'+T[field]+ed+'</label></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
+ $('modalBody').innerHTML='<h3>'+TX('修改：','Edit: ')+esc(T[field])+'</h3>'+body;
+ $('modal').classList.add('show');
+ $('ceSave').onclick=function(){
+  var v=$('ce_val').value;
+  if(field==='amount')v=parseFloat(v)||0;
+  l[field]=v;
+  if(field==='stage'&&(!l.last||todayStr()<l.last))l.last=todayStr();
+  snapLeads();save('leads',S.leads);refreshAll();closeModal();toast(TX('已更新','Updated'));
+ };
+}
+function leadNew(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',product:'',stage:PIPE[0],source:SOURCES[0],amount:0,last:todayStr(),note:'',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
 function viewCust(){
  var ins=custInsight();
  var mode=S._custView||'card';
@@ -1722,7 +1745,7 @@ function viewCust(){
   h+=top.map(function(x){var w=custNextWhere(x);return '<span class="ai-focus" data-action="custJump" data-where="'+w+'" data-id="'+x.id+'">▸ '+esc(x.name)+'：'+esc(x.action)+'</span>';}).join('');
   h+='</div>';
  }
- h+='<div class="card" style="margin-top:14px"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><b style="font-size:14px">'+TX('客户信息互通','Import / Export')+'</b><span class="muted" style="font-size:12px">'+TX('导出 CSV 用 Excel 批量编辑，再导入回来；按「客户名+国家」匹配更新。','Export CSV to edit in Excel, then re-import; matched by name + country.')+'</span><span style="flex:1"></span><button class="btn mini" data-action="exportLeadsCsv">'+TX('导出 CSV','Export CSV')+'</button><button class="btn mini ghost" data-action="exportLeadsJson">'+TX('导出 JSON','Export JSON')+'</button><button class="btn mini ghost" data-action="importLeads">'+TX('导入文件','Import')+'</button></div><input type="file" id="leadImpFile" accept=".csv,.json,text/csv,application/json" style="display:none"></div>';
+ h+='<div class="card" style="margin-top:14px"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><button class="btn mini" data-action="leadNew" style="background:var(--accent,#2563eb);color:#fff">+ '+TX('新建客户','New client')+'</button><b style="font-size:14px">'+TX('客户信息互通','Import / Export')+'</b><span class="muted" style="font-size:12px">'+TX('导出 CSV 用 Excel 批量编辑，再导入回来；按「客户名+国家」匹配更新。','Export CSV to edit in Excel, then re-import; matched by name + country.')+'</span><span style="flex:1"></span><button class="btn mini" data-action="exportLeadsCsv">'+TX('导出 CSV','Export CSV')+'</button><button class="btn mini ghost" data-action="exportLeadsJson">'+TX('导出 JSON','Export JSON')+'</button><button class="btn mini ghost" data-action="importLeads">'+TX('导入文件','Import')+'</button></div><input type="file" id="leadImpFile" accept=".csv,.json,text/csv,application/json" style="display:none"></div>';
  h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button></div>';
  if(mode==='card'){
   h+='<div class="cust-grid">';
@@ -1739,7 +1762,7 @@ function viewCust(){
   else if(sheet==='deal')h+=custSheetDeals();
   else h+=custSheetTasks();
   h+='</div></div>';
-  h+='<div class="hint" style="margin-top:8px">'+TX('表头固定；点蓝字单元格即跳到对应模块，AI 下一步列直接带你到该做的那一步。','Sticky header; click blue cells to jump; the AI next-step column takes you to the action.')+'</div>';
+  h+='<div class="hint" style="margin-top:8px">'+TX('市场 / 阶段 / 金额 / 最后跟进 这几列可直接点开编辑；点客户名或「360」看完整详情，「编辑」改全部字段，「删」移入回收站可恢复。','Click Market / Stage / Amount / Last-touch cells to edit inline; click name or 360 for full detail, Edit for all fields, Del moves to recoverable Trash.')+'</div>';
  }
  return h;
 }
@@ -2364,6 +2387,8 @@ document.addEventListener('click',function(e){
  else if(a==='leadTouch'){leadTouch(el.dataset.id);}
  else if(a==='leadDel'){leadDel(el.dataset.id);}
  else if(a==='leadEdit'){leadEdit(el.dataset.id);}
+ else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}
+ else if(a==='leadNew'){leadNew();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
  else if(a==='leadRestore'){leadRestore(el.dataset.id);}
