@@ -115,9 +115,12 @@ svg{display:block}
 .keypts li{margin:3px 0}
 .grid{display:grid;gap:14px}
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(20,40,80,.13);border-color:var(--main)}
+.kpi:active{transform:translateY(0)}
 .kpi .n{font-size:26px;font-weight:800;color:var(--main);line-height:1.1}
 .kpi .l{font-size:12px;color:var(--sub);margin-top:4px}
+.kpi .l i{font-style:normal;opacity:.45;font-weight:700}
 @media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
 .cust-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:12px;margin-top:14px}
 .ccard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:transform .08s,box-shadow .12s}
@@ -1578,7 +1581,7 @@ function custInsight(){
   else if(l.stage==='报价')action=TX('出报价 PI','Send quote PI');
   else if(l.stage==='成交')action=TX('走交付 SOP','Run delivery SOP');
   else action=TX('维持触达','Keep in touch');
-  return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
+  return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,country:(l.country||''),product:(l.product||''),wa:(l.wa||''),email:(l.email||''),source:(l.source||''),note:(l.note||''),dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
  }).sort(function(a,b){return (b.follow?1:0)-(a.follow?1:0)|| b.score-a.score;});
  var midEast=leads.filter(function(l){return l.market==='中东';}).length;
  var d8=daysBetween(todayStr(),'2027-02-08');
@@ -1618,7 +1621,7 @@ function custJump(where,id,mkt){
 function clearClient(){S._activeClient='';refreshAll();toast(TX('已退出客户上下文','Client context cleared'));}
 function custSheetCustomers(ins){
  if(!ins.lines.length)return '<div class="muted" style="padding:16px;text-align:center">'+TX('暂无线索，去「找客户」加一条。','No leads yet; add one in Find Leads.')+'</div>';
- var head=[TX('#','#'),TX('客户','Client'),TX('市场','Market'),TX('阶段','Stage'),TX('AI评分','Score'),TX('金额($)','Amount'),TX('最后跟进','Last touch'),TX('跟进状态','Follow-up'),TX('待办','Tasks'),TX('单证进度','Docs'),TX('AI 下一步','AI next'),TX('操作','Ops')];
+ var head=[TX('#','#'),TX('客户','Client'),TX('国家','Country'),TX('市场','Market'),TX('阶段','Stage'),TX('产品','Product'),TX('WhatsApp','WhatsApp'),TX('AI评分','Score'),TX('金额($)','Amount'),TX('最后跟进','Last touch'),TX('跟进状态','Follow-up'),TX('待办','Tasks'),TX('单证进度','Docs'),TX('AI 下一步','AI next'),TX('操作','Ops')];
  var h='<table class="xls"><thead><tr>';
  head.forEach(function(x){h+='<th>'+x+'</th>';});
  h+='</tr></thead><tbody>';
@@ -1627,8 +1630,11 @@ function custSheetCustomers(ins){
   h+='<tr>';
   h+='<td class="rownum">'+(i+1)+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+x.id+'" title="'+TX('点击查看客户360','Open 360')+'"><b>'+esc(x.name)+'</b></td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="country" data-id="'+x.id+'" title="'+TX('点击编辑国家','Edit country')+'">'+esc(x.country||'—')+'</td>';
   h+='<td class="cell" data-action="custCellEdit" data-field="market" data-id="'+x.id+'" title="'+TX('点击编辑市场','Edit market')+'">'+esc(x.market||'—')+'</td>';
   h+='<td class="cell" data-action="custCellEdit" data-field="stage" data-id="'+x.id+'" title="'+TX('点击编辑阶段','Edit stage')+'">'+esc(x.stage)+'</td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="product" data-id="'+x.id+'" title="'+TX('点击编辑产品','Edit product')+'">'+esc(x.product||'—')+'</td>';
+  h+='<td class="cell" data-action="custCellEdit" data-field="wa" data-id="'+x.id+'" title="'+TX('点击编辑 WhatsApp','Edit WhatsApp')+'">'+esc(x.wa||'—')+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+x.id+'"><span class="tagmini">'+x.score+'</span></td>';
   h+='<td class="cell" data-action="custCellEdit" data-field="amount" data-id="'+x.id+'" title="'+TX('点击编辑金额','Edit amount')+'">'+(x.amount?('$'+esc(x.amount)):'—')+'</td>';
   h+='<td class="cell" data-action="custCellEdit" data-field="last" data-id="'+x.id+'" title="'+TX('点击编辑跟进日期','Edit last-touch date')+'">'+esc(x.last||'—')+'</td>';
@@ -1687,6 +1693,76 @@ function custSheetTasks(){
  h+='</tbody></table>';
  return h;
 }
+/* ---- KPI 下钻：统计数字不是可填空，但可以点开看构成、就地编辑 ---- */
+function kpiJump(where,id){closeModal();custJump(where,id);}
+function kpiTaskDone(id){taskDone(id);custKpi(S._kpiKind||'task');}
+function kpiEditTask(id){taskEdit(id);}
+function kpiEditClient(id){leadEdit(id);}
+function custKpi(kind){
+ S._kpiKind=kind;
+ var ins=custInsight();
+ var titles={total:TX('客户总数 · 全部客户明细','All clients'),active:TX('在谈 · 未成交客户','In pipeline (not closed)'),overdue:TX('逾期 · 超 14 天未跟进','Overdue — 14+ days no follow-up'),docs:TX('单证均进度 · 各笔交易','Doc progress by deal'),task:TX('待办 · 未完成','Open tasks')};
+ var h='<h3>'+titles[kind]+'</h3>';
+ if(kind==='task'){
+  var ts=(S.tasks||[]).filter(function(t){return !t.done;}).sort(function(a,b){return String(a.due||'9999').localeCompare(String(b.due||'9999'));});
+  if(!ts.length){h+='<div class="muted" style="padding:14px;text-align:center">'+TX('没有未完成待办。','No open tasks.')+'</div>';}
+  else{
+   h+='<table class="xls"><thead><tr><th>'+TX('待办','To-do')+'</th><th>'+TX('截止','Due')+'</th><th>'+TX('客户','Client')+'</th><th>'+TX('操作','Ops')+'</th></tr></thead><tbody>';
+   ts.forEach(function(t){
+    var od=t.due&&t.due<todayStr();
+    var cl=t.clientId?S.leads.find(function(x){return String(x.id)===String(t.clientId);}):null;
+    h+='<tr>';
+    h+='<td>'+esc(t.title)+'</td>';
+    h+='<td>'+(t.due?('<span class="tagmini '+(od?'r':'')+'">'+esc(t.due)+'</span>'):'—')+'</td>';
+    h+='<td'+(cl?(' class="cell" data-action="kpiJump" data-where="cust360" data-id="'+esc(cl.id)+'"'):'')+'>'+(cl?esc(cl.name):'—')+'</td>';
+    h+='<td><button class="btn green mini" data-action="kpiTaskDone" data-id="'+esc(String(t.id))+'">'+TX('完成','Done')+'</button> <button class="btn ghost mini" data-action="kpiEditTask" data-id="'+esc(String(t.id))+'">'+TX('编辑','Edit')+'</button></td>';
+    h+='</tr>';
+   });
+   h+='</tbody></table>';
+  }
+ } else if(kind==='docs'){
+  var ds=ins.lines.filter(function(x){return x.docPct!==null;}).sort(function(a,b){return a.docPct-b.docPct;});
+  if(!ds.length){h+='<div class="muted" style="padding:14px;text-align:center">'+TX('还没有关联交易的客户，先去「外贸单据」建一笔交易。','No deals yet; create one in Trade Docs.')+'</div>';}
+  else{
+   h+='<table class="xls"><thead><tr><th>'+TX('客户','Client')+'</th><th>'+TX('交易号','Deal')+'</th><th>'+TX('进度','Progress')+'</th><th>'+TX('操作','Ops')+'</th></tr></thead><tbody>';
+   ds.forEach(function(x){
+    h+='<tr>';
+    h+='<td class="cell" data-action="kpiJump" data-where="cust360" data-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b></td>';
+    h+='<td>'+esc(x.dealNo||'—')+'</td>';
+    h+='<td><span class="bar"><i style="width:'+x.docPct+'%"></i></span> '+x.docPct+'%</td>';
+    h+='<td><button class="btn mini" data-action="kpiJump" data-where="docs" data-id="'+esc(x.id)+'">'+TX('去处理单证','Open docs')+'</button> <button class="btn ghost mini" data-action="kpiEditClient" data-id="'+esc(x.id)+'">'+TX('改客户','Edit')+'</button></td>';
+    h+='</tr>';
+   });
+   h+='</tbody></table>';
+   h+='<div class="hint" style="margin-top:8px">'+TX('单证进度 = 该笔交易已完成单证数 ÷ 27。点「去处理单证」逐张勾选完成。','Progress = docs done ÷ 27. Click “Open docs” to tick them off.')+'</div>';
+  }
+ } else {
+  var rows=ins.lines.filter(function(x){
+   if(kind==='active')return x.stage!=='成交';
+   if(kind==='overdue')return x.follow;
+   return true;
+  });
+  if(!rows.length){h+='<div class="muted" style="padding:14px;text-align:center">'+TX('暂无记录。','No records.')+'</div>';}
+  else{
+   h+='<table class="xls"><thead><tr><th>'+TX('客户','Client')+'</th><th>'+TX('市场','Market')+'</th><th>'+TX('阶段','Stage')+'</th><th>'+TX('金额','Amount')+'</th><th>'+TX('最后跟进','Last')+'</th><th>'+TX('操作','Ops')+'</th></tr></thead><tbody>';
+   rows.forEach(function(x){
+    h+='<tr>';
+    h+='<td class="cell" data-action="kpiJump" data-where="cust360" data-id="'+esc(x.id)+'" title="'+TX('点击查看客户360','Open 360')+'"><b>'+esc(x.name)+'</b></td>';
+    h+='<td>'+esc(x.market||'—')+'</td>';
+    h+='<td>'+esc(x.stage)+(x.follow?(' <span class="tagmini r">'+TX('逾期','late')+' '+x.days+TX('天','d')+'</span>'):'')+'</td>';
+    h+='<td>'+(x.amount?('$'+esc(x.amount)):'—')+'</td>';
+    h+='<td>'+esc(x.last||'—')+'</td>';
+    h+='<td><button class="btn mini" data-action="kpiJump" data-where="'+custNextWhere(x)+'" data-id="'+esc(x.id)+'">'+TX('去办','Do it')+'</button> <button class="btn ghost mini" data-action="kpiEditClient" data-id="'+esc(x.id)+'">'+TX('编辑','Edit')+'</button></td>';
+    h+='</tr>';
+   });
+   h+='</tbody></table>';
+   h+='<div class="hint" style="margin-top:8px">'+TX('这些数字由下面明细自动汇总，改数字请改客户资料本身：点「编辑」改全部字段，或点客户名进 360 看全貌。','These figures are auto-computed from the list below — to change them, edit the client record: “Edit” for all fields, or click the name for 360.')+'</div>';
+  }
+ }
+ h+='<div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button></div>';
+ $('modalBody').innerHTML=h;
+ $('modal').classList.add('show');
+}
 function custCard(x){
  var w=custNextWhere(x);
  var stageIdx=PIPE.indexOf(x.stage);
@@ -1733,11 +1809,11 @@ function viewCust(){
  var mode=S._custView||'card';
  var h=shead('cust',TX('以客户为中心的总驾驶舱：一眼看清每个客户在「找客户 / 今天要处理 / 外贸单据 / 复盘」的状态，点卡片或「去办」即跳到对应板块（AI 联动）。','Customer-centric command center: every client’s status across modules at a glance; tap a card or "Do it" to jump (AI-linked).'));
  h+='<div class="kpis">';
- h+='<div class="kpi"><div class="n">'+ins.total+'</div><div class="l">'+TX('客户总数','Clients')+'</div></div>';
- h+='<div class="kpi"><div class="n">'+ins.active+'</div><div class="l">'+TX('在谈','In pipeline')+'</div></div>';
- h+='<div class="kpi" style="'+(ins.overdue?'background:#fef2f2;border-color:#fecaca':'')+'"><div class="n" style="'+(ins.overdue?'color:#dc2626':'')+'">'+ins.overdue+'</div><div class="l">'+TX('逾期','Overdue')+'</div></div>';
- h+='<div class="kpi"><div class="n">'+ins.docAvg+'%</div><div class="l">'+TX('单证均进度','Docs')+'</div></div>';
- h+='<div class="kpi"><div class="n">'+ins.tasksTotal+'</div><div class="l">'+TX('待办','Tasks')+'</div></div>';
+ h+='<div class="kpi" data-action="custKpi" data-kind="total" title="'+TX('点开看客户明细，可编辑或进入客户360','Open client list — edit or open 360')+'"><div class="n">'+ins.total+'</div><div class="l">'+TX('客户总数','Clients')+' <i>›</i></div></div>';
+ h+='<div class="kpi" data-action="custKpi" data-kind="active" title="'+TX('点开看未成交客户明细','Open pipeline clients')+'"><div class="n">'+ins.active+'</div><div class="l">'+TX('在谈','In pipeline')+' <i>›</i></div></div>';
+ h+='<div class="kpi" data-action="custKpi" data-kind="overdue" style="'+(ins.overdue?'background:#fef2f2;border-color:#fecaca':'')+'" title="'+TX('点开看逾期客户，立即跟进','Open overdue clients')+'"><div class="n" style="'+(ins.overdue?'color:#dc2626':'')+'">'+ins.overdue+'</div><div class="l">'+TX('逾期','Overdue')+' <i>›</i></div></div>';
+ h+='<div class="kpi" data-action="custKpi" data-kind="docs" title="'+TX('点开看每笔交易的单证进度并去处理','Open doc progress per deal')+'"><div class="n">'+ins.docAvg+'%</div><div class="l">'+TX('单证均进度','Docs')+' <i>›</i></div></div>';
+ h+='<div class="kpi" data-action="custKpi" data-kind="task" title="'+TX('点开看未完成待办，可完成/编辑','Open tasks — complete or edit')+'"><div class="n">'+ins.tasksTotal+'</div><div class="l">'+TX('待办','Tasks')+' <i>›</i></div></div>';
  h+='</div>';
  if(ins.lines.length){
   h+='<div class="insight" style="margin-top:14px"><b>AI '+TX('今日重点','Today’s focus')+'</b> ';
@@ -1762,7 +1838,7 @@ function viewCust(){
   else if(sheet==='deal')h+=custSheetDeals();
   else h+=custSheetTasks();
   h+='</div></div>';
-  h+='<div class="hint" style="margin-top:8px">'+TX('市场 / 阶段 / 金额 / 最后跟进 这几列可直接点开编辑；点客户名或「360」看完整详情，「编辑」改全部字段，「删」移入回收站可恢复。','Click Market / Stage / Amount / Last-touch cells to edit inline; click name or 360 for full detail, Edit for all fields, Del moves to recoverable Trash.')+'</div>';
+  h+='<div class="hint" style="margin-top:8px">'+TX('国家 / 市场 / 阶段 / 产品 / WhatsApp / 金额 / 最后跟进 这几列可直接点开编辑；点客户名或「360」看完整详情，「编辑」改全部字段，「删」移入回收站可恢复。顶部 5 个统计数字也可点开看构成明细。','Click Country / Market / Stage / Product / WhatsApp / Amount / Last-touch cells to edit inline; click name or 360 for full detail, Edit for all fields, Del moves to recoverable Trash. The 5 KPI tiles on top are clickable too.')+'</div>';
  }
  return h;
 }
@@ -2410,6 +2486,11 @@ document.addEventListener('click',function(e){
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
+ else if(a==='custKpi'){custKpi(el.dataset.kind);}
+ else if(a==='kpiJump'){kpiJump(el.dataset.where, el.dataset.id);}
+ else if(a==='kpiTaskDone'){kpiTaskDone(el.dataset.id);}
+ else if(a==='kpiEditTask'){kpiEditTask(el.dataset.id);}
+ else if(a==='kpiEditClient'){kpiEditClient(el.dataset.id);}
  else if(a==='clearClient'){clearClient();}
  else if(a==='dealNew'){dealNew();}
  else if(a==='dealEdit'){dealEdit();}
