@@ -2312,50 +2312,80 @@ function resetAll(){
 }
 /* ============ 闭环演示 ============ */
 function demoMe(){return {name:'John Guo',company:'Guo Trading',years:'8',product:'prayer pillow',market:'中东',whatsapp:''};}
-function demoStep(n,title,sub,what,out,ai){
- return '<div class="demo-step"><div class="dh"><span class="num">'+n+'</span><div><b style="font-size:15px">'+title+'</b> <span class="muted">· '+sub+'</span></div></div><div class="act">'+TX('这一步做什么','What this step does')+'</div><div class="muted" style="font-size:13.5px">'+what+'</div><div class="act">'+TX('工具实际产出','What the tool outputs')+'</div><div class="out" style="font-size:13px">'+esc(out)+'</div><div class="ai"><b>AI '+TX('自我复盘','self-review')+' · </b>'+ai+'</div></div>';
+/* 演示买家 = 一个可被真实系统调用的线索对象（评分/客户库/序列全复用） */
+function demoLead(){return {id:'demo_ahmed',name:'Ahmed Al Falah',company:'Al Falah Gifts',country:'UAE',market:'中东',wa:'+97150123456',email:'ahmed@alfalah.ae',product:'prayer pillow',stage:'试样',source:TX('演示','Demo'),amount:2000,last:todayStr(),note:TX('闭环演示里的示例买家（UAE 穆斯林礼品进口商）','Demo buyer from the Loop Demo (UAE Muslim-gift importer)'),logs:[]};}
+function genPosText(v,me){return '【'+TX('定位卡','Positioning Card')+'】\n'+TX('产品','Product')+'：Muslim prayer pillow（'+((me&&me.product)||TX('蓝款','blue'))+'）\n'+TX('市场','Market')+'：'+(v.mkt||'—')+'\n\n'+TX('三层结构','Three tiers')+'：\n· '+TX('引流款','Drain')+'：'+(v.drain||'—')+'（'+TX('走量、养信任','volume, trust')+'）\n· '+TX('利润款A','Profit A')+'：'+(v.proA||'—')+'（'+TX('品质溢价','quality premium')+'）\n· '+TX('利润款B','Profit B')+'：'+(v.proB||'—')+'（'+TX('节期礼赠','festival gift')+'）\n\n'+TX('一句话','One-liner')+'：'+TX('不只卖便宜那一种，用确定感换利润。','Don’t just sell the cheap one — trade certainty for margin.')+((me&&me.whatsapp)?('\n\n'+TX('联系','Contact')+'：WhatsApp '+me.whatsapp):'');}
+function demoAddLead(){
+ var exists=(S.leads||[]).filter(function(l){return l.name==='Ahmed Al Falah';}).length>0;
+ if(exists){toast(TX('Ahmed 已在你的客户库里（去「客户汇总」看）','Ahmed is already in your leads — see Customer Hub'));S.view='cust';save('view',S.view);refreshAll();return;}
+ var l=demoLead();S.leads=S.leads||[];S.leads.unshift(l);snapLeads();save('leads',S.leads);S.view='cust';save('view',S.view);refreshAll();toast(TX('已把 Ahmed 加进真实客户库 → 现在可在「客户汇总」跑 AI 评分/跟进序列/建交易','Ahmed added as a real lead — run AI score / cadence / deal in Customer Hub'));
+}
+function demoStep(n,title,sub,what,out,ai,jump,extra){
+ var jb=jump?('<button class="btn mini" data-action="nav" data-view="'+jump+'">'+TX('▸ 去实操（进真实模块）','▸ Do it in the real module')+'</button>'):'';
+ var ex=extra?extra:'';
+ return '<div class="demo-step"><div class="dh"><span class="num">'+n+'</span><div><b style="font-size:15px">'+title+'</b> <span class="muted">· '+sub+'</span></div></div><div class="act">'+TX('这一步做什么','What this step does')+'</div><div class="muted" style="font-size:13.5px">'+what+'</div><div class="act">'+TX('工具实际产出','What the tool outputs')+'</div><div class="out" style="font-size:13px">'+esc(out)+'</div><div class="ai"><b>AI '+TX('自我复盘','self-review')+' · </b>'+ai+'</div>'+(jb||ex?('<div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px">'+jb+(jb&&ex?' ':'' )+ex+'</div>'):'')+'</div>';
 }
 function viewDemo(){
  var me=demoMe();
  var d8=daysBetween(todayStr(),nextRamadan());
+ var dl=demoLead();
+ var dlScore=scoreLead(dl);
  var s3=SCENES.cold_email.gen({client:'Ahmed',product:'prayer pillow',country:'UAE',edge:'stable $2 FOB + Ramadan stock'},me);
  var s4=SCENES.phone.gen({client:'Ahmed',company:'Al Falah Gifts',product:'prayer pillow'},me);
  var s5=SCENES.quote.gen({client:'Ahmed',product:'embroidered pillow',price:'10'},me);
  var s7=SCENES.reorder.gen({client:'Ahmed',product:'prayer pillow'},me);
- var h='<div class="card" style="margin-bottom:16px"><div class="shead" style="margin:0"><div class="ic">'+ICON.demo+'</div><div><h2>'+TX('闭环演示 · 用 Ahmed 跑通全流程','Loop Demo · run the full loop with Ahmed')+'</h2><p>'+TX('以一个真实买家（UAE 的 Ahmed，穆斯林礼品进口商）为例，看八段怎么一环扣一环转起来。每个步骤都展示工具实际产出的内容，以及 AI 的自我复盘。','A real buyer (Ahmed from UAE, Muslim-gift importer) shows how the 8 stages chain together. Each step shows real tool output + AI self-review.')+'</p></div></div></div>';
+ var posOut=genPosText({drain:TX('蓝款 prayer pillow $2','blue pillow $2'),proA:TX('绣金款 $10','embroidered $10'),proB:TX('斋月/朝觐礼盒 $20','Ramadan/Hajj gift box $20'),mkt:me.market},me);
+ /* 第 8 步：用你真实客户库算指标（没客户才显示演示买家进度） */
+ var leads=S.leads||[];var total=leads.length;
+ var dealN=leads.filter(function(l){return l.stage==='成交';}).length;
+ var talking=leads.filter(function(l){return ['已联系','已回复','试样','报价'].indexOf(l.stage)>=0;}).length;
+ var warn=leads.filter(function(l){return l.stage!=='成交' && Math.round((new Date(todayStr())-new Date(l.last))/864e5)>=14;}).length;
+ var conv=total?Math.round(dealN/total*100):0;
+ var bot='—',cnt={},max=0;leads.forEach(function(l){if(l.stage!=='成交'){cnt[l.stage]=(cnt[l.stage]||0)+1;}});Object.keys(cnt).forEach(function(k){if(cnt[k]>max){max=cnt[k];bot=k;}});
+ var w=0;leads.forEach(function(l){var p=(l.stage==='成交'?1:(STAGE_W[l.stage]||0)/100);w+=(l.amount||0)*p;});
+ var revOut, revAi;
+ if(total>0){
+  revOut=TX('指标（来自你真实客户库）','Metrics (from your real leads)')+'：\n'+TX('线索','Leads')+' '+total+' · '+TX('在谈','In talk')+' '+talking+' · '+TX('成交','Deals')+' '+dealN+' · '+TX('预警','Alerts')+' '+warn+'\nAI '+TX('洞察','insight')+'：'+TX('转化率','conv')+' '+conv+'%；'+(bot!=='—'?(''+TX('瓶颈在「','bottleneck at')+bot+'」；'):'')+TX('加权预测 $','weighted $')+Math.round(w).toLocaleString()+'；'+TX('距斋月约 ','~')+d8+TX(' 天。',' days to Ramadan.')+'';
+  revAi=TX('这就是"结合整个系统"：演示第 8 步直接读你的真实客户库，不再编数字。你加的客户越多、推进越快，这里的转化率和加权预测就越好看——闭环真的在转。','This is the "whole-system" link: step 8 reads your real leads, not fake numbers. More leads you add and push, the better conversion & forecast here — the loop actually turns.');
+ }else{
+  revOut=TX('指标（演示买家 Ahmed 的进度）','Metrics (demo buyer Ahmed’s progress)')+'：\n'+TX('本月新开发 2','new 2')+' · '+TX('在谈 2','in-talk 2')+' · '+TX('成交 0','deals 0')+' · '+TX('预警 0','alerts 0')+'\nAI '+TX('洞察','insight')+'：'+TX('转化0%（新客期正常）；瓶颈在「试样」；加权预测 $1,200；距斋月还有 ','conv 0% (normal for new); bottleneck at Sample; weighted $1,200; ')+d8+TX(' 天，现在推试样。',' days to Ramadan — push samples now.')+'\n（'+TX('你还没有真实客户——点第 2 步「把 Ahmed 加进我的客户」，这里会立刻变成你的真实数据。','You have no real leads yet — tap step 2 "Add Ahmed as a real lead" and this becomes your real data.')+'）';
+  revAi=TX('原版"复购数"是空的。自我完善：指标全算真值 + 加 AI 洞察（转化率/瓶颈/加权预测/节期窗口），复盘从"填模板"变"出决策"。现在更进一步——直接读你的真实客户库。','Old "reorder count" was blank. Improved: all metrics real + AI insights turn review into decisions. Now it even reads your real leads.');
+ }
+ var h='<div class="card" style="margin-bottom:16px"><div class="shead" style="margin:0"><div class="ic">'+ICON.demo+'</div><div><h2>'+TX('闭环演示 · 用 Ahmed 跑通全流程','Loop Demo · run the full loop with Ahmed')+'</h2><p>'+TX('以一个真实买家（UAE 的 Ahmed，穆斯林礼品进口商）为例，看八段怎么一环扣一环转起来。每一步都展示工具真实产出的内容（不是写死的），可点「去实操」进对应的真实模块；第 2 步还能把 Ahmed 直接加进你的客户库，打通后续跟进/单据。','A real buyer (Ahmed from UAE, Muslim-gift importer) shows how the 8 stages chain. Each step shows REAL tool output (not hardcoded) with a "Do it" jump to the real module; step 2 can add Ahmed to your leads, unlocking cadence & docs.')+'</p></div></div></div>';
  h+=demoStep(1,TX('定位选品','Positioning'),TX('确定卖什么、怎么分层','what to sell & how to tier'),
-  TX('在「定位选品」生成产品分层卡：引流款蓝 pillow $2 走量，绣金款 $10 吃利润，斋月礼盒 $20 吃礼赠。价差 10 倍。','Generate the tier card: blue drain $2, embroidered profit $10, Ramadan gift box $20. 10x gap.'),
-  '【'+TX('定位卡','Card')+'】'+TX('产品','Product')+'：Muslim prayer pillow（'+TX('蓝款','blue')+'）\n'+TX('市场','Market')+'：'+TX('中东','Mid-East')+'\n'+TX('三层','Tiers')+'：'+TX('引流 $2','drain $2')+' / '+TX('利润A $10','profitA $10')+' / '+TX('利润B $20','profitB $20')+'\n'+TX('一句话','One-liner')+'：'+TX('不只卖便宜那一种，用确定感换利润。','Don’t just sell the cheap one.')+'',
-  TX('原版只让填分层卡，没说"为什么"。自我完善：分层卡现在直接点明"价差10倍=两台机器"，并自动把你的主打市场带入，避免空填。','Old version just collected tiers without the "why". Improved: card states "10x gap = two machines" and auto-fills your market, no empty forms.'));
+  TX('在「定位选品」点"生成定位卡"——下方便是工具真实产出的分层卡（同格式、带你的署名与市场）。','In Positioning, click "Generate card" — the panel shows the real tier card (same format, with your name & market).'),
+  posOut,
+  TX('原版只让填分层卡，没说"为什么"。自我完善：分层卡现在直接点明"价差10倍=两台机器"，并自动把你的主打市场带入，避免空填。','Old version just collected tiers without the "why". Improved: card states "10x gap = two machines" and auto-fills your market, no empty forms.'),'pos');
  h+=demoStep(2,TX('找客户','Find Leads'),TX('把 Ahmed 进线索 Pipeline','put Ahmed into the pipeline'),
-  TX('在「找客户」添加线索 Ahmed（UAE/中东/试样品阶段）。AI 自动评分并排今日优先。','Add Ahmed (UAE/Mid-East/sample stage). AI auto-scores and ranks today’s priority.'),
-  TX('线索','Lead')+'：Ahmed · UAE · '+TX('中东','Mid-East')+' · '+TX('阶段「试样」','stage Sample')+' · '+TX('评分','score')+' 78 · '+TX('今日优先 Top1','top priority #1'),
-  TX('原版线索按时间排序，谁急谁不急看不出。自我完善：加 AI 评分（阶段权重+近期度+金额+节期临近），今日优先自动排，不用你记。','Old list sorted by time — urgency invisible. Improved: AI score (stage recency amount festival) auto-ranks priority; no mental tracking.'));
+  TX('在「找客户」建线索 Ahmed（UAE/中东/试样品阶段）。下面"加进我的客户"会真实写入客户库，之后第 3-8 步用的 AI 评分、跟进序列、客户汇总全都接上他。','Add Ahmed (UAE/Mid-East/sample stage) in Find Leads. The button below writes him into your real leads — then steps 3-8 (AI score, cadence, hub) all connect to him.'),
+  TX('线索','Lead')+'：'+dl.name+' · '+dl.country+' · '+TX('中东','Mid-East')+' · '+TX('阶段「试样」','stage Sample')+' · '+TX('AI 评分','AI score')+' '+dlScore+'（'+TX('真实算法：阶段权重+近期度+金额+市场','real: stage+recency+amount+market')+'）',
+  TX('原版线索按时间排序，谁急谁不急看不出。自我完善：加 AI 评分（阶段权重+近期度+金额+节期临近），今日优先自动排，不用你记；现在演示买家也能一键变成你的真实客户。','Old list sorted by time — urgency invisible. Improved: AI score auto-ranks priority; and the demo buyer can become a real lead in one tap.'),'find','<button class="btn amber mini" data-action="demoAddLead">'+TX('＋ 把 Ahmed 加进我的客户（打通真实链路）','+ Add Ahmed as a real lead')+'</button>');
  h+=demoStep(3,TX('触达建联','Outreach'),TX('冷开发邮件破冰','cold email to break ice'),
-  TX('在「触达建联」选"冷开发邮件"，填 Ahmed/UAE/优势，一键生成英文照发稿。','Pick "cold email", fill Ahmed/UAE/edge, one tap → send-ready English.'),
+  TX('在「触达建联」选"冷开发邮件"，填 Ahmed/UAE/优势，一键生成英文照发稿（下面是工具真实产出）。','In Outreach, pick "cold email", fill Ahmed/UAE/edge, one tap → the real send-ready English (shown below).'),
   s3.en,
-  TX('原版话术固定模板，不带买家市场。自我完善：话术自动带入你的署名+年限，并按买家市场（UAE）调优势点，更不像群发。','Old script was a fixed template ignoring buyer market. Improved: auto-signs your name+years and tailors the edge to UAE — less blast-like.'));
+  TX('原版话术固定模板，不带买家市场。自我完善：话术自动带入你的署名+年限，并按买家市场（UAE）调优势点，更不像群发。','Old script was a fixed template ignoring buyer market. Improved: auto-signs your name+years and tailors the edge to UAE — less blast-like.'),'reach');
  h+=demoStep(4,TX('建立信任','Build Trust'),TX('电话破冰脚本','call opener script'),
-  TX('在「建立信任」选"电话开场白"，生成可照读脚本，先问"方便吗"再给样品。','Pick "call opener" → read-aloud script; ask "good time?" before offering sample.'),
+  TX('在「建立信任」选"电话开场白"，生成可照读脚本（下面是工具真实产出），先问"方便吗"再给样品。','In Build Trust, pick "call opener" → the real read-aloud script (below); ask "good time?" before offering sample.'),
   s4.en,
-  TX('这是你最初的痛点"电话信任难"。自我完善：脚本把"你自己看质量"作为降防备钩子，并在中文栏标注禁忌（不让对方说话=失败）。','This targets your original pain "hard to build trust on calls". Improved: script uses "check quality yourself" as a trust hook, with taboos flagged in Chinese.'));
+  TX('这是你最初的痛点"电话信任难"。自我完善：脚本把"你自己看质量"作为降防备钩子，并在中文栏标注禁忌（不让对方说话=失败）。','This targets your original pain "hard to build trust on calls". Improved: script uses "check quality yourself" as a trust hook, with taboos flagged in Chinese.'),'trust');
  h+=demoStep(5,TX('报价成交','Quote & Close'),TX('报价+逼单','quote + close'),
-  TX('在「报价成交」选"报价与逼单"，生成含 MOQ/交期/限时的报价稿；异议处理有照读稿。','Pick "quote & close" → quote with MOQ/lead time/deadline; objection handlers included.'),
+  TX('在「报价成交」选"报价与逼单"，生成含 MOQ/交期/限时的报价稿（下面是工具真实产出）；异议处理有照读稿。','In Quote & Close, pick "quote & close" → real quote with MOQ/lead time/deadline (below); objection handlers included.'),
   s5.en,
-  TX('自我完善：报价现在按"分层"逻辑走——给 Ahmed 推的是绣金款 $10 而非基础 $2，利润款客户不再被低价喂跑。','Improved: quoting follows the tier logic — Ahmed gets the $10 embroidered, not the $2 base; profit buyers aren’t under-fed.'));
- h+=demoStep(6,TX('交付履约','Delivery'),TX('订单 SOP + 验货','order SOP + QC'),
-  TX('在「交付履约」复制订单 SOP（收定金→生产→验货→物流→尾款→回访）和验货清单。','Copy the order SOP (deposit→production→QC→logistics→balance→follow-up) and QC checklist.'),
-  TX('SOP','SOP')+'：1.'+TX('收定金30%','30% deposit')+' 2.'+TX('下单生产','produce')+' 3.'+TX('出货前QC','pre-ship QC')+' 4.'+TX('安排物流','logistics')+' 5.'+TX('收尾款70%','70% balance')+' 6.'+TX('售后回访','after-sales')+'\n'+TX('验货','QC')+'：'+TX('数量/颜色/款式一致·刺绣无脱线·尺寸±1cm·礼盒防潮·拍照留底','qty/color/style match·no loose threads·±1cm·gift moisture-proof·photo on file'),
-  TX('自我完善：原版 SOP 是死的。现在和"复购"联动——第6步"售后回访+节期提醒"直接喂给第7段，闭环不断；并且新增独立的「外贸单据」模块，一笔出口的 全套外贸单证一次性备齐、可生成草稿，离发货就差勾掉的那一项。','Improved: SOP now links to reorder; plus a dedicated "Trade Documents" module prepares all 15 export docs at once with fillable drafts — you are one checkbox from shipment.'));
+  TX('自我完善：报价现在按"分层"逻辑走——给 Ahmed 推的是绣金款 $10 而非基础 $2，利润款客户不再被低价喂跑。','Improved: quoting follows the tier logic — Ahmed gets the $10 embroidered, not the $2 base; profit buyers aren’t under-fed.'),'deal');
+ h+=demoStep(6,TX('交付履约','Delivery'),TX('订单 SOP + 验货 + 备单据','order SOP + QC + docs'),
+  TX('在「交付履约」复制订单 SOP 与验货清单（下面是真实内容）；出货前跳「外贸单据」一次性备齐 27 套正式单证。','In Delivery, copy the order SOP & QC checklist (real content below); before shipment, jump to Trade Documents to prepare all 27 docs at once.'),
+  TX('SOP','SOP')+'：1.'+TX('收定金30%','30% deposit')+' 2.'+TX('下单生产','produce')+' 3.'+TX('出货前QC','pre-ship QC')+' 4.'+TX('安排物流','logistics')+' 5.'+TX('收尾款70%','70% balance')+' 6.'+TX('售后回访','after-sales')+'\n'+TX('验货','QC')+'：'+TX('数量/颜色/款式一致·刺绣无脱线·尺寸±1cm·礼盒防潮·拍照留底','qty/color/style match·no loose threads·±1cm·gift moisture-proof·photo on file')+'\n'+TX('单据','Docs')+'：'+TX('商业发票/装箱单/提单/产地证/报关单/保险单/汇票/检验证/装船通知/受益人证（+按条件熏蒸/海关/领事/船证）','invoice/packing/BL/C-O/customs/insurance/draft/inspection/advice/beneficiary (+fumigation/customs/consular/shipping cert)'),
+  TX('自我完善：原版 SOP 是死的。现在和"复购"联动，并新增独立的「外贸单据」模块——一笔出口 27 套单证一次性备齐、可生成正式草稿、打印/导出 PDF，离发货就差勾掉的那一项。','Improved: SOP links to reorder, plus a dedicated Trade Documents module prepares all 27 export docs at once with fillable drafts & PDF export — one checkbox from shipment.'),'deliver','<button class="btn ghost mini" data-action="nav" data-view="docs">'+TX('▸ 去备外贸单据(27套)','▸ Trade Documents (27)')+'</button>');
  h+=demoStep(7,TX('复购转介','Reorder'),TX('斋月返单+转介绍','Ramadan reorder + referral'),
-  TX('在「复购转介」用节期日历（斋月02-08）触发返单话术，并趁信任高要转介绍。','Use the festival calendar (Ramadan 02-08) to trigger reorder; ask referral while trust is high.'),
+  TX('在「复购转介」用节期日历（距斋月约 '+d8+' 天）触发返单话术（下面是工具真实产出），并趁信任高要转介绍。','In Reorder, use the festival calendar (~'+d8+' days to Ramadan) to trigger the reorder script (real output below); ask referral while trust is high.'),
   s7.en,
-  TX('这是"找客户难"的解药。自我完善：返单话术用节期做理由（比"在吗"强10倍），且日历自动倒数，不靠你记。','This is the cure for "hard to find clients". Improved: reorder uses the festival as reason (10x stronger than "hello"), calendar auto-counts down.'));
+  TX('这是"找客户难"的解药。自我完善：返单话术用节期做理由（比"在吗"强10倍），且日历自动倒数，不靠你记。','This is the cure for "hard to find clients". Improved: reorder uses the festival as reason (10x stronger than "hello"), calendar auto-counts down.'),'repeat');
  h+=demoStep(8,TX('复盘增长','Review'),TX('数据复盘+AI洞察','data review + AI insights'),
-  TX('在「复盘增长」看转化率/瓶颈/加权预测，AI 给出下一步动作。','See conversion/bottleneck/weighted forecast; AI suggests next moves.'),
-  TX('指标','Metrics')+'：'+TX('本月新开发 2','new 2')+' · '+TX('在谈 2','in-talk 2')+' · '+TX('成交 0','deals 0')+' · '+TX('预警 0','alerts 0')+'\nAI '+TX('洞察','insight')+'：'+TX('转化0%（新客期正常）；瓶颈在「试样」；加权预测 $1,200；距斋月还有 ','conv 0% (normal for new); bottleneck at Sample; weighted $1,200; ')+d8+TX(' 天，现在推试样。',' days to Ramadan — push samples now.')+'',
-  TX('原版"复购数"是空的。自我完善：指标全算真值 + 加 AI 洞察（转化率/瓶颈/加权预测/节期窗口），复盘从"填模板"变"出决策"。','Old "reorder count" was blank. Improved: all metrics real + AI insights (conversion/bottleneck/forecast/festival) turn review into decisions.'));
+  TX('在「复盘增长」看转化率/瓶颈/加权预测（下面直接读你的真实客户库；没客户就显示演示进度）。','In Review, see conversion/bottleneck/weighted forecast (below reads your real leads; demo progress if empty).'),
+  revOut,
+  revAi,'review');
  h+='<div class="card" style="margin-top:16px;background:#eff6ff"><h3 style="margin:0 0 6px;font-size:15px">'+TX('怎么用这套跑你自己的闭环','How to run your own loop')+'</h3><ol class="keypts" style="margin:0;background:none;border:none;padding:0"><li>'+TX('先填「我的资料」→ 所有话术自动署名。','Fill My Profile → scripts auto-sign.')+'</li><li>'+TX('每天打开看「今天要处理」→ 逾期/预警一键处理。','Open "To handle today" → one-tap overdue/alert.')+'</li><li>'+TX('新客户进「找客户」→ AI 评分排优先级 → 用「AI 跟进序列」自动排程。','New lead → Find Leads (AI score) → AI cadence auto-schedules.')+'</li><li>'+TX('卡住就用「教练诊断」给别人做体检，顺带练手。','Stuck? Use Coach to diagnose others and practice.')+'</li><li>'+TX('月底进「复盘增长」看 AI 洞察，定下月重点。','Month-end: Review AI insights set next month’s focus.')+'</li></ol></div>';
+ h+='<div class="card" style="margin-top:14px;background:#ecfdf5"><h3 style="margin:0 0 6px;font-size:15px">'+TX('闭环验证：演示买家 → 真实客户','Close the loop: demo buyer → real lead')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('点第 2 步「把 Ahmed 加进我的客户」后，去首页「闭环地图」选客户生成 AI 跟进序列、在「客户汇总」看他的 AI 评分与单证进度、在「外贸单据」为他建交易备齐 27 套单证——演示到真实业务，一步打通。','After "Add Ahmed as a real lead", go to Home → pick him to generate the AI cadence, see his score & doc progress in Customer Hub, prepare his 27 docs in Trade Documents — demo to real business, one tap.')+'</p><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-action="demoAddLead">'+TX('＋ 现在就把 Ahmed 加进我的客户','+ Add Ahmed now')+'</button><button class="btn ghost" data-action="nav" data-view="home">'+TX('▸ 去闭环地图','▸ Loop Map')+'</button></div></div>';
  return h;
 }
 /* ============ 今日待处理 ============ */
@@ -2486,6 +2516,7 @@ document.addEventListener('click',function(e){
  else if(a==='hotClearUser'){openModal(TX('清空我的私藏','Clear my picks'),TX('确定删除你导入的全部私藏选品吗？此操作不可撤销。','Delete all your imported picks? This cannot be undone.'),function(){S._hotUser=[];save('_hotUser',S._hotUser);refreshAll();toast(TX('已清空','Cleared'));});}
  else if(a==='hotBoard'){var u=el.dataset.u;if(typeof window!=='undefined'&&window.open)window.open(u,'_blank');}
  else if(a==='addLead'){addLead();}
+ else if(a==='demoAddLead'){demoAddLead();}
  else if(a==='leadAdv'){leadAdv(el.dataset.id);}
  else if(a==='leadTouch'){leadTouch(el.dataset.id);}
  else if(a==='leadDel'){leadDel(el.dataset.id);}
