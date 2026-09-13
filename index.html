@@ -1557,6 +1557,7 @@ function renderLeads(){
 }
 /* ============ 客户汇总（AI 联动中枢） ============ */
 function docAvgCal(lines){if(!lines.length)return 0;var s=0,c=0;lines.forEach(function(x){if(x.docPct!==null){s+=x.docPct;c++;}});return c?Math.round(s/c):0;}
+function nextRamadan(){var tbl={'2025':'2025-03-01','2026':'2026-02-19','2027':'2027-02-08','2028':'2028-01-27','2029':'2029-01-15','2030':'2030-01-05','2031':'2031-12-25','2032':'2032-12-13'};var t=todayStr();for(var y=2025;y<=2032;y++){if(tbl[String(y)]&&tbl[String(y)]>=t)return tbl[String(y)];}return '2027-02-08';}
 function custInsight(){
  var leads=S.leads;
  var total=leads.length;
@@ -1571,9 +1572,12 @@ function custInsight(){
   var follow=days>=14&&l.stage!=='成交';
   var dl=dealByLead[l.id];var docDone=0;
   if(dl){DOC_DEF.forEach(function(d){if(dl.docs&&dl.docs[d.id]==='done')docDone++;});}
+  var docPct=dl?Math.round(docDone/DOC_DEF.length*100):null;
   var tasksO=taskOverdue[l.id]||0;
   var action='';
   if(follow)action=TX('逾期 '+days+' 天，立即跟进','Overdue '+days+'d — follow up now');
+  else if(tasksO>0)action=TX('有 '+tasksO+' 条待办未处理','Has '+tasksO+' open task(s)');
+  else if(dl&&docPct!==null&&docPct<60)action=TX('单证进度 '+docPct+'% 偏低，去处理','Docs at '+docPct+'% — handle now');
   else if(l.stage==='待开发')action=TX('写首触话术','Write first-touch script');
   else if(l.stage==='已联系')action=TX('继续触达','Keep reaching out');
   else if(l.stage==='已回复')action=TX('电话破冰 / 寄样','Call opener / send sample');
@@ -1584,11 +1588,11 @@ function custInsight(){
   return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,country:(l.country||''),product:(l.product||''),wa:(l.wa||''),email:(l.email||''),source:(l.source||''),note:(l.note||''),dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
  }).sort(function(a,b){return (b.follow?1:0)-(a.follow?1:0)|| b.score-a.score;});
  var midEast=leads.filter(function(l){return l.market==='中东';}).length;
- var d8=daysBetween(todayStr(),'2027-02-08');
+ var d8=daysBetween(todayStr(),nextRamadan());
  var summary=TX('共 ','Total ')+total+TX(' 个客户，',' clients, ')+active+TX(' 个在谈。',' in pipeline. ');
  if(overdue.length)summary+=overdue.length+TX(' 个已逾期跟进（风险最高）：',' overdue (highest risk): ')+overdue.map(function(l){return l.name;}).join('、')+'。';
  else summary+=TX('暂无逾期，跟进节奏良好。','No overdue — rhythm is good. ');
- if(midEast)summary+=TX('其中 ','Of these ')+midEast+TX(' 个中东客户，距 2027 斋月约 ',' Mid-East clients; ~')+d8+TX(' 天，是试样/返单黄金窗口。',' days to Ramadan 2027 — prime sample/reorder window. ');
+ if(midEast)summary+=TX('其中 ','Of these ')+midEast+TX(' 个中东客户，距下次斋月约 ',' Mid-East clients; ~')+d8+TX(' 天，是试样/返单黄金窗口。',' days to next Ramadan — prime sample/reorder window. ');
  if(lines.length){var top=lines[0];summary+=TX('AI 建议今日优先：','AI suggests today’s priority: ')+top.name+'（'+top.action+'）。';}
  var openTasks=(S.tasks||[]).filter(function(t){return !t.done;}).length;
  return {total:total,active:active,overdue:overdue.length,stageCnt:stageCnt,mktCnt:mktCnt,lines:lines,summary:summary,docAvg:docAvgCal(lines),tasksTotal:openTasks};
@@ -1619,13 +1623,24 @@ function custJump(where,id,mkt){
  if(where==='find'&&mkt&&$('lf_market')){$('lf_market').value=mkt;}
 }
 function clearClient(){S._activeClient='';refreshAll();toast(TX('已退出客户上下文','Client context cleared'));}
+function custFilterKey(){var v=((document.getElementById('custFilterQ')||{}).value||'');S._custFilter=S._custFilter||{q:'',market:'',stage:''};S._custFilter.q=v;refreshAll();var el=document.getElementById('custFilterQ');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}}}
+function custFilterSel(){var m=((document.getElementById('custFilterMarket')||{}).value||'');var s=((document.getElementById('custFilterStage')||{}).value||'');S._custFilter=S._custFilter||{q:'',market:'',stage:''};S._custFilter.market=m;S._custFilter.stage=s;refreshAll();}
+function custFilterReset(){S._custFilter={q:'',market:'',stage:''};S._custSort={key:'',dir:1};refreshAll();toast(TX('已重置筛选','Filter reset'));}
+function custSort(key){var cs=S._custSort||{key:'',dir:1};if(cs.key===key)cs.dir=-cs.dir;else{cs.key=key;cs.dir=1;}S._custSort=cs;refreshAll();}
 function custSheetCustomers(ins){
  if(!ins.lines.length)return '<div class="muted" style="padding:16px;text-align:center">'+TX('暂无线索，去「找客户」加一条。','No leads yet; add one in Find Leads.')+'</div>';
- var head=[TX('#','#'),TX('客户','Client'),TX('国家','Country'),TX('市场','Market'),TX('阶段','Stage'),TX('产品','Product'),TX('WhatsApp','WhatsApp'),TX('AI评分','Score'),TX('金额($)','Amount'),TX('最后跟进','Last touch'),TX('跟进状态','Follow-up'),TX('待办','Tasks'),TX('单证进度','Docs'),TX('AI 下一步','AI next'),TX('操作','Ops')];
+ var cf=S._custFilter||{q:'',market:'',stage:''};
+ var fl=ins.lines.slice();
+ if(cf.q){var q=String(cf.q).toLowerCase();fl=fl.filter(function(x){return (x.name+' '+(x.country||'')+' '+(x.product||'')+' '+(x.market||'')).toLowerCase().indexOf(q)>=0;});}
+ if(cf.market)fl=fl.filter(function(x){return x.market===cf.market;});
+ if(cf.stage)fl=fl.filter(function(x){return x.stage===cf.stage;});
+ var cs=S._custSort||{key:'',dir:1};
+ if(cs.key){fl=fl.slice().sort(function(a,b){var av=a[cs.key],bv=b[cs.key];if(cs.key==='amount'){av=parseFloat(av)||0;bv=parseFloat(bv)||0;}av=(''+(av==null?'':av)).toLowerCase();bv=(''+(bv==null?'':bv)).toLowerCase();if(av<bv)return -1*cs.dir;if(av>bv)return 1*cs.dir;return 0;});}
+ var cols=[{t:TX('#','#'),k:''},{t:TX('客户','Client'),k:'name'},{t:TX('国家','Country'),k:'country'},{t:TX('市场','Market'),k:'market'},{t:TX('阶段','Stage'),k:'stage'},{t:TX('产品','Product'),k:'product'},{t:TX('WhatsApp','WhatsApp'),k:''},{t:TX('AI评分','Score'),k:'score'},{t:TX('金额($)','Amount'),k:'amount'},{t:TX('最后跟进','Last touch'),k:'last'},{t:TX('跟进状态','Follow-up'),k:''},{t:TX('待办','Tasks'),k:''},{t:TX('单证进度','Docs'),k:''},{t:TX('AI 下一步','AI next'),k:''},{t:TX('操作','Ops'),k:''}];
  var h='<table class="xls"><thead><tr>';
- head.forEach(function(x){h+='<th>'+x+'</th>';});
+ cols.forEach(function(c){if(c.k){var arr=(cs.key===c.k)?((cs.dir===1)?' ▲':' ▼'):'';h+='<th data-action="custSort" data-key="'+c.k+'" style="cursor:pointer;user-select:none;white-space:nowrap">'+c.t+arr+'</th>';}else{h+='<th>'+c.t+'</th>';}});
  h+='</tr></thead><tbody>';
- ins.lines.forEach(function(x,i){
+ fl.forEach(function(x,i){
   var w=custNextWhere(x);
   h+='<tr>';
   h+='<td class="rownum">'+(i+1)+'</td>';
@@ -1645,6 +1660,7 @@ function custSheetCustomers(ins){
   h+='<td class="ops"><button class="btn ghost mini" data-action="custJump" data-where="cust360" data-id="'+x.id+'">'+TX('360','360')+'</button> <button class="btn ghost mini" data-action="leadEdit" data-id="'+x.id+'">'+TX('编辑','Edit')+'</button> <button class="btn danger mini" data-action="leadDel" data-id="'+x.id+'">'+TX('删','Del')+'</button></td>';
   h+='</tr>';
  });
+ if(!fl.length)h+='<tr><td colspan="15" class="muted" style="text-align:center;padding:16px">'+TX('没有匹配的客户，试试调整搜索或筛选。','No matching clients — adjust search/filter.')+'</td></tr>';
  h+='</tbody></table>';
  return h;
 }
@@ -1823,6 +1839,17 @@ function viewCust(){
  }
  h+='<div class="card" style="margin-top:14px"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><button class="btn mini" data-action="leadNew" style="background:var(--accent,#2563eb);color:#fff">+ '+TX('新建客户','New client')+'</button><b style="font-size:14px">'+TX('客户信息互通','Import / Export')+'</b><span class="muted" style="font-size:12px">'+TX('导出 CSV 用 Excel 批量编辑，再导入回来；按「客户名+国家」匹配更新。','Export CSV to edit in Excel, then re-import; matched by name + country.')+'</span><span style="flex:1"></span><button class="btn mini" data-action="exportLeadsCsv">'+TX('导出 CSV','Export CSV')+'</button><button class="btn mini ghost" data-action="exportLeadsJson">'+TX('导出 JSON','Export JSON')+'</button><button class="btn mini ghost" data-action="importLeads">'+TX('导入文件','Import')+'</button></div><input type="file" id="leadImpFile" accept=".csv,.json,text/csv,application/json" style="display:none"></div>';
  h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button></div>';
+ if(mode==='table'){
+  var cf=S._custFilter||{q:'',market:'',stage:''};
+  var mopt='<option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(m){return '<option value="'+m+'"'+(cf.market===m?' selected':'')+'>'+m+'</option>';}).join('');
+  var sopt='<option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(s){return '<option value="'+s+'"'+(cf.stage===s?' selected':'')+'>'+s+'</option>';}).join('');
+  h+='<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;align-items:center">'
+   +'<input id="custFilterQ" placeholder="'+TX('搜索客户/国家/产品','Search name/country/product')+'" value="'+esc(cf.q||'')+'" oninput="custFilterKey()" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">'
+   +'<select id="custFilterMarket" onchange="custFilterSel()" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">'+mopt+'</select>'
+   +'<select id="custFilterStage" onchange="custFilterSel()" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">'+sopt+'</select>'
+   +'<button class="btn mini ghost" data-action="custFilterReset">'+TX('重置','Reset')+'</button>'
+   +'</div>';
+ }
  if(mode==='card'){
   h+='<div class="cust-grid">';
   if(!ins.lines.length)h+='<div class="muted" style="padding:20px;text-align:center;grid-column:1/-1">'+TX('暂无线索，去「找客户」加一条。','No leads yet; add one in Find Leads.')+'</div>';
@@ -2152,12 +2179,12 @@ function renderIns(){
  var cnt={};S.leads.forEach(function(l){if(l.stage!=='成交')cnt[l.stage]=(cnt[l.stage]||0)+1;});
  var bot='—',max=0;Object.keys(cnt).forEach(function(k){if(cnt[k]>max){max=cnt[k];bot=k;}});
  var w=0;S.leads.forEach(function(l){var p=(l.stage==='成交'?1:(STAGE_W[l.stage]||0)/100);w+=(l.amount||0)*p;});
- var d8=daysBetween(todayStr(),'2027-02-08');
+ var d8=daysBetween(todayStr(),nextRamadan());
  var html='';
  html+='<div class="insight"><b>'+TX('转化率','Conversion')+'</b> '+conv+'%（'+TX('成交','deals')+' '+deal+' / '+TX('线索','leads')+' '+total+'）。'+(conv<20?TX('偏低：多数线索卡在','Low: most stuck at')+'「'+bot+'」，'+TX('先集中推进该阶段。','push that stage first.')+'':TX('健康，保持节奏。','Healthy, keep rhythm.'))+'</div>';
  if(bot!=='—')html+='<div class="insight"><b>'+TX('最大瓶颈','Top bottleneck')+'</b> '+max+' '+TX('条卡在','stuck at')+'「'+bot+'」。'+TX('建议：用 AI 跟进序列自动排程，别靠记忆跟。','Use the AI cadence to auto-schedule; don’t rely on memory.')+'</div>';
  html+='<div class="insight"><b>'+TX('加权预测金额','Weighted forecast')+'</b> $'+Math.round(w).toLocaleString()+'（'+TX('按阶段概率折算','by stage probability')+'）。'+TX('这是你本月大概率能拿下的盘子。','Your probable take this month.')+'</div>';
- html+='<div class="insight"><b>'+TX('节期窗口','Festival window')+'</b> '+TX('距 2027 斋月(02-08)约 ','~')+d8+TX(' 天。现在就该给中东/东南亚老客推试样，错过要等一年。',' days to Ramadan 2027. Push samples to Mid-East/SEA clients now — miss it, wait a year.')+'</div>';
+ html+='<div class="insight"><b>'+TX('节期窗口','Festival window')+'</b> '+TX('距下次斋月约 ','~')+d8+TX(' 天。现在就该给中东/东南亚老客推试样，错过要等一年。',' days to next Ramadan. Push samples to Mid-East/SEA clients now — miss it, wait a year.')+'</div>';
  box.innerHTML=html;
 }
 /* ============ 教练诊断（帮别人） ============ */
@@ -2290,7 +2317,7 @@ function demoStep(n,title,sub,what,out,ai){
 }
 function viewDemo(){
  var me=demoMe();
- var d8=daysBetween(todayStr(),'2027-02-08');
+ var d8=daysBetween(todayStr(),nextRamadan());
  var s3=SCENES.cold_email.gen({client:'Ahmed',product:'prayer pillow',country:'UAE',edge:'stable $2 FOB + Ramadan stock'},me);
  var s4=SCENES.phone.gen({client:'Ahmed',company:'Al Falah Gifts',product:'prayer pillow'},me);
  var s5=SCENES.quote.gen({client:'Ahmed',product:'embroidered pillow',price:'10'},me);
@@ -2467,6 +2494,9 @@ document.addEventListener('click',function(e){
  else if(a==='leadNew'){leadNew();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
+ else if(a==='custFilterReset'){custFilterReset();}
+ else if(a==='custSort'){custSort(el.dataset.key);}
+ else if(a==='lead360Save'){lead360Save(el.dataset.id);}
  else if(a==='leadRestore'){leadRestore(el.dataset.id);}
  else if(a==='trashEmpty'){trashEmpty();}
  else if(a==='emGmail'){var g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(el.dataset.to)+'&su='+el.dataset.su+'&body='+el.dataset.bd;if(openUrl(g)){toast(TX('已打开 Gmail 撰写页，按发送即可','Gmail compose opened, tap send'));}else{copySilent('To: '+(el.dataset.to||'')+'\n\n'+dU(el.dataset.bd));toast(TX('Gmail 未能自动打开（可能被拦截），邮件已复制，粘贴到任意邮箱即可','Gmail blocked; email copied to clipboard'));}logSend(el.dataset.id,'email',dU(el.dataset.bd));}
@@ -2837,13 +2867,17 @@ function lead360(id){
  var waBtn360=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn ghost" data-action="leadWa" data-id="'+id+'">WhatsApp</button>':'';
  var emailBtn360=(l.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email))?'<button class="btn ghost" data-action="leadEmail" data-id="'+id+'">'+TX('邮件','Email')+'</button>':'';
  var body='<div class="modal-form">'
-  +'<label>'+TX('客户名','Name')+'<input value="'+esc(l.name)+'" disabled></label>'
-  +'<label>'+TX('国家/市场','Country/Market')+'<input value="'+esc((l.country||'')+' / '+(l.market||''))+'" disabled></label>'
-  +'<label>'+TX('WhatsApp / 手机号','WhatsApp / Phone')+'<input value="'+esc(l.wa||'')+'" disabled></label>'
-  +'<label>'+TX('邮箱','Email')+'<input value="'+esc(l.email||'')+'" disabled></label>'
-  +'<label>'+TX('产品/金额','Product/Amount')+'<input value="'+esc((l.product||'')+' / $'+(l.amount||0))+'" disabled></label>'  +'<label>'+TX('来源渠道','Source')+'<input value="'+esc(l.source||'—')+'" disabled></label>'
-  +'<label>'+TX('阶段','Stage')+'<input value="'+esc(l.stage)+'" disabled></label>'
-  +'</div>'
+  +'<label>'+TX('客户名','Name')+'<input id="v360_name" value="'+esc(l.name)+'"></label>'
+  +'<label>'+TX('国家','Country')+'<input id="v360_country" value="'+esc(l.country||'')+'"></label>'
+  +'<label>'+TX('市场','Market')+'<input id="v360_market" value="'+esc(l.market||'')+'"></label>'
+  +'<label>'+TX('阶段','Stage')+'<input id="v360_stage" value="'+esc(l.stage)+'"></label>'
+  +'<label>'+TX('WhatsApp','WhatsApp')+'<input id="v360_wa" value="'+esc(l.wa||'')+'"></label>'
+  +'<label>'+TX('邮箱','Email')+'<input id="v360_email" value="'+esc(l.email||'')+'"></label>'
+  +'<label>'+TX('产品','Product')+'<input id="v360_product" value="'+esc(l.product||'')+'"></label>'
+  +'<label>'+TX('金额($)','Amount')+'<input id="v360_amount" value="'+esc(l.amount||0)+'"></label>'
+  +'<label>'+TX('来源','Source')+'<input id="v360_source" value="'+esc(l.source||'')+'"></label>'
+  +'<label>'+TX('备注','Note')+'<input id="v360_note" value="'+esc(l.note||'')+'"></label>'
+  +'</div><div class="muted" style="font-size:12px;margin:-4px 0 4px">'+TX('字段可直接修改，改完点「保存修改」','Edit fields above, then tap Save')+'</div>'
   +'<h4 style="margin:12px 0 4px">'+TX('整条闭环状态（点格直达对应模块，AI 自动判断该客户卡在哪段）','Full-loop status (tap a tile to jump; AI shows where this client sits)')+'</h4>'
   +'<div class="hub-grid">'
   +['pos','find','reach','trust','deal','deliver','docs','repeat','today','review'].map(function(k){
@@ -2854,10 +2888,11 @@ function lead360(id){
   +'</div>'
   +'<h4 style="margin:12px 0 4px">'+TX('跟进时间线','Follow-up timeline')+'</h4>'+logs
   +'<h4 style="margin:12px 0 4px">'+TX('关联交易','Linked deals')+'</h4>'+dlist
-  +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+'<button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="leadEdit" data-id="'+id+'">'+TX('编辑','Edit')+'</button></div></div>';
+  +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+'<button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="lead360Save" data-id="'+id+'">'+TX('保存修改','Save')+'</button></div></div>';
  $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3>'+body;
  $('modal').classList.add('show');
 }
+function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');l.wa=g('v360_wa');l.email=g('v360_email');l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.source=g('v360_source');l.note=g('v360_note');snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
 function dealNew(){
  var d={id:uid(),leadId:'',cnee:'',no:'INV-'+new Date().getFullYear()+'-'+(S.deals.length+1),date:todayStr(),amt:0,qty:0,pkg:0,gross:0,net:0,vessel:'',port:'',eta:'',incoterms:'FOB',transport:'sea',woodPkg:false,lc:false,destCountry:'',docs:{}};
  DOC_DEF.forEach(function(x){d.docs[x.id]='todo';});
