@@ -353,6 +353,7 @@ var S={
  _custSheet:load('_custSheet','cust'),
  _recShow:false,_chkShow:false,
  _activeClient:load('_activeClient',''),
+ _cadText:load('_cadText',''),
  hidden:load('hidden',[]),
  comp:load('comp',[]),
  _cpKw:load('_cpKw',''),
@@ -425,6 +426,7 @@ function buildState(){
   _custSheet:load('_custSheet','cust'),
   _recShow:false,_chkShow:false,
   _activeClient:load('_activeClient',''),
+  _cadText:load('_cadText',''),
   hidden:load('hidden',[]),
   comp:load('comp',[]),
   _cpKw:load('_cpKw',''),
@@ -583,6 +585,7 @@ function daysAgo(n){var d=new Date();d.setDate(d.getDate()-n);return d.toISOStri
 function iso(d,off){var x=new Date(d);if(off)x.setDate(x.getDate()+off);return x.toISOString().slice(0,10);}
 function todayStr(){return new Date().toISOString().slice(0,10);}
 function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/864e5);}
+function addDays(a,n){var d=new Date(a);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 /* ============ 多语言 ============ */
 function TX(zh,en){return S.lang==='en'?en:zh;}
 /* ============ 工具函数 ============ */
@@ -666,16 +669,20 @@ function viewHome(){
   h+='<div class="lp" data-action="nav" data-view="'+k+'"><span class="n">'+(i+1)+'</span><div class="ic">'+ICON[k]+'</div><h4>'+TX(m.t,m.te)+'</h4><p>'+TX(m.d,m.de)+'</p></div>';});
  h+='<div class="lp coach" data-action="nav" data-view="coach"><div class="ic">'+ICON.coach+'</div><h4>'+TX('教练诊断模式','Coach Mode')+'</h4><p>'+TX('拿去帮别的销售做业务体检，形成你的 coaching 生意','Diagnose other salespeople — your coaching business')+'</p></div>';
  h+='</div>';
- h+='<div class="card" style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:15px">'+TX('快速开始（不用先填资料）','Quick Start (no setup needed)')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('这三件是你每天真在干的活，点一下直接产出可发内容。','The three things you actually do daily — one tap produces send-ready content.')+'</p><div class="qstart">';
+ h+='<div class="card" style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:15px">'+TX('快速开始（不用先填资料）','Quick Start (no setup needed)')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('每天三件高频活：开发邮件、节期问候、给别人做诊断 —— 点一下进对应工具；下面还能让 AI 直接给重点客户起草跟进序列。','Three daily jobs: cold email, festival greeting, diagnose others — tap to open the tool. Below, let AI draft a follow-up cadence for your priority client.')+'</p><div class="qstart">';
  h+='<button class="btn big-cta" data-action="nav" data-view="reach">'+TX('写一封开发邮件','Write a cold email')+'</button>';
  h+='<button class="btn ghost big-cta" data-action="nav" data-view="repeat">'+TX('发节期问候','Send festival greeting')+'</button>';
  h+='<button class="btn amber big-cta" data-action="nav" data-view="coach">'+TX('给别人做诊断','Diagnose someone')+'</button>';
+ h+='<button class="btn green big-cta" data-action="quickCadence">⚡ '+TX('给重点客户起草跟进序列','Draft cadence for priority client')+'</button>';
  h+='</div></div>';
  h+='<div class="card" style="margin-top:16px;background:#f8fafc"><h3 style="margin:0 0 8px;font-size:15px">'+TX('这条链怎么转起来（28法则）','How the loop turns (Pareto)')+'</h3><ul class="keypts" style="margin:0;background:none;border:none;padding:0"><li><b>'+TX('找客户','Find leads')+'</b>'+TX('是最大瓶颈 → 先把线索 Pipeline 管起来，AI 自动排优先级，别每次从零开发。','is the biggest bottleneck — manage the pipeline with AI priority, stop starting from zero.')+'</li><li><b>'+TX('信任','Trust')+'</b>'+TX('决定客单价 → 电话/样品不是推销，是给"确定感"。','sets the price point — calls/samples give "certainty", not a pitch.')+'</li><li><b>'+TX('复购','Reorder')+'</b>'+TX('比新客便宜 → 节期日历驱动返单，老客养起来。','is cheaper than new leads — festival calendar drives reorders.')+'</li><li>'+TX('四段之后（交付/复购/复盘/教练）是让你从"辛苦找"变"持续返"。','The later four stages turn "hunting" into "steady reorders".')+'</li></ul></div>';
- h+='<div class="card" style="margin-top:16px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('AI 跟进序列（四段闭环一键发）','AI Follow-up Cadence (4-stage, one-tap send)')+'</h3>';
- h+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><select id="cad_lead">'+(S.leads||[]).map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+'（'+(x.market||x.country||'—')+'）</option>';}).join('')+'</select><button class="btn" data-action="genCadence">'+TX('生成序列','Generate')+'</button><button class="btn amber" data-action="cadenceSend" data-ch="wa">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost" data-action="cadenceSend" data-ch="email">'+TX('发邮件','Send Email')+'</button></div>';
- h+='<div class="out" id="cadOut" style="white-space:pre-wrap;max-height:260px;overflow:auto">'+TX('选客户 → 生成：自动排好首触/寄样/报价/节期/返单五触点，可直接发。','Pick a client → generate: 5-touch cadence auto-scheduled, ready to send.')+'</div>';
- h+='<div class="hint" style="margin-top:6px">'+TX('序列含全部触点，可在 WhatsApp/邮箱里按需删减后再发。','The cadence includes all touches; trim in WhatsApp/email before sending.')+'</div></div>';
+ h+='<div class="card" style="margin-top:16px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('AI 跟进序列（按客户阶段自动排触点）','AI Follow-up Cadence (auto-tuned to client stage)')+'</h3>';
+ var _leadOpts=(S.leads&&S.leads.length)?S.leads.map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+'（'+(x.market||x.country||'—')+' · '+(x.stage||'待开发')+'）</option>';}).join(''):'<option value="">'+TX('（暂无客户，先去添加）','（no clients yet — add first）')+'</option>';
+ h+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><select id="cad_lead">'+_leadOpts+'</select><button class="btn" data-action="genCadence">'+TX('生成序列','Generate')+'</button>';
+ if(S.leads&&S.leads.length)h+='<button class="btn ghost mini" data-action="copy" data-copy="cadOut" style="margin-left:2px">'+TX('复制序列','Copy')+'</button>';
+ h+='<button class="btn amber" data-action="cadenceSend" data-ch="wa">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost" data-action="cadenceSend" data-ch="email">'+TX('发邮件','Send Email')+'</button></div>';
+ h+='<div class="out" id="cadOut" style="white-space:pre-wrap;max-height:260px;overflow:auto">'+ (S._cadText?esc(S._cadText):TX('选客户 → 生成：AI 按客户当前阶段排出首触/寄样/报价/节期/返单等触点，并标好日历日期，可直接发。','Pick a client → AI schedules touches (first-touch/sample/quote/festival/reorder) by current stage with calendar dates, ready to send.')) +'</div>';
+ h+='<div class="hint" style="margin-top:6px">'+TX('序列按客户阶段智能裁剪；可在 WhatsApp/邮箱里按需删减后再发。','Cadence is trimmed by stage; trim in WhatsApp/email before sending.')+'</div></div>';
  return h;
 }
 /* ============ 通用段头 ============ */
@@ -2535,6 +2542,14 @@ document.addEventListener('click',function(e){
  else if(a==='emClient'){var mt=el.dataset.mailto||'';var _to=dU(mt.replace(/^mailto:/,'').split('?')[0]);var _su=dU((/[?&]subject=([^&]*)/.exec(mt)||[])[1]||'');var _bd=dU((/[?&]body=([^&]*)/.exec(mt)||[])[1]||'');var _full='To: '+_to+'\nSubject: '+_su+'\n\n'+_bd;copySilent(_full);var _g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(_to)+'&su='+encodeURIComponent(_su)+'&body='+encodeURIComponent(_bd);try{openMailto(mt);}catch(e){}toast(TX('正在尝试调用本机邮件客户端…','Trying to open your mail app…'));var _la=false;var _bf=function(){_la=true;};if(typeof window!=='undefined'){try{window.addEventListener('blur',_bf,{once:true});}catch(e){}}setTimeout(function(){try{if(typeof window!=='undefined'){window.removeEventListener('blur',_bf);}}catch(e){}if(!_la&&(typeof document==='undefined'||document.hasFocus())){if(openUrl(_g)){toast(TX('本机未设置默认邮件程序，已自动为你打开 Gmail 网页撰写窗口（收件人/主题/正文已填好），登录点发送即可；邮件全文也已复制备用。','No default mail app — opened Gmail web compose (pre-filled). Full email copied too.'));}else{toast(TX('本机未设置默认邮件程序且网页窗口被拦截；邮件全文已复制，请打开 mail.google.com 粘贴发送。','No default mail app and web blocked; full email copied, open Gmail to paste.'));}}},1000);logSend(el.dataset.id,'email',_bd);}
  else if(a==='emCopy'){var full='To: '+(el.dataset.to||'')+'\nSubject: '+dU(el.dataset.su)+'\n\n'+dU(el.dataset.bd);copyText(full);logSend(el.dataset.id,'email',dU(el.dataset.bd));}
  else if(a==='genCadence'){genCadence();}
+ else if(a==='quickCadence'){
+  if(!(S.leads&&S.leads.length)){toast(TX('还没有客户，先去「找客户」加一个','No clients yet — add one in Find Leads'));S.view='find';save('view',S.view);S._activeClient='';refreshAll();return;}
+  var ranked=S.leads.slice().sort(function(a,b){return scoreLead(b)-scoreLead(a);});
+  var top=ranked[0];
+  var sel=$('cad_lead');if(sel)sel.value=top.id;
+  genCadence();
+  var box=$('cadOut');if(box&&box.scrollIntoView)box.scrollIntoView({behavior:'smooth',block:'center'});
+ }
  else if(a==='docOpen'){docOpen(el.dataset.id);}
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}
@@ -2794,18 +2809,38 @@ function taskEdit(id){
 function genCadence(){
  var id=$('cad_lead').value;var l=S.leads.find(function(x){return x.id===id;});if(!l){toast(TX('先选线索','Pick a lead'));return;}
  var me=S.me;
- var out='【AI '+TX('跟进序列','Follow-up Cadence')+' · '+l.name+'（'+l.market+'）】\n';
- var t1=SCENES.whatsapp.gen({client:l.name,product:l.product||'prayer pillow',edge:clientEdge(l)},me);
- out+='\n▶ '+TX('触点1','Touch 1')+' · '+TX('今天（首触/WhatsApp）','today (first touch)')+'\n'+t1.en+'\n';
- var t2=SCENES.sample.gen({client:l.name,product:l.product||'prayer pillow',courier:'DHL'},me);
- out+='\n▶ '+TX('触点2','Touch 2')+' · +3'+TX('天（寄样跟进）','d (sample follow-up)')+'\n'+t2.en+'\n';
- var t3=SCENES.quote.gen({client:l.name,product:l.product||'prayer pillow',price:'2'},me);
- out+='\n▶ '+TX('触点3','Touch 3')+' · +7'+TX('天（报价）','d (quote)')+'\n'+t3.en+'\n';
- var t4=SCENES.festival.gen({client:l.name},me);
- out+='\n▶ '+TX('触点4','Touch 4')+' · '+TX('斋月前30天（节期问候/备货）','30d before Ramadan (greeting/stocking)')+'\n'+t4.en+'\n';
- var t5=SCENES.reorder.gen({client:l.name,product:l.product||'prayer pillow'},me);
- out+='\n▶ '+TX('触点5','Touch 5')+' · '+TX('斋月前14天（返单提醒）','14d before Ramadan (reorder)')+'\n'+t5.en+'\n';
- $('cadOut').textContent=out;toast(TX('已生成序列','Cadence generated'));
+ var ram=nextRamadan();
+ var d1=todayStr(),d2=addDays(todayStr(),3),d3=addDays(todayStr(),7),dR30=addDays(ram,-30),dR14=addDays(ram,-14);
+ var stage=l.stage||'待开发';
+ var steps=[];
+ if(stage==='待开发'||stage===''){
+  steps.push(['1',d1,TX('首触 / WhatsApp','first touch / WhatsApp'),SCENES.whatsapp.gen({client:l.name,product:l.product||'prayer pillow',edge:clientEdge(l)},me)]);
+  steps.push(['2',d2,TX('寄样跟进','sample follow-up'),SCENES.sample.gen({client:l.name,product:l.product||'prayer pillow',courier:'DHL'},me)]);
+  steps.push(['3',d3,TX('报价','quote'),SCENES.quote.gen({client:l.name,product:l.product||'prayer pillow',price:'2'},me)]);
+ }else if(stage==='已联系'||stage==='已回复'){
+  steps.push(['1',d1,TX('寄样跟进','sample follow-up'),SCENES.sample.gen({client:l.name,product:l.product||'prayer pillow',courier:'DHL'},me)]);
+  steps.push(['2',d2,TX('报价','quote'),SCENES.quote.gen({client:l.name,product:l.product||'prayer pillow',price:'2'},me)]);
+ }else if(stage==='试样'){
+  steps.push(['1',d1,TX('寄样确认 / 催反馈','sample confirm / nudge'),SCENES.sample.gen({client:l.name,product:l.product||'prayer pillow',courier:'DHL'},me)]);
+  steps.push(['2',d2,TX('报价','quote'),SCENES.quote.gen({client:l.name,product:l.product||'prayer pillow',price:'2'},me)]);
+ }else if(stage==='报价'){
+  steps.push(['1',d1,TX('报价跟进 / 逼单','quote follow-up / close'),SCENES.quote.gen({client:l.name,product:l.product||'prayer pillow',price:'2'},me)]);
+ }else if(stage==='成交'){
+  steps.push(['1',dR30,TX('斋月备货问候（已成交客户）','Ramadan stocking greeting (closed)'),SCENES.festival.gen({client:l.name},me)]);
+  steps.push(['2',dR14,TX('返单提醒 + 转介绍','reorder nudge + referral'),SCENES.reorder.gen({client:l.name,product:l.product||'prayer pillow'},me)]);
+ }else{
+  steps.push(['1',d1,TX('首触 / WhatsApp','first touch / WhatsApp'),SCENES.whatsapp.gen({client:l.name,product:l.product||'prayer pillow',edge:clientEdge(l)},me)]);
+  steps.push(['2',d2,TX('寄样跟进','sample follow-up'),SCENES.sample.gen({client:l.name,product:l.product||'prayer pillow',courier:'DHL'},me)]);
+  steps.push(['3',d3,TX('报价','quote'),SCENES.quote.gen({client:l.name,product:l.product||'prayer pillow',price:'2'},me)]);
+ }
+ if(stage!=='成交'){
+  steps.push([String(steps.length+1),dR30,TX('节期问候 / 备货','festival greeting / stocking'),SCENES.festival.gen({client:l.name},me)]);
+  steps.push([String(steps.length+1),dR14,TX('返单提醒','reorder nudge'),SCENES.reorder.gen({client:l.name,product:l.product||'prayer pillow'},me)]);
+ }
+ var out='【AI '+TX('跟进序列','Follow-up Cadence')+' · '+l.name+'（'+(l.market||l.country||'—')+'）】\n'+TX('当前阶段','Stage')+'：'+stage+' · '+TX('共','')+steps.length+TX('个触点',' touches')+'\n';
+ steps.forEach(function(s){out+='\n▶ '+TX('触点','Touch')+s[0]+' · '+s[1]+'（'+s[2]+'）\n'+s[3].en+'\n';});
+ S._cadText=out;save('_cadText',out);
+ $('cadOut').textContent=out;toast(TX('已生成序列（按','Cadence ready (by')+' '+stage+'）');
 }
 /* ============ 语言切换 ============ */
 function langToggle(){S.lang=(S.lang==='en'?'zh':'en');save('lang',S.lang);refreshAll();}
