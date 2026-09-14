@@ -114,7 +114,7 @@ svg{display:block}
 .keypts b{color:var(--main)}
 .keypts li{margin:3px 0}
 .grid{display:grid;gap:14px}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
 .kpi:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(20,40,80,.13);border-color:var(--main)}
 .kpi:active{transform:translateY(0)}
@@ -308,6 +308,7 @@ var ICON={
  demo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/></svg>',
  docs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 12h6M10 16h6"/></svg>',
  lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11v14H4z"/><path d="M15 8h5v11h-5"/><path d="M7 9h5M7 13h5"/></svg>',
+ mails:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/></svg>',
  brand:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g stroke="#2563eb"><circle cx="9.5" cy="12" r="7"/><path d="M2.5 12h14"/><path d="M9.5 5c2 2 2 12 0 14"/><path d="M9.5 5c-2 2-2 12 0 14"/></g><path stroke="#f59e0b" d="M12.5 9l8-4-3 8 3 5-7-4"/></svg>'
 };
 /* ============ 导航 ============ */
@@ -337,7 +338,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -694,9 +695,14 @@ function viewHome(){
  h+='<div class="lp-map">';
  var order=['pos','find','reach','trust','deal','deliver','repeat','review'];
  order.forEach(function(k,i){var m=STAGE_META[k];
-  h+='<div class="lp" data-action="nav" data-view="'+k+'"><span class="n">'+(i+1)+'</span><div class="ic">'+ICON[k]+'</div><h4>'+TX(m.t,m.te)+'</h4><p>'+TX(m.d,m.de)+'</p></div>';});
+  h+='<div class="lp" data-action="nav" data-view="'+k+'"><span class="n">'+(i+1)+'</span><div class="ic">'+(ICON[k]||ICON.brand)+'</div><h4>'+TX(m.t,m.te)+'</h4><p>'+TX(m.d,m.de)+'</p></div>';});
  h+='<div class="lp coach" data-action="nav" data-view="coach"><div class="ic">'+ICON.coach+'</div><h4>'+TX('教练诊断模式','Coach Mode')+'</h4><p>'+TX('拿去帮别的销售做业务体检，形成你的 coaching 生意','Diagnose other salespeople — your coaching business')+'</p></div>';
  h+='</div>';
+ h+='<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;align-items:center"><span class="hint" style="margin:0">'+TX('贯穿全流程的工具','Cross-loop tools')+'：</span>'
+ +'<button class="btn ghost mini" data-action="nav" data-view="lib">'+TX('话术邮件模版','Templates')+'（'+((S.scripts||[]).length)+'）</button>'
+ +'<button class="btn ghost mini" data-action="nav" data-view="mails">'+TX('邮件发送记录','Sent log')+'（'+((S.mails||[]).length)+'）</button>'
+ +'<button class="btn ghost mini" data-action="nav" data-view="cust">'+TX('客户驾驶舱','Customer Hub')+'</button>'
+ +'<button class="btn ghost mini" data-action="nav" data-view="backup">'+TX('备份与导出','Backup')+'</button></div>';
  h+='<div class="card" style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:15px">'+TX('快速开始（不用先填资料）','Quick Start (no setup needed)')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('每天三件高频活：开发邮件、节期问候、给别人做诊断 —— 点一下进对应工具；下面还能让 AI 直接给重点客户起草跟进序列。','Three daily jobs: cold email, festival greeting, diagnose others — tap to open the tool. Below, let AI draft a follow-up cadence for your priority client.')+'</p><div class="qstart">';
  h+='<button class="btn big-cta" data-action="nav" data-view="reach">'+TX('写一封开发邮件','Write a cold email')+'</button>';
  h+='<button class="btn ghost big-cta" data-action="nav" data-view="repeat">'+TX('发节期问候','Send festival greeting')+'</button>';
@@ -714,7 +720,7 @@ function viewHome(){
  return h;
 }
 /* ============ 通用段头 ============ */
-function shead(k,sub){var m=STAGE_META[k]||{t:k,d:''};var t=(S.lang==='en'&&m.te)?m.te:m.t;var d=(S.lang==='en')?(m.de||m.d):(sub||m.d);return '<div class="shead"><div class="ic">'+ICON[k]+'</div><div><h2>'+t+'</h2><p>'+d+'</p></div></div>';}
+function shead(k,sub){var m=STAGE_META[k]||{t:k,d:''};var t=(S.lang==='en'&&m.te)?m.te:m.t;var d=(S.lang==='en')?(m.de||m.d):(sub||m.d);return '<div class="shead"><div class="ic">'+(ICON[k]||ICON.brand)+'</div><div><h2>'+t+'</h2><p>'+d+'</p></div></div>';}
 /* ============ 定位选品 ============ */
 function viewPos(){
  var m=S.me;
@@ -1581,7 +1587,8 @@ function renderLeads(){
   var next=stageIdx<PIPE.length-1?PIPE[stageIdx+1]:null;
   var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);
   var follow=days>=14&&l.stage!=='成交';
-  html+='<div class="list-item"><div class="main"><div class="t"><button class="linkbtn" data-action="lead360" data-id="'+l.id+'">'+esc(l.name)+'</button> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.source?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.source)+'</span>':'')+' <span class="tag score">'+scoreLead(l)+'</span>'+(follow?' <span class="tag r">'+days+TX('天未跟','d no follow')+'</span>':'')+'</div>';
+  var mc=mailCount(l.id);
+  html+='<div class="list-item"><div class="main"><div class="t"><button class="linkbtn" data-action="lead360" data-id="'+l.id+'">'+esc(l.name)+'</button> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.source?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.source)+'</span>':'')+' <span class="tag score">'+scoreLead(l)+'</span>'+(mc?' <button class="tag b" data-action="mailOf" data-id="'+l.id+'" style="background:#DBEAFE;color:#1D4ED8;border:none;cursor:pointer" title="'+TX('看这个客户的发送记录','See this client’s sent log')+'">✉ '+mc+'</button>':'')+(follow?' <span class="tag r">'+days+TX('天未跟','d no follow')+'</span>':'')+'</div>';
   html+='<div class="s">'+esc(l.product||'')+(l.amount?(' · $'+esc(l.amount)):'')+'</div>';
   html+='<div class="s" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px"><span><b>WhatsApp</b>：'+esc(l.wa||'—')+'</span><span><b>'+TX('邮箱','Email')+'</b>：'+esc(l.email||'—')+'</span></div></div>';
   var waBtn=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn mini" data-action="leadWa" data-id="'+l.id+'">WhatsApp</button>':'';
@@ -1594,7 +1601,7 @@ function renderLeads(){
 function docAvgCal(lines){if(!lines.length)return 0;var s=0,c=0;lines.forEach(function(x){if(x.docPct!==null){s+=x.docPct;c++;}});return c?Math.round(s/c):0;}
 function nextRamadan(){var tbl={'2025':'2025-03-01','2026':'2026-02-19','2027':'2027-02-08','2028':'2028-01-27','2029':'2029-01-15','2030':'2030-01-05','2031':'2031-12-25','2032':'2032-12-13'};var t=todayStr();for(var y=2025;y<=2032;y++){if(tbl[String(y)]&&tbl[String(y)]>=t)return tbl[String(y)];}return '2027-02-08';}
 function custInsight(){
- var leads=S.leads;
+ var leads=S.leads||[];
  var total=leads.length;
  var active=leads.filter(function(l){return l.stage!=='成交';}).length;
  var overdue=leads.filter(function(l){var d=Math.round((new Date(todayStr())-new Date(l.last))/864e5);return d>=14&&l.stage!=='成交';});
@@ -1752,7 +1759,7 @@ function kpiEditClient(id){leadEdit(id);}
 function custKpi(kind){
  S._kpiKind=kind;
  var ins=custInsight();
- var titles={total:TX('客户总数 · 全部客户明细','All clients'),active:TX('在谈 · 未成交客户','In pipeline (not closed)'),overdue:TX('逾期 · 超 14 天未跟进','Overdue — 14+ days no follow-up'),docs:TX('单证均进度 · 各笔交易','Doc progress by deal'),task:TX('待办 · 未完成','Open tasks')};
+ var titles={total:TX('客户总数 · 全部客户明细','All clients'),active:TX('在谈 · 未成交客户','In pipeline (not closed)'),overdue:TX('逾期 · 超 14 天未跟进','Overdue — 14+ days no follow-up'),docs:TX('单证均进度 · 各笔交易','Doc progress by deal'),task:TX('待办 · 未完成','Open tasks'),mails:TX('邮件发送记录 · 已发出全部留痕','Sent log — everything sent')};
  var h='<h3>'+titles[kind]+'</h3>';
  if(kind==='task'){
   var ts=(S.tasks||[]).filter(function(t){return !t.done;}).sort(function(a,b){return String(a.due||'9999').localeCompare(String(b.due||'9999'));});
@@ -1787,7 +1794,7 @@ function custKpi(kind){
    h+='</tbody></table>';
    h+='<div class="hint" style="margin-top:8px">'+TX('单证进度 = 该笔交易已完成单证数 ÷ 27。点「去处理单证」逐张勾选完成。','Progress = docs done ÷ 27. Click “Open docs” to tick them off.')+'</div>';
   }
- } else {
+ } else if(kind!=='mails'){
   var rows=ins.lines.filter(function(x){
    if(kind==='active')return x.stage!=='成交';
    if(kind==='overdue')return x.follow;
@@ -1809,6 +1816,28 @@ function custKpi(kind){
    h+='</tbody></table>';
    h+='<div class="hint" style="margin-top:8px">'+TX('这些数字由下面明细自动汇总，改数字请改客户资料本身：点「编辑」改全部字段，或点客户名进 360 看全貌。','These figures are auto-computed from the list below — to change them, edit the client record: “Edit” for all fields, or click the name for 360.')+'</div>';
   }
+ }
+ if(kind==='mails'){
+  var mst=mailStats();
+  h+='<div class="muted" style="margin-bottom:8px">'+TX('累计 ','Total ')+mst.total+TX(' 封 · 近 7 天 ',' · 7d ')+mst.w7+TX(' 封 · 覆盖 ',' · clients ')+mst.cli+TX(' 位客户','')+(mst.unlinked?TX(' · 未关联 ',' · not linked ')+mst.unlinked:'' )+'</div>';
+  var ms=S.mails||[];
+  if(!ms.length){h+='<div class="muted" style="padding:14px;text-align:center">'+TX('还没有发送记录。去「触达建联 / 建立信任 / 报价成交」任一板块点「发邮件 / 发 WhatsApp」即可留痕。','No records yet. Hit “Send” in any board to log it here.')+'</div>';}
+  else{
+   h+='<table class="xls"><thead><tr><th>'+TX('日期','Date')+'</th><th>'+TX('渠道','Ch')+'</th><th>'+TX('客户','Client')+'</th><th>'+TX('主题 / 摘要','Subject')+'</th><th>'+TX('操作','Ops')+'</th></tr></thead><tbody>';
+   ms.slice(0,40).forEach(function(m){
+    var ld=m.leadId?((S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);})):null;
+    h+='<tr>';
+    h+='<td><span class="tagmini">'+esc(m.date||'')+'</span></td>';
+    h+='<td>'+esc(m.channel==='wa'?'WhatsApp':TX('邮件','Email'))+'</td>';
+    h+='<td'+(ld?' class="cell" data-action="kpiJump" data-where="cust360" data-id="'+esc(String(ld.id))+'" title="'+TX('点击查看客户360','Open 360')+'"':'')+'>'+(ld?esc(ld.name):('<span class="muted">'+TX('未关联客户','Not linked')+'</span>'))+'</td>';
+    h+='<td>'+esc(m.subject||TX('（无主题）','(no subject)'))+'</td>';
+    h+='<td><button class="btn amber mini" data-action="resendMail" data-id="'+esc(String(m.id))+'">'+TX('重发','Re-send')+'</button></td>';
+    h+='</tr>';
+   });
+   h+='</tbody></table>';
+   if(ms.length>40)h+='<div class="hint" style="margin-top:8px">'+TX('只显示最近 40 条；完整记录见「邮件发送记录」板块。','Showing latest 40; see the Sent Log board for all.')+'</div>';
+  }
+  h+='<div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn mini" data-action="kpiJump" data-where="mails">'+TX('打开完整记录','Open full log')+'</button></div>';
  }
  h+='<div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button></div>';
  $('modalBody').innerHTML=h;
@@ -1865,6 +1894,8 @@ function viewCust(){
  h+='<div class="kpi" data-action="custKpi" data-kind="overdue" style="'+(ins.overdue?'background:#fef2f2;border-color:#fecaca':'')+'" title="'+TX('点开看逾期客户，立即跟进','Open overdue clients')+'"><div class="n" style="'+(ins.overdue?'color:#dc2626':'')+'">'+ins.overdue+'</div><div class="l">'+TX('逾期','Overdue')+' <i>›</i></div></div>';
  h+='<div class="kpi" data-action="custKpi" data-kind="docs" title="'+TX('点开看每笔交易的单证进度并去处理','Open doc progress per deal')+'"><div class="n">'+ins.docAvg+'%</div><div class="l">'+TX('单证均进度','Docs')+' <i>›</i></div></div>';
  h+='<div class="kpi" data-action="custKpi" data-kind="task" title="'+TX('点开看未完成待办，可完成/编辑','Open tasks — complete or edit')+'"><div class="n">'+ins.tasksTotal+'</div><div class="l">'+TX('待办','Tasks')+' <i>›</i></div></div>';
+ var _mst=mailStats();
+ h+='<div class="kpi" data-action="custKpi" data-kind="mails" title="'+TX('点开看每封已发邮件的客户归属，可一键重发','Open sent log with client links — re-send in one tap')+'"><div class="n">'+_mst.total+'</div><div class="l">'+TX('已发送','Sent')+' <i>›</i></div></div>';
  h+='</div>';
  if(ins.lines.length){
   h+='<div class="insight" style="margin-top:14px"><b>AI '+TX('今日重点','Today’s focus')+'</b> ';
@@ -2310,16 +2341,20 @@ function qcReset(){save('qcDone',[]);qcPaintAll();toast(TX('已重置验货进�
 /* ============ 复盘增长 ============ */
 function viewReview(){
  var h=shead('review',TX('周/月复盘 + AI 洞察。看转化率与复购率，别只看流水。','Weekly/monthly review + AI insights. Watch conversion, not just revenue.')+'');
- var dev=S.leads.filter(function(l){return l.last>=iso(new Date(),-30);}).length;
- var talking=S.leads.filter(function(l){return ['已联系','已回复','试样','报价'].indexOf(l.stage)>=0;}).length;
- var deal=S.leads.filter(function(l){return l.stage==='成交';}).length;
- var warn=S.leads.filter(function(l){return l.stage!=='成交' && Math.round((new Date(todayStr())-new Date(l.last))/864e5)>=14;}).length;
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:15px">'+TX('关键指标','Key Metrics')+'</h3><div class="grid g4">';
+ var _ls=S.leads||[];
+ var dev=_ls.filter(function(l){return l.last>=iso(new Date(),-30);}).length;
+ var talking=_ls.filter(function(l){return ['已联系','已回复','试样','报价'].indexOf(l.stage)>=0;}).length;
+ var deal=_ls.filter(function(l){return l.stage==='成交';}).length;
+ var warn=_ls.filter(function(l){return l.stage!=='成交' && Math.round((new Date(todayStr())-new Date(l.last))/864e5)>=14;}).length;
+ var _mst=mailStats();
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:15px">'+TX('关键指标','Key Metrics')+'</h3><div class="grid g3">';
  h+='<div class="stat"><div class="v">'+dev+'</div><div class="k">'+TX('本月新开发','New this month')+'</div></div>';
  h+='<div class="stat"><div class="v">'+talking+'</div><div class="k">'+TX('在谈中','In talk')+'</div></div>';
  h+='<div class="stat"><div class="v">'+deal+'</div><div class="k">'+TX('成交数','Deals')+'</div></div>';
- h+='<div class="stat"><div class="v" style="color:var(--red)">'+warn+'</div><div class="k">'+TX('预警(≥14天)','Alert (≥14d)')+'</div></div></div>';
- h+='<div class="hint">'+TX('本月新开发=近30天新增；在谈=已联系/试样/报价阶段；预警=超14天未跟且未成交，优先处理。','New=last 30d; In talk=contacted/sample/quote; Alert=14d+ no follow & not closed.')+'</div></div>';
+ h+='<div class="stat"><div class="v" style="color:var(--red)">'+warn+'</div><div class="k">'+TX('预警(≥14天)','Alert (≥14d)')+'</div></div>';
+ h+='<div class="stat"><div class="v">'+_mst.w30+'</div><div class="k">'+TX('已发邮件(近30天)','Sent (last 30d)')+'</div></div>';
+ h+='<div class="stat"><div class="v">'+_mst.cli+'</div><div class="k">'+TX('已触达客户(有留痕)','Clients reached')+'</div></div></div>';
+ h+='<div class="hint">'+TX('本月新开发=近30天新增；在谈=已联系/试样/报价阶段；预警=超14天未跟且未成交，优先处理；已发邮件/已触达客户来自「邮件发送记录」，发送本身会刷新客户的最后跟进日，所以多发信能直接减少预警数。','New=last 30d; In talk=contacted/sample/quote; Alert=14d+ no follow & not closed. Sent/reached come from the Sent Log — sending also refreshes a client’s last-contact date, so more sends = fewer alerts.')+'</div></div>';
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">AI '+TX('复盘洞察','Insights')+'</h3><div id="insBox"></div></div>';
  h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('周复盘模板（可复制）','Weekly review template')+'</h3>';
  var t='【'+TX('本周复盘','Weekly review')+' '+todayStr()+'】\n1. '+TX('新增线索：__ 条，回复：__ 条','New leads: __, replies: __')+'\n2. '+TX('推进到试样/报价：__ 条','Advanced to sample/quote: __')+'\n3. '+TX('成交：__ 单，金额 $__','Deals: __, $__')+'\n4. '+TX('卡在哪：___','Stuck at: ___')+'\n5. '+TX('下周重点：___','Next week focus: ___')+'\n6. '+TX('一个可复制的动作：___','One repeatable action: ___');
@@ -2328,12 +2363,13 @@ function viewReview(){
 }
 function renderIns(){
  var box=$('insBox');if(!box)return;
- var total=S.leads.length;
- var deal=S.leads.filter(function(l){return l.stage==='成交';}).length;
+ var _ls2=S.leads||[];
+ var total=_ls2.length;
+ var deal=_ls2.filter(function(l){return l.stage==='成交';}).length;
  var conv=total?Math.round(deal/total*100):0;
- var cnt={};S.leads.forEach(function(l){if(l.stage!=='成交')cnt[l.stage]=(cnt[l.stage]||0)+1;});
+ var cnt={};_ls2.forEach(function(l){if(l.stage!=='成交')cnt[l.stage]=(cnt[l.stage]||0)+1;});
  var bot='—',max=0;Object.keys(cnt).forEach(function(k){if(cnt[k]>max){max=cnt[k];bot=k;}});
- var w=0;S.leads.forEach(function(l){var p=(l.stage==='成交'?1:(STAGE_W[l.stage]||0)/100);w+=(l.amount||0)*p;});
+ var w=0;_ls2.forEach(function(l){var p=(l.stage==='成交'?1:(STAGE_W[l.stage]||0)/100);w+=(l.amount||0)*p;});
  var d8=daysBetween(todayStr(),nextRamadan());
  var html='';
  html+='<div class="insight"><b>'+TX('转化率','Conversion')+'</b> '+conv+'%（'+TX('成交','deals')+' '+deal+' / '+TX('线索','leads')+' '+total+'）。'+(conv<20?TX('偏低：多数线索卡在','Low: most stuck at')+'「'+bot+'」，'+TX('先集中推进该阶段。','push that stage first.')+'':TX('健康，保持节奏。','Healthy, keep rhythm.'))+'</div>';
@@ -2547,8 +2583,8 @@ function viewDemo(){
 function renderToday(){
  var box=$('today');if(!box)return;
  var items=[];
- S.tasks.forEach(function(t){if(!t.done){var od=t.due<todayStr();items.push({txt:t.title,od:od,id:t.id,type:'task'});}});
- S.leads.forEach(function(l){if(l.stage!=='成交'){var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);if(days>=14)items.push({txt:l.name+' '+TX('已 ','')+days+TX(' 天未跟进','d no follow'),od:true,id:l.id,type:'lead'});}});
+ (S.tasks||[]).forEach(function(t){if(!t.done){var od=t.due<todayStr();items.push({txt:t.title,od:od,id:t.id,type:'task'});}});
+ (S.leads||[]).forEach(function(l){if(l.stage!=='成交'){var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);if(days>=14)items.push({txt:l.name+' '+TX('已 ','')+days+TX(' 天未跟进','d no follow'),od:true,id:l.id,type:'lead'});}});
  if(!items.length){box.style.display='none';box.innerHTML='';return;}
  box.style.display='block';
  var h='<h3>'+ICON.brand+' '+TX('今天要处理','To handle today')+'（'+items.length+'）</h3>';
@@ -2570,7 +2606,7 @@ function renderNav(){
   var lock=(n.k==='home');
   var num=n.k==='lib'?((S.scripts&&S.scripts.length)?S.scripts.length:''):(n.k==='mails'?((S.mails&&S.mails.length)?S.mails.length:''):n.n);
   var hot=(n.k==='lib'&&S.scripts.length>0)?' hot':'';
-  h+='<button class="navitem '+(S.view===n.k?'on':'')+hot+'" data-action="nav" data-view="'+n.k+'">'+ICON[n.k]+'<span>'+TX(n.t,n.te)+'</span>'+(num?'<span class="num">'+num+'</span>':'')+(lock?'':'<span class="x" data-action="navHide" data-view="'+n.k+'" title="'+TX('隐藏此模块','Hide module')+'">×</span>')+'</button>';
+  h+='<button class="navitem '+(S.view===n.k?'on':'')+hot+'" data-action="nav" data-view="'+n.k+'">'+(ICON[n.k]||ICON.brand)+'<span>'+TX(n.t,n.te)+'</span>'+(num?'<span class="num">'+num+'</span>':'')+(lock?'':'<span class="x" data-action="navHide" data-view="'+n.k+'" title="'+TX('隐藏此模块','Hide module')+'">×</span>')+'</button>';
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
@@ -2702,7 +2738,7 @@ document.addEventListener('click',function(e){
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
- else if(a==='saveScene'){saveScene();}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
+ else if(a==='saveScene'){saveScene();}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='mailOf'){mailOf(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
  else if(a==='taskDone'){taskDone(el.dataset.id);}
  else if(a==='todayDel'){todayDel(el.dataset.type, el.dataset.id);}
  else if(a==='todayEdit'){todayEdit(el.dataset.type, el.dataset.id);}
@@ -2890,28 +2926,58 @@ function addLead(){
 function leadAdv(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=PIPE.indexOf(l.stage);if(i<PIPE.length-1)l.stage=PIPE[i+1];l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
 function leadTouch(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var note=prompt(TX('记录本次跟进（如：发了绣金样品质检）：','Log this follow-up (e.g. sent embroidered sample QC):'),l.note||'');if(note!==null){l.logs=l.logs||[];l.logs.unshift({date:todayStr(),text:note});l.note=note;l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();toast(TX('已记录','Logged'));}}
 function logSend(id,channel,text){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;l.logs=l.logs||[];var sn=(text||'').replace(/\s+/g,' ').trim().slice(0,40);var ch=channel==='wa'?TX('WhatsApp','WhatsApp'):TX('邮件','Email');l.logs.unshift({date:todayStr(),text:ch+'：'+(sn||TX('(已发起联系)','contact initiated'))});l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
-function recordMail(leadId,to,subject,body,channel){try{S.mails=S.mails||[];var lead=(S.leads||[]).find(function(x){return x.id===leadId;});S.mails.unshift({id:uid(),leadId:leadId||'',toName:(lead?lead.name:''),to:to||'',subject:subject||'',body:body||'',channel:channel||'email',date:todayStr()});save('mails',S.mails);}catch(e){}}
+function recordMail(leadId,to,subject,body,channel){try{S.mails=S.mails||[];var lead=(S.leads||[]).find(function(x){return x.id===leadId;});S.mails.unshift({id:uid(),leadId:leadId||'',toName:(lead&&lead.name)?lead.name:(to||''),to:to||'',subject:subject||'',body:body||'',channel:channel||'email',date:todayStr()});save('mails',S.mails);}catch(e){}}
+function mailCount(leadId){if(!leadId)return 0;var n=0;(S.mails||[]).forEach(function(m){if(m.leadId&&String(m.leadId)===String(leadId))n++;});return n;}
+function mailStats(){var l=S.mails||[],c7=iso(new Date(),-6),c30=iso(new Date(),-29);var s={total:l.length,w7:0,w30:0,cli:0,wa:0,unlinked:0};var seen={};l.forEach(function(m){if(m.date>=c7)s.w7++;if(m.date>=c30)s.w30++;if(m.channel==='wa')s.wa++;if(m.leadId){if(!seen[m.leadId]){seen[m.leadId]=1;s.cli++;}}else s.unlinked++;});return s;}
 function viewMails(){
  var h=shead('mails',TX('所有发出去的邮件 / WhatsApp 都会留痕在这里。点「重发」可一键再次调取原内容发送——适合跟进、催单、节期问候的重复触达。','Every sent email / WhatsApp is logged here. Hit “Re-send” to pull the original content and send again — great for follow-ups, balance chasing and festival greetings.'));
  var list=S.mails||[];
  if(!list.length){
   h+='<div class="card" style="text-align:center;color:var(--sub);padding:30px 16px">'+TX('还没有发送记录。去「触达建联 / 建立信任 / 报价成交 / 交付履约 / 复购转介」任一板块生成话术后点「发邮件 / 发 WhatsApp」即可留痕。','No records yet. Generate a script in any board and hit “Send” to log it here.')+'</div>';
+  h+='<div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">';
+  ['reach','trust','deal','deliver','repeat'].forEach(function(k){var m=STAGE_META[k];h+='<button class="btn ghost mini" data-action="nav" data-view="'+k+'">'+TX(m.t,m.te)+'</button>';});
+  h+='</div>';
   return h;
  }
- h+='<div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn amber mini" data-action="bulkOpen">'+TX('群发助手','Bulk send')+'</button><button class="btn ghost mini" data-action="mailClear">'+TX('清空记录','Clear all')+'</button></div>';
- h+='<div id="mailWrap">'+mailListHTML()+'</div>';
+ var st=mailStats();
+ h+='<div class="card" style="margin-bottom:12px"><div class="grid g4" style="gap:10px">';
+ h+='<div class="stat"><div class="v">'+st.total+'</div><div class="k">'+TX('累计发送','Total sent')+'</div></div>';
+ h+='<div class="stat"><div class="v">'+st.w7+'</div><div class="k">'+TX('近7天','Last 7 days')+'</div></div>';
+ h+='<div class="stat"><div class="v">'+st.cli+'</div><div class="k">'+TX('覆盖客户','Clients reached')+'</div></div>';
+ h+='<div class="stat"><div class="v"'+(st.unlinked?' style="color:#b45309"':'')+'>'+st.unlinked+'</div><div class="k">'+TX('未关联客户','Not linked')+'</div></div>';
+ h+='</div>';
+ var mf=S._mailFilter||'all';
+ var opt='<option value="all"'+(mf==='all'?' selected':'')+'>'+TX('全部记录','All records')+'</option>';
+ opt+='<option value="unlinked"'+(mf==='unlinked'?' selected':'')+'>'+TX('未关联客户的记录','Not linked to a client')+'</option>';
+ var _co=[];
+ (S.leads||[]).forEach(function(l){var c=mailCount(l.id);if(c)_co.push('<option value="'+esc(String(l.id))+'"'+(String(mf)===String(l.id)?' selected':'')+'>'+esc(l.name)+'（'+c+'）</option>');});
+ if(_co.length)opt+='<optgroup label="'+TX('按客户查看','By client')+'">'+_co.join('')+'</optgroup>';
+ h+='<div class="row" style="align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap"><span class="hint" style="margin:0">'+TX('查看','View')+'</span><select id="mailFilter" onchange="mailFilterSet(this.value)" style="min-width:210px">'+opt+'</select><span style="flex:1"></span><button class="btn amber mini" data-action="bulkOpen">'+TX('群发助手','Bulk send')+'</button><button class="btn ghost mini" data-action="mailClear">'+TX('清空记录','Clear all')+'</button></div></div>';
+ var shown=mailFiltered(list);
+ if(!shown.length){h+='<div class="card muted" style="text-align:center;padding:22px">'+TX('该筛选下没有记录。','No records under this filter.')+'</div>';}
+ else h+='<div id="mailWrap">'+mailListHTML(shown)+'</div>';
+ h+='<div class="hint" style="margin-top:8px">'+TX('发送记录与「找客户」的跟进时间线、客户360、以及客户驾驶舱的「已发送」指标是同一份数据：在这里重发一次，客户的最后跟进日会同步刷新。','This log shares one dataset with the lead timeline, Client 360 and the Customer Hub “Sent” KPI — re-sending here also refreshes the client’s last-contact date.')+'</div>';
  return h;
 }
-function mailListHTML(){
- var list=S.mails||[],html='';
+function mailFiltered(list){
+ var mf=S._mailFilter||'all';
+ if(mf==='unlinked')return list.filter(function(m){return !m.leadId;});
+ if(mf&&mf!=='all')return list.filter(function(m){return String(m.leadId)===String(mf);});
+ return list;
+}
+function mailFilterSet(v){S._mailFilter=v||'all';save('_mailFilter',S._mailFilter);refreshAll();}
+function mailOf(id){S._mailFilter=id||'all';save('_mailFilter',S._mailFilter);S.view='mails';save('view',S.view);S._activeClient='';refreshAll();}
+function mailListHTML(src){
+ var list=src||S.mails||[],html='';
  list.forEach(function(m){
   var sub=m.subject||TX('（无主题）','（no subject）');
   var ch=m.channel==='wa'?TX('WhatsApp','WhatsApp'):TX('邮件','Email');
   var sn=(m.body||'').replace(/\s+/g,' ').trim().slice(0,80);
   html+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:14px">'+esc(sub)+'</b><span class="tag">'+esc(ch)+'</span></div>';
-  html+='<div class="muted" style="font-size:12.5px;margin-bottom:4px">'+TX('收件','To')+': '+esc(m.toName||'')+' &lt;'+esc(m.to||'')+'&gt; · '+esc(m.date||'')+'</div>';
+  var ld=m.leadId?((S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);})):null;
+  html+='<div class="muted" style="font-size:12.5px;margin-bottom:4px">'+TX('收件','To')+': '+esc(m.toName||'')+' &lt;'+esc(m.to||'')+'&gt; · '+esc(m.date||'')+(ld?'':' · <span class="tagmini">'+TX('未关联客户','Not linked')+'</span>')+'</div>';
   if(sn)html+='<div class="out" style="margin-bottom:8px">'+esc(sn)+(sn.length>=80?'…':'')+'</div>';
-  html+='<div style="margin-top:6px"><button class="btn amber mini" data-action="resendMail" data-id="'+m.id+'">'+TX('重发','Re-send')+'</button><button class="btn ghost mini" data-action="mailDel" data-id="'+m.id+'" style="margin-left:6px;color:var(--red)">'+TX('删除','Delete')+'</button></div>';
+  html+='<div style="margin-top:6px">'+(ld?'<button class="btn mini" data-action="lead360" data-id="'+esc(String(m.leadId))+'">'+TX('客户360','Client 360')+'</button>':'')+'<button class="btn amber mini" data-action="resendMail" data-id="'+m.id+'">'+TX('重发','Re-send')+'</button>'+(ld?'<button class="btn ghost mini" data-action="leadTouch" data-id="'+esc(String(m.leadId))+'" style="margin-left:6px">'+TX('记录跟进','Log')+'</button>':'')+'<button class="btn ghost mini" data-action="mailDel" data-id="'+m.id+'" style="margin-left:6px;color:var(--red)">'+TX('删除','Delete')+'</button></div>';
   html+='</div>';
  });
  return html;
@@ -2929,7 +2995,7 @@ function mailList360(id){
 }
 function resendMail(id){
  var m=(S.mails||[]).find(function(x){return x.id===id;});if(!m){toast(TX('记录不存在','Record missing'));return;}
- var l=S.leads.find(function(x){return x.id===m.leadId;});
+ var l=(S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);});
  if(!l){l={name:m.toName||'',email:m.to||''};}
  openEmailModal(l,m.subject||'',m.body||'');
 }
