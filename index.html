@@ -2080,7 +2080,7 @@ function sceneBox(keys){
  var meTip=needMe?'<div class="client-banner" style="border-color:#f59e0b">'+TX('提示：去「我的资料」填姓名/公司/年数，话术署名才完整。','Tip: fill My Profile (name/company/years) so signatures are complete.')+' <button class="btn ghost mini" data-action="nav" data-view="me">'+TX('去填资料','Fill profile')+'</button></div>':'';
  var h=banner+meTip+'<div class="grid g2">';
  h+='<div class="card"><div class="field"><label>'+TX('场景','Scene')+'</label><select id="sc_sel">'+keys.map(function(k){return '<option value="'+k+'">'+scTitle(k)+'</option>';}).join('')+'</select></div><div id="sc_fields"></div><button class="btn" data-action="genScene">'+TX('生成话术','Generate script')+'</button><div class="hint">'+TX('第一次填"我的资料"后，署名自动带入。','After filling My Profile once, signature auto-fills.')+'</div></div>';
- h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('英文（照发）','English (send as-is)')+'</h3><div style="margin:6px 0 10px"><label style="font-size:12px;color:var(--sub);margin-right:6px">'+TX('发送给','Send to')+'</label><select id="sc_pick" onchange="scPick(this.value)">'+_pickOpts+'</select>'+(!S._activeClient?'<button class="btn ghost mini" data-action="leadNew" style="margin-left:6px">＋ '+TX('加为新线索','Add as lead')+'</button>':'')+'</div><div class="out" id="sc_en">'+TX('选择场景并填变量后生成。','Pick a scene and fill vars.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="sc_en" style="margin:8px 6px 0 0">'+TX('复制英文','Copy EN')+'</button><button class="btn ghost mini" data-action="saveScene" style="margin-top:8px">'+TX('存到话术库','Save to library')+'</button><button class="btn ghost mini" data-action="nav" data-view="lib" style="margin-top:8px">'+TX('查看话术库 →','View library →')+'</button><button class="btn ghost mini" data-action="nav" data-view="mails" style="margin-top:8px">'+TX('发送记录','Sent log')+'</button><button class="btn amber mini" data-action="sceneSend" data-ch="wa" style="margin:8px 6px 0 0">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost mini" data-action="sceneSend" data-ch="email" style="margin:8px 6px 0 0">'+TX('发邮件','Send Email')+'</button><h3 style="margin:14px 0 8px;font-size:15px">'+TX('中文（原理/禁忌）','Chinese (why/taboo)')+'</h3><div class="out zh" id="sc_zh"></div></div>';
+ h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('英文（照发）','English (send as-is)')+'</h3><div style="margin:6px 0 10px"><label style="font-size:12px;color:var(--sub);margin-right:6px">'+TX('发送给','Send to')+'</label><select id="sc_pick" onchange="scPick(this.value)">'+_pickOpts+'</select>'+(!S._activeClient?'<button class="btn ghost mini" data-action="leadNew" style="margin-left:6px">＋ '+TX('加为新线索','Add as lead')+'</button>':'')+'</div><div class="out" id="sc_en">'+TX('选择场景并填变量后生成。','Pick a scene and fill vars.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="sc_en" style="margin:8px 6px 0 0">'+TX('复制英文','Copy EN')+'</button><button class="btn ghost mini" data-action="saveScene" style="margin-top:8px">'+TX('存到话术库','Save to library')+'</button><button class="btn ghost mini" data-action="nav" data-view="lib" style="margin-top:8px">'+TX('查看话术库 →','View library →')+'</button><button class="btn ghost mini" data-action="nav" data-view="mails" style="margin-top:8px">'+TX('发送记录','Sent log')+'</button><button class="btn amber mini" data-action="bulkOpen" style="margin-top:8px">'+TX('群发助手','Bulk send')+'</button><button class="btn amber mini" data-action="sceneSend" data-ch="wa" style="margin:8px 6px 0 0">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost mini" data-action="sceneSend" data-ch="email" style="margin:8px 6px 0 0">'+TX('发邮件','Send Email')+'</button><h3 style="margin:14px 0 8px;font-size:15px">'+TX('中文（原理/禁忌）','Chinese (why/taboo)')+'</h3><div class="out zh" id="sc_zh"></div></div>';
  h+='</div>';
  return h;
 }
@@ -2702,7 +2702,7 @@ document.addEventListener('click',function(e){
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
- else if(a==='saveScene'){saveScene();}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}
+ else if(a==='saveScene'){saveScene();}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
  else if(a==='taskDone'){taskDone(el.dataset.id);}
  else if(a==='todayDel'){todayDel(el.dataset.type, el.dataset.id);}
  else if(a==='todayEdit'){todayEdit(el.dataset.type, el.dataset.id);}
@@ -2898,7 +2898,7 @@ function viewMails(){
   h+='<div class="card" style="text-align:center;color:var(--sub);padding:30px 16px">'+TX('还没有发送记录。去「触达建联 / 建立信任 / 报价成交 / 交付履约 / 复购转介」任一板块生成话术后点「发邮件 / 发 WhatsApp」即可留痕。','No records yet. Generate a script in any board and hit “Send” to log it here.')+'</div>';
   return h;
  }
- h+='<div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn ghost mini" data-action="mailClear">'+TX('清空记录','Clear all')+'</button></div>';
+ h+='<div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn amber mini" data-action="bulkOpen">'+TX('群发助手','Bulk send')+'</button><button class="btn ghost mini" data-action="mailClear">'+TX('清空记录','Clear all')+'</button></div>';
  h+='<div id="mailWrap">'+mailListHTML()+'</div>';
  return h;
 }
@@ -2941,6 +2941,84 @@ function mailDel(id){
 function mailClear(){
  if(!(typeof confirm==='function'?confirm(TX('清空全部发送记录？此操作不可恢复','Permanently clear all sent records?')):true)){return;}
  S.mails=[];save('mails',S.mails);refreshAll();toast(TX('已清空','Cleared'));
+}
+/* ============ 群发助手（逐封 Gmail 发送） ============ */
+var _bulk=null;
+function bulkFill(t,l){
+ t=(''+(t||''));
+ var name=l.name||'',company=l.company||(S.me&&S.me.company)||'',product=l.product||(S.me&&S.me.product)||'',market=l.market||l.country||'',country=l.country||l.market||'';
+ return (''+t).replace(/\{name\}/g,name).replace(/\{姓名\}/g,name).replace(/\{company\}/g,company).replace(/\{公司\}/g,company).replace(/\{product\}/g,product).replace(/\{产品\}/g,product).replace(/\{market\}/g,market).replace(/\{市场\}/g,market).replace(/\{country\}/g,country).replace(/\{国家\}/g,country);
+}
+function bulkRecipientsBox(){
+ var leads=(S.leads||[]).filter(function(x){return x.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x.email);});
+ var h='<label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">'+TX('从线索库选择（有邮箱的）','Select leads with email')+'</label>';
+ h+='<div style="max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px">';
+ if(!leads.length)h+='<div class="muted" style="font-size:13px">'+TX('线索库还没有带邮箱的客户。可去「找客户」录入，或在下方粘贴邮箱。','No leads with email yet. Add in Find Leads, or paste emails below.')+'</div>';
+ leads.forEach(function(l){h+='<label style="display:flex;gap:8px;align-items:center;padding:3px 0;font-size:13px"><input type="checkbox" class="bulk-chk" value="'+esc(l.id)+'"> '+esc(l.name)+' <span class="muted">&lt;'+esc(l.email)+'&gt;</span>'+(l.market?' <span class="tag b">'+esc(l.market)+'</span>':'');});
+ h+='</div><div class="row" style="margin-top:6px"><button class="btn ghost mini" data-action="bulkToggleAll">'+TX('全选/全不选','Select all/none')+'</button><span class="muted" style="font-size:12px" id="bulkCnt"></span></div>';
+ h+='<label style="font-size:12px;color:var(--sub);display:block;margin-top:8px">'+TX('或粘贴邮箱（每行一个）','Or paste emails (one per line)')+'</label><textarea id="bulkPaste" rows="2" placeholder="buyer1@x.com&#10;buyer2@y.com" style="width:100%;margin-top:4px"></textarea>';
+ return h;
+}
+function bulkTplBox(){
+ var opts='<option value="">'+TX('（空白模版，自己写）','（blank, write your own）')+'</option>';
+ (S.scripts||[]).forEach(function(s){opts+='<option value="s_'+s.id+'">'+TX('话术库','Lib')+': '+esc(s.title||'')+'</option>';});
+ (EMAIL_TPLS||[]).forEach(function(t,i){opts+='<option value="t_'+i+'">'+TX('模版库','TPL')+': '+esc(t.title||t.stage||'')+'</option>';});
+ var h='<div class="field" style="margin-top:10px"><label>'+TX('套用模版（可选）','Template (optional)')+'</label><select id="bulkTplSel" onchange="bulkTplFill(this.value)">'+opts+'</select></div>';
+ h+='<div class="field" style="margin-top:8px"><label>'+TX('邮件主题','Subject')+'（可用 {name}{company}{product}{market}）</label><input id="bulkSubj" placeholder="'+TX('{product} for {market} buyers — {company}','{product} for {market} buyers — {company}')+'"></div>';
+ h+='<div class="field" style="margin-top:8px"><label>'+TX('邮件正文','Body')+'（可用 {name}{company}{product}{market}{country}）</label><textarea id="bulkBody" rows="6" placeholder="'+TX('Dear {name},\\n\\nWe supply {product}...','Dear {name},\\n\\nWe supply {product}...')+'"></textarea></div>';
+ return h;
+}
+function bulkTplFill(v){
+ if(!v)return;var subj='',body='';
+ if(v.indexOf('s_')===0){var s=(S.scripts||[]).find(function(x){return x.id===v.slice(2);});if(s){subj=s.title||'';body=s.en||'';}}
+ else if(v.indexOf('t_')===0){var t=(EMAIL_TPLS||[])[parseInt(v.slice(2),10)];if(t){subj=t.title||'';body=t.en||'';}}
+ if(subj&&$('bulkSubj'))$('bulkSubj').value=subj;if(body&&$('bulkBody'))$('bulkBody').value=body;
+}
+function bulkOpen(){
+ var h='<h3>'+TX('群发助手','Bulk send')+'</h3><div class="muted" style="font-size:12.5px;margin-bottom:8px">'+TX('选多收件人 → 套模版 → 系统给每人生成个性化邮件 → 逐封打开 Gmail 发送，每封自动记入「发送记录」。','Pick recipients → choose template → personalized per recipient → send one-by-one via Gmail, each auto-logged.')+'</div>';
+ h+=bulkRecipientsBox()+bulkTplBox();
+ h+='<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" data-action="bulkStart">'+TX('下一步：预览','Next: preview')+'</button></div>';
+ $('modalBody').innerHTML=h;$('modal').classList.add('show');
+}
+function bulkToggleAll(){
+ var chs=document.querySelectorAll('.bulk-chk');if(!chs.length)return;var all=chs[0].checked;for(var i=0;i<chs.length;i++)chs[i].checked=!all;
+}
+function bulkStart(){
+ var leads=(S.leads||[]),sel=[];
+ document.querySelectorAll('.bulk-chk:checked').forEach(function(c){var l=leads.find(function(x){return x.id===c.value;});if(l)sel.push({leadId:l.id,name:l.name,email:l.email,company:l.company,product:l.product,market:l.market,country:l.country});});
+ var paste=$('bulkPaste')?$('bulkPaste').value.trim():'';
+ if(paste)paste.split(/[\s,;]+/).forEach(function(e){e=e.trim();if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))sel.push({leadId:'',name:e,email:e,company:'',product:'',market:'',country:''});});
+ if(!sel.length){toast(TX('请至少选一位收件人','Select at least one recipient'));return;}
+ var subj=$('bulkSubj')?$('bulkSubj').value.trim():'',body=$('bulkBody')?$('bulkBody').value.trim():'';
+ if(!body){toast(TX('请填写邮件正文','Fill email body'));return;}
+ if(!subj)subj=(S.me&&S.me.product||'prayer pillow')+' for '+(S.me&&S.me.market||'global')+' buyers';
+ _bulk={list:sel.map(function(r){return {leadId:r.leadId,name:r.name,email:r.email,subject:bulkFill(subj,r),body:bulkFill(body,r),done:false};}),idx:0};
+ bulkRender();
+}
+function bulkRender(){
+ var b=_bulk;if(!b)return;var r=b.list[b.idx];
+ if(!r){bulkDone();return;}
+ var n=b.idx+1,total=b.list.length,to=esc(r.email),su=encodeURIComponent(r.subject),bd=encodeURIComponent(r.body);
+ var h='<h3>'+TX('群发发送中','Bulk sending')+' ('+n+'/'+total+')</h3>';
+ h+='<div class="row" style="margin-bottom:6px"><span class="tag">'+TX('收件人','To')+'</span><span>'+esc(r.name)+' &lt;'+to+'&gt;</span></div>';
+ h+='<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('主题','Subject')+'</div><div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;white-space:pre-wrap;font-size:14px">'+esc(r.subject)+'</div>';
+ h+='<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('正文','Body')+'</div><div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap;max-height:240px;overflow:auto;font-size:14px;line-height:1.55">'+esc(r.body)+'</div>';
+ h+='<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:14px">'
+  +'<button class="btn amber" data-action="emGmail" data-to="'+to+'" data-su="'+esc(su)+'" data-bd="'+esc(bd)+'" data-id="'+esc(r.leadId||'')+'">'+TX('用 Gmail 网页发送','Send via Gmail')+'</button>'
+  +'<button class="btn" data-action="emOutlook" data-to="'+to+'" data-su="'+esc(su)+'" data-bd="'+esc(bd)+'" data-id="'+esc(r.leadId||'')+'">'+TX('用 Outlook 网页发送','Send via Outlook')+'</button>'
+  +'<button class="btn" data-action="emClient" data-mailto="'+esc('mailto:'+r.email+'?subject='+su+'&body='+bd)+'" data-id="'+esc(r.leadId||'')+'">'+TX('本机邮件客户端','Desktop app')+'</button>'
+  +'<button class="btn ghost" data-action="emCopy" data-to="'+to+'" data-su="'+esc(su)+'" data-bd="'+esc(bd)+'" data-id="'+esc(r.leadId||'')+'">'+TX('复制全文','Copy all')+'</button>'
+  +'</div>';
+ h+='<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="bulkSkip">'+TX('跳过这封','Skip')+'</button><button class="btn" data-action="bulkNext">'+TX('下一封 →','Next →')+'</button></div>';
+ h+='<div class="muted" style="margin-top:8px">'+TX('点上面任一方式发送/复制即记入「发送记录」，发完点「下一封」继续。','Send/copy logs it; hit “Next” after each.')+'</div>';
+ $('modalBody').innerHTML=h;
+}
+function bulkNext(){if(!_bulk)return;_bulk.idx++;bulkRender();}
+function bulkSkip(){bulkNext();}
+function bulkDone(){
+ var total=_bulk?_bulk.list.length:0;
+ var h='<h3>'+TX('群发完成','Bulk done')+'</h3><div class="card" style="text-align:center;padding:24px;color:var(--sub)">'+TX('已处理 ','Processed ')+total+TX(' 封邮件，全部记入「发送记录」。',' emails, all logged.')+'</div><div class="row" style="justify-content:center;margin-top:14px"><button class="btn" data-action="closeModal">'+TX('完成','Done')+'</button></div>';
+ $('modalBody').innerHTML=h;
 }
 function leadDel(id){snapLeads();if(!confirm(TX('确定删除该线索？可进回收站恢复','Delete this lead? Goes to Trash, recoverable'))){return;}var l=S.leads.find(function(x){return x.id===id;});if(!l)return;l.delAt=todayStr();S.trash=S.trash||[];S.trash.unshift(l);S.leads=S.leads.filter(function(x){return x.id!==id;});save('trash',S.trash);save('leads',S.leads);refreshAll();toast(TX('已移入回收站','Moved to Trash'));}
 function trashToggle(){S._trashShow=!S._trashShow;refreshAll();}
