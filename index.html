@@ -600,13 +600,13 @@ function openMailto(u){try{var a=document.createElement('a');a.href=u;a.style.di
 function dU(s){try{return decodeURIComponent(s||'');}catch(e){return s||'';}}
 /* ============ 话术引擎 ============ */
 var SCENES={
- cold_email:{title:'冷开发邮件',te:'Cold Email',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'country',l:'国家/市场'},{k:'edge',l:'你的优势(1句)'}],
+ cold_email:{title:'冷开发邮件',te:'Cold Email',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'country',l:'国家/市场'},{k:'edge',l:'你的优势(1句)',ph:'稳定 $2 FOB + 斋月库存'}],
   gen:function(v,me){var en='Subject: '+v.product+' supplier for '+v.country+' buyers — '+v.edge+'\n\nHi '+v.client+',\n\nThis is '+nm(me)+' from '+co(me)+', '+yr(me)+' focused on Muslim prayer pillows & gifts.\n\nWe help '+v.country+' importers with: '+v.edge+'. Our blue prayer pillow runs at stable $2 FOB, with embroidered / gift-box premium lines for Ramadan & Hajj seasons.\n\nCould I send you our catalog and a sample for a quality check?\n\nBest,\n'+nm(me)+'\n'+co(me);
   var zh='原理：短、具体、给一个行动钩子（要样品）。禁忌：别写长篇公司介绍；别群发同一文案；别编造交期。';return {en:en,zh:zh};}},
  rfq:{title:'阿里RFQ回复',te:'Ali RFQ Reply',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'qty',l:'数量'},{k:'edge',l:'推荐方案(1句)'}],
   gen:function(v,me){var en='Hi '+v.client+', thanks for your RFQ on '+v.product+' ('+v.qty+' pcs).\n\nWe are a '+yr(me)+' supplier of Muslim prayer pillows. MOQ 500 pcs, lead time 15-20 days. For your market we recommend: '+v.edge+'.\n\nCan we confirm the specification so I prepare an exact quotation?';
   var zh='原理：RFQ 是主动意向，24h 内回；先确认规格再报价。禁忌：一上来报底价；不问用途。';return {en:en,zh:zh};}},
- whatsapp:{title:'WhatsApp首触',te:'WhatsApp First Touch',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'edge',l:'价值点(1句)'}],
+ whatsapp:{title:'WhatsApp首触',te:'WhatsApp First Touch',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'edge',l:'价值点(1句)',ph:'稳定斋月库存 + 可定制'}],
   gen:function(v,me){var en='Hi '+v.client+', this is '+nm(me)+' from '+co(me)+'. Noticed you source '+v.product+' — we supply '+v.edge+' with stable Ramadan / Hajj stock. Can I share our best-sellers catalog?';
   var zh='原理：轻、给价值、要一次互动。禁忌：首条发长报价单；群发。';return {en:en,zh:zh};}},
  phone:{title:'电话开场白(可照读)',te:'Call Opener',fields:[{k:'client',l:'客户名'},{k:'company',l:'客户公司'},{k:'product',l:'产品'}],
@@ -626,7 +626,11 @@ var SCENES={
   var zh='原理：用节期制造返单理由，比"在吗"强十倍。禁忌：无理由催单。';return {en:en,zh:zh};}},
  referral:{title:'转介绍话术',te:'Referral Ask',fields:[{k:'client',l:'客户名'}],
   gen:function(v,me){var en='Hi '+v.client+', glad to work with you. If you know other importers who need prayer pillows or gift items, I would appreciate an intro — I will treat them as well as I treat you.';
-  var zh='原理：成交后趁信任高要转介绍。禁忌：没建立信任就开口。';return {en:en,zh:zh};}}
+  var zh='原理：成交后趁信任高要转介绍。禁忌：没建立信任就开口。';return {en:en,zh:zh};}},
+ post_show:{title:'展会后跟进',te:'Post-Show Follow-up',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'稳定斋月库存 + 可定制'}],
+  gen:function(v,me){var en='Hi '+v.client+', great meeting you at the show. As promised, here are our best-sellers for '+v.product+': stable Ramadan/Hajj stock, MOQ 500 pcs, lead time 15-20 days. Shall I send the catalog and a sample so you can check the quality?';var zh='原理：趁展会记忆新鲜 48h 内跟进，把承诺变成动作。禁忌：展后失联、群发无差别跟进。';return {en:en,zh:zh};}},
+ social:{title:'LinkedIn/社媒开发',te:'Social / LinkedIn',fields:[{k:'client',l:'客户名'},{k:'company',l:'客户公司'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'快打样 + 私牌定制'}],
+  gen:function(v,me){var en='Hi '+v.client+', noticed '+v.company+' sources '+v.product+': we help buyers with '+v.edge+'. Could I share our portfolio so you can see the quality and MOQ?';var zh='原理：先证明做过功课（知道他卖什么、在哪卖），用看作品集这种零压力动作开场。禁忌：一上来报底价、硬广刷屏。';return {en:en,zh:zh};}}
 };
 function scTitle(k){var s=SCENES[k];return (S.lang==='en'&&s.te)?s.te:s.title;}
 function nm(me){return me.name||'（你的名字）';}
@@ -2006,7 +2010,7 @@ function doImportLeads(){
 /* ============ 触达建联 ============ */
 function viewReach(){
  var h=shead('reach',TX('选场景 → 填变量 → 生成中英对照话术 → 复制即发。我的资料自动带入。','Pick scene → fill vars → generate bilingual script → copy & send.'));
- h+=sceneBox(['cold_email','rfq','whatsapp']);
+ h+=sceneBox(['cold_email','rfq','whatsapp','post_show','social']);
  return h;
 }
 function viewTrust(){var h=shead('trust',TX('电话破冰 + 样品策略：信任不是推销，是给买家"确定感"。','Call opener + sample strategy: trust = giving the buyer certainty.'));
@@ -2046,15 +2050,17 @@ function sceneBox(keys){
   var lc=S.leads.find(function(x){return x.id===S._activeClient;});
   if(lc)banner='<div class="client-banner">'+TX('为','For')+' <b>'+esc(lc.name)+'</b> '+TX('生成话术：客户名/市场/产品已带入，填完其余变量点"生成"即可发。','— name/market/product pre-filled; fill the rest and generate.')+' <button class="btn ghost mini" data-action="clearClient">'+TX('退出','Exit')+'</button></div>';
  }
- var h=banner+'<div class="grid g2">';
+ var needMe=!(S.me&&S.me.name&&S.me.company&&S.me.years);
+ var meTip=needMe?'<div class="client-banner" style="border-color:#f59e0b">'+TX('提示：去「我的资料」填姓名/公司/年数，话术署名才完整。','Tip: fill My Profile (name/company/years) so signatures are complete.')+' <button class="btn ghost mini" data-action="nav" data-view="me">'+TX('去填资料','Fill profile')+'</button></div>':'';
+ var h=banner+meTip+'<div class="grid g2">';
  h+='<div class="card"><div class="field"><label>'+TX('场景','Scene')+'</label><select id="sc_sel">'+keys.map(function(k){return '<option value="'+k+'">'+scTitle(k)+'</option>';}).join('')+'</select></div><div id="sc_fields"></div><button class="btn" data-action="genScene">'+TX('生成话术','Generate script')+'</button><div class="hint">'+TX('第一次填"我的资料"后，署名自动带入。','After filling My Profile once, signature auto-fills.')+'</div></div>';
- h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('英文（照发）','English (send as-is)')+'</h3><div style="margin:6px 0 10px"><label style="font-size:12px;color:var(--sub);margin-right:6px">'+TX('发送给','Send to')+'</label><select id="sc_pick" onchange="scPick(this.value)">'+_pickOpts+'</select></div><div class="out" id="sc_en">'+TX('选择场景并填变量后生成。','Pick a scene and fill vars.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="sc_en" style="margin:8px 6px 0 0">'+TX('复制英文','Copy EN')+'</button><button class="btn ghost mini" data-action="saveScene" style="margin-top:8px">'+TX('存到话术库','Save to library')+'</button><button class="btn ghost mini" data-action="nav" data-view="lib" style="margin-top:8px">'+TX('查看话术库 →','View library →')+'</button><button class="btn amber mini" data-action="sceneSend" data-ch="wa" style="margin:8px 6px 0 0">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost mini" data-action="sceneSend" data-ch="email" style="margin:8px 6px 0 0">'+TX('发邮件','Send Email')+'</button><h3 style="margin:14px 0 8px;font-size:15px">'+TX('中文（原理/禁忌）','Chinese (why/taboo)')+'</h3><div class="out zh" id="sc_zh"></div></div>';
+ h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('英文（照发）','English (send as-is)')+'</h3><div style="margin:6px 0 10px"><label style="font-size:12px;color:var(--sub);margin-right:6px">'+TX('发送给','Send to')+'</label><select id="sc_pick" onchange="scPick(this.value)">'+_pickOpts+'</select>'+(!S._activeClient?'<button class="btn ghost mini" data-action="leadNew" style="margin-left:6px">＋ '+TX('加为新线索','Add as lead')+'</button>':'')+'</div><div class="out" id="sc_en">'+TX('选择场景并填变量后生成。','Pick a scene and fill vars.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="sc_en" style="margin:8px 6px 0 0">'+TX('复制英文','Copy EN')+'</button><button class="btn ghost mini" data-action="saveScene" style="margin-top:8px">'+TX('存到话术库','Save to library')+'</button><button class="btn ghost mini" data-action="nav" data-view="lib" style="margin-top:8px">'+TX('查看话术库 →','View library →')+'</button><button class="btn amber mini" data-action="sceneSend" data-ch="wa" style="margin:8px 6px 0 0">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost mini" data-action="sceneSend" data-ch="email" style="margin:8px 6px 0 0">'+TX('发邮件','Send Email')+'</button><h3 style="margin:14px 0 8px;font-size:15px">'+TX('中文（原理/禁忌）','Chinese (why/taboo)')+'</h3><div class="out zh" id="sc_zh"></div></div>';
  h+='</div>';
  return h;
 }
 function renderSceneFields(){
  var sel=$('sc_sel');if(!sel)return;var k=sel.value;var sc=SCENES[k];if(!sc)return;
- var h='';sc.fields.forEach(function(f){h+='<div class="field"><label>'+f.l+'</label><input id="sc_'+f.k+'" placeholder="'+f.l+'"></div>';});
+ var h='';sc.fields.forEach(function(f){h+='<div class="field"><label>'+f.l+'</label><input id="sc_'+f.k+'" placeholder="'+(f.ph||f.l)+'"></div>';});
  $('sc_fields').innerHTML=h;
  if(S._activeClient){
   var lc=S.leads.find(function(x){return x.id===S._activeClient;});
