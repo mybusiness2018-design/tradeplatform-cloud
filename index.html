@@ -2186,17 +2186,119 @@ function viewDeliver(){
  }
  h+='</div>';
  h+=sceneBox(['ready_ship','ship_advice','track']);
- h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('订单执行 SOP（可复制）','Order SOP (copyable)')+'</h3>';
- var steps=[TX('收定金 30% 确认','30% deposit confirmed'),TX('下单生产 / 中期跟进','Place order / mid-production follow-up'),TX('出货前验货 QC','Pre-shipment QC'),TX('安排物流 + 提单','Arrange logistics + B/L'),TX('收尾款 70%','Collect 70% balance'),TX('售后回访 + 节期提醒','After-sales + festival reminder')];
- var s=steps.map(function(s,i){return (i+1)+'. '+s;}).join('\n');
- h+='<div class="out" id="dlSop">'+esc(s)+'</div><button class="btn ghost mini" data-action="copy" data-copy="dlSop" style="margin-top:8px">'+TX('复制SOP','Copy SOP')+'</button></div>';
- h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('验货要点模板（可复制）','QC checklist (copyable)')+'</h3>';
- var qc='【'+TX('验货清单','QC List')+'】\n· '+TX('数量 / 颜色 / 款式 与 PI 一致','Qty/color/style match PI')+'\n· '+TX('刺绣/烫金无脱线、无污渍','No loose threads/stains on embroidery')+'\n· '+TX('尺寸公差 ±1cm','Size tolerance ±1cm')+'\n· '+TX('包装：礼盒款防压、防潮','Packaging: gift box crush/moisture-proof')+'\n· '+TX('吊牌 / 标签 / 唛头 正确','Hangtags/labels/shipping marks correct')+'\n· '+TX('拍照留底 + 视频 15s','Photo + 15s video on file');
- h+='<div class="out" id="dlQc">'+esc(qc)+'</div><button class="btn ghost mini" data-action="copy" data-copy="dlQc" style="margin-top:8px">'+TX('复制验货模板','Copy QC')+'</button></div>';
+ h+=sopCard();
+ h+=qcCard();
  h+='<div class="card" style="margin-top:14px;background:#f1f5f9"><div class="shead" style="margin:0"><div class="ic">'+ICON.docs+'</div><div><h2 style="font-size:15px">'+TX('下一步：备齐全套外贸单据','Next: prepare the full document set')+'</h2><p>'+TX('出货前要把 全套外贸单证一次性备齐——发票、箱单、提单、原产地证、报关单、保险单、汇票、检验证、装船通知、受益人证明，以及按条件出具的熏蒸/海关/领事/船证等。','Before shipment, prepare all 15 docs at once — invoice, packing list, B/L, C/O, customs decl., insurance, draft, inspection, shipping advice, beneficiary cert, plus conditional ones.')+'</p></div></div><div class="row"><button class="btn amber" data-action="nav" data-view="docs">'+TX('去备外贸单据 →','Go to Trade Documents →')+'</button></div></div>';
  h+='<div class="card" style="margin-top:14px;background:#ecfdf5"><div class="shead" style="margin:0"><div class="ic">'+ICON.repeat+'</div><div><h2 style="font-size:15px">'+TX('交付完成 → 进「复购转介」养老客','After delivery → Reorder to retain')+'</h2><p>'+TX('货到确认、售后回访后，用「复购转介」的节期日历触发返单，并趁信任高要转介绍——复购比开发新客便宜太多。','After goods arrive & after-sales, use Reorder’s festival calendar to trigger reorders and ask for referrals while trust is high.')+'</p></div></div><div class="row"><button class="btn green" data-action="nav" data-view="repeat">'+TX('去复购转介 →','Go to Reorder →')+'</button></div></div>';
  return h;
 }
+/* ---- 交付履约：可视化 SOP + 验货打钩表（小白版） ---- */
+var SOP_STEPS=[
+ {n:'确认定金',ne:'Confirm deposit',tag:'定金',tage:'Deposit',w:'客户下单后先付 30% 定金，钱到账才排产——这一步没完成，后面别开工。',we:'Client pays a 30% deposit first; production starts only after the money lands.',d:'发 PI 让客户签字回传 → 核对水单金额（注意手续费）→ 到账后在客户 360 记一笔',de:'Send the PI to sign back → check the bank slip → log it on the client record',p:'没收定金就开工，客户跑了，料钱自己赔',pe:'Starting without a deposit — if they walk, you eat the material cost',o:'PI 已签回 + 定金到账',oe:'PI signed back + deposit received'},
+ {n:'下单生产',ne:'Place the order',tag:'生产',tage:'Production',w:'把订单交给工厂，边做边给客户拍照，让他心里有底。',we:'Hand the order to the factory and keep sending progress photos.',d:'下生产单 → 3~5 天发首件/大货样照片 → 每周同步进度和预计完工日',de:'Issue the production order → first-article photo in 3-5 days → weekly progress + ETA',p:'长时间没消息，客户会以为你把单转给别人了',pe:'Long silence makes the client think you subcontracted it',o:'生产进度照片已发出',oe:'Progress photos sent'},
+ {n:'出货前验货',ne:'Pre-shipment QC',tag:'验货',tage:'QC',w:'货做好后、装柜前，按下面那张清单查一遍，拍照留证。',we:'Before loading, run the checklist below and photograph everything.',d:'按「验货清单」逐项打钩 → 拍照片 + 15 秒视频 → 存进客户档案',de:'Tick off the QC list → photos + a 15s video → save to the client file',p:'等客户收到才发现问题，退货运费比货值还贵',pe:'Problems found after arrival cost more in freight than the goods',o:'验货照片/视频已留存',oe:'QC photos/video on file'},
+ {n:'订舱出货',ne:'Book & ship',tag:'物流',tage:'Logistics',w:'订舱、报关、装船，拿到提单（B/L）——这是货权凭证。',we:'Book, declare, load; the B/L you get back is the title to the goods.',d:'给货代订舱 → 报关放行 → 出货后把提单草稿发客户确认',de:'Book with the forwarder → customs release → send the draft B/L to confirm',p:'提单收货人/品名写错，改单费几百美金',pe:'A wrong consignee or description costs hundreds in amendment fees',o:'提单已出 + 三单齐全（发票/箱单/提单）',oe:'B/L issued + all three docs (invoice / packing list / B/L)'},
+ {n:'收尾款',ne:'Collect balance',tag:'尾款',tage:'Balance',w:'用提单副本收剩下的 70%。',we:'Use the B/L copy to collect the remaining 70%.',d:'发提单副本 + 尾款发票 → 跟进到账 → 收到全款再放正本/电放提单',de:'Send the B/L copy + balance invoice → chase payment → release the B/L only after full payment',p:'没收到全款就放单，可能货款两空',pe:'Releasing the B/L before full payment risks losing both money and goods',o:'尾款到账 + 提单已放',oe:'Balance received + B/L released'},
+ {n:'售后回访',ne:'After-sales',tag:'售后',tage:'After-sales',w:'货到了问一句好不好卖，顺便铺下一次返单。',we:'Ask how it sold, and plant the seed for the next order.',d:'到港后 3 天问收货反馈 → 记进客户 360 → 节期前 30/14 天提醒备货',de:'Ask for feedback 3 days after arrival → log it → remind them 30/14 days before the festival',p:'等卖完了才联系，补单窗口已经过了',pe:'Waiting until it sells out means missing the reorder window',o:'客户反馈已记录 + 节期提醒已设',oe:'Feedback logged + festival reminder set'}
+];
+var QC_ITEMS=[
+ {t:'数量 / 颜色 / 款式 与 PI 一致',te:'Qty / color / style match the PI',ho:'按 PI 逐项点数，随机抽 3 箱开箱核对',hoe:'Count against the PI; open and verify 3 random cartons',r:'先别装柜，立即通知工厂补/改',re:'Hold loading; tell the factory to fix it now'},
+ {t:'刺绣 / 烫金 无脱线、无污渍',te:'No loose threads or stains on embroidery',ho:'迎光看一遍 + 用手整片摸一遍，重点查边角和接缝',hoe:'Hold to the light, then feel the whole piece — corners and seams first',r:'挑出不良品，要求返工并重新验',re:'Pull the defects, have them reworked and re-inspected'},
+ {t:'尺寸公差 ±1cm',te:'Size tolerance ±1cm',ho:'每款抽 5 件用尺量，记录最大/最小值',hoe:'Measure 5 pcs per style and note the max/min',r:'判断是普遍问题还是个别，普遍问题要停线',re:'Check if it is systemic — stop the line if so'},
+ {t:'面料手感 / 色差',te:'Fabric hand-feel / color shading',ho:'和确认样并排对比，同批内不能有明显色差',hoe:'Compare side by side with the approved sample; no obvious shading within a lot',r:'色差超一档立即停线确认',re:'Stop and confirm if shading exceeds one grade'},
+ {t:'包装：礼盒防压、防潮',te:'Packaging: gift box crush & moisture proof',ho:'抽 1 箱做挤压测试，检查内衬和干燥剂',hoe:'Crush-test 1 carton; check the insert and desiccant',r:'加内衬或换更硬的纸箱',re:'Add inserts or use a sturdier carton'},
+ {t:'吊牌 / 标签 / 唛头 正确',te:'Hangtags / labels / shipping marks correct',ho:'唛头与箱单逐字对一遍，条码扫一下确认能读',hoe:'Check marks letter-by-letter against the packing list; scan the barcode',r:'重新贴正确标签，错唛头会导致清关卡货',re:'Relabel — wrong marks can block customs clearance'},
+ {t:'气味：无刺鼻异味',te:'No harsh smell',ho:'开箱闻一下，重点查烫金和胶水味',hoe:'Open and smell — watch for foil-stamp and glue odours',r:'通风晾置；味道重则要求返工',re:'Air it out; if strong, have it reworked'},
+ {t:'拍照留底 + 视频 15 秒',te:'Photos + a 15s video on file',ho:'全景、细节、装箱过程各拍一段',hoe:'Shoot the overall view, key details and the packing process',r:'没留证据等于没验过，客户扯皮时你没依据',re:'No evidence means no proof if the client disputes'}
+];
+function sopList(){var a=load('sopDone',[]);return Array.isArray(a)?a:[];}
+function qcList(){var a=load('qcDone',[]);return Array.isArray(a)?a:[];}
+function sopText(){
+ var L=['【'+TX('订单执行 SOP · 6 步走完一单','Order SOP · 6 steps per order')+'】'];
+ SOP_STEPS.forEach(function(s,i){L.push((i+1)+'. '+TX(s.n,s.ne)+'｜'+TX(s.w,s.we));L.push('   '+TX('要做','To do')+'：'+TX(s.d,s.de));L.push('   '+TX('坑','Pitfall')+'：'+TX(s.p,s.pe)+' ｜ '+TX('完成标志','Done when')+'：'+TX(s.o,s.oe));});
+ return L.join('\n');
+}
+function qcText(){
+ var L=['【'+TX('验货清单（出货前逐项打钩）','QC Checklist (tick before loading)')+'】'];
+ QC_ITEMS.forEach(function(q,i){L.push('□ '+(i+1)+'. '+TX(q.t,q.te)+'｜'+TX('怎么看','How')+'：'+TX(q.ho,q.hoe)+'｜'+TX('不合格','If fail')+'：'+TX(q.r,q.re));});
+ return L.join('\n');
+}
+function sopCard(){
+ var done=sopList(),N=SOP_STEPS.length;
+ var h='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 4px;font-size:15px">'+TX('订单执行 SOP · 6 步走完一单','Order SOP · 6 steps per order')+'</h3>';
+ h+='<p class="muted" style="margin:0 0 10px">'+TX('客户付了定金之后，这一单就按下面 6 步走。每步做完点一下左边的圆圈打钩，进度自动保存。','After the deposit, run the order through these 6 steps. Tap the circle on the left when a step is done — progress saves itself.')+'</p>';
+ h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="flex:1;height:8px;background:#e5eaf3;border-radius:99px;overflow:hidden"><div id="sopBar" style="height:100%;width:'+Math.round(done.length/N*100)+'%;background:#16a34a;transition:width .2s"></div></div><span id="sopProg" style="font-size:12.5px;font-weight:700;color:#16a34a">'+done.length+' / '+N+'</span><button class="btn ghost mini" data-action="sopReset">'+TX('重置','Reset')+'</button></div>';
+ SOP_STEPS.forEach(function(s,i){
+  var on=done.indexOf(String(i))>=0;
+  h+='<div style="display:flex;gap:12px">';
+  h+='<div style="display:flex;flex-direction:column;align-items:center;flex:0 0 30px">';
+  h+='<button data-action="sopToggle" data-i="'+i+'" id="sopDot'+i+'" title="'+TX('做完点一下','Tap when done')+'" style="width:30px;height:30px;border-radius:50%;border:2px solid '+(on?'#16a34a':'#c7d2e5')+';background:'+(on?'#16a34a':'#fff')+';color:'+(on?'#fff':'#334155')+';font-weight:700;font-size:14px;cursor:pointer;padding:0">'+(on?'✓':(i+1))+'</button>';
+  h+='<div style="flex:1;width:2px;background:'+(i<N-1?'#e5eaf3':'transparent')+'"></div></div>';
+  h+='<div id="sopRow'+i+'" style="flex:1;padding-bottom:16px;opacity:'+(on?'0.55':'1')+'">';
+  h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:14.5px">'+TX(s.n,s.ne)+'</b><span class="tag">'+TX(s.tag,s.tage)+'</span></div>';
+  h+='<div style="font-size:13px;color:#475569;margin:4px 0 6px">'+TX(s.w,s.we)+'</div>';
+  h+='<div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#334155"><b>'+TX('你要做','To do')+'：</b>'+TX(s.d,s.de)+'</div>';
+  h+='<div style="font-size:12.5px;color:#b45309;margin-top:6px">'+TX('⚠ 容易踩的坑：','⚠ Common pitfall: ')+TX(s.p,s.pe)+'</div>';
+  h+='<div style="font-size:12.5px;color:#15803d;margin-top:3px">'+TX('✅ 做到这算完成：','✅ Done when: ')+TX(s.o,s.oe)+'</div>';
+  h+='</div></div>';
+ });
+ h+='<div style="display:none" id="dlSop">'+esc(sopText())+'</div>';
+ h+='<button class="btn ghost mini" data-action="copy" data-copy="dlSop">'+TX('复制文字版清单','Copy text list')+'</button>';
+ h+='<p class="hint" style="margin-top:8px">'+TX('文字版可以发给同事或贴进订单本，照着走不会漏步骤。','Send the text list to your team or paste it into your order book.')+'</p></div>';
+ return h;
+}
+function qcCard(){
+ var done=qcList(),N=QC_ITEMS.length;
+ var h='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 4px;font-size:15px">'+TX('验货清单 · 出货前逐项打钩','QC Checklist · tick before loading')+'</h3>';
+ h+='<p class="muted" style="margin:0 0 10px">'+TX('装柜前对着这张表一项一项查，勾上的才算过关。任何一项不合格，先拍照通知工厂返工，不要抱着侥幸出货。','Check item by item before loading. Anything that fails: photograph it and have the factory rework it — never ship on a hope.')+'</p>';
+ h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="flex:1;height:8px;background:#e5eaf3;border-radius:99px;overflow:hidden"><div id="qcBar" style="height:100%;width:'+Math.round(done.length/N*100)+'%;background:#16a34a;transition:width .2s"></div></div><span id="qcProg" style="font-size:12.5px;font-weight:700;color:#16a34a">'+done.length+' / '+N+'</span><button class="btn ghost mini" data-action="qcReset">'+TX('重置','Reset')+'</button></div>';
+ QC_ITEMS.forEach(function(q,i){
+  var on=done.indexOf(String(i))>=0;
+  h+='<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid '+(on?'#bbf7d0':'#e8edf5')+';background:'+(on?'#f0fdf4':'#fff')+';border-radius:9px;padding:9px 11px;margin-bottom:7px">';
+  h+='<button data-action="qcToggle" data-i="'+i+'" id="qcDot'+i+'" title="'+TX('查过点一下','Tick when checked')+'" style="flex:0 0 22px;width:22px;height:22px;border-radius:6px;border:2px solid '+(on?'#16a34a':'#c7d2e5')+';background:'+(on?'#16a34a':'#fff')+';color:#fff;font-size:13px;font-weight:700;cursor:pointer;padding:0;line-height:1">'+(on?'✓':'')+'</button>';
+  h+='<div style="flex:1"><b style="font-size:13.5px;color:'+(on?'#166534':'#1e293b')+'">'+TX(q.t,q.te)+'</b>';
+  h+='<div style="font-size:12.5px;color:#475569;margin-top:3px">'+TX('怎么看：','How: ')+TX(q.ho,q.hoe)+'</div>';
+  h+='<div style="font-size:12.5px;color:#b45309;margin-top:2px">'+TX('不合格：','If it fails: ')+TX(q.r,q.re)+'</div>';
+  h+='</div></div>';
+ });
+ h+='<div style="display:none" id="dlQc">'+esc(qcText())+'</div>';
+ h+='<button class="btn ghost mini" data-action="copy" data-copy="dlQc">'+TX('复制文字版清单','Copy text list')+'</button>';
+ h+='<p class="hint" style="margin-top:8px">'+TX('验完把照片和这张表一起存进客户档案，客户扯皮时就是你的证据。','Save the photos plus this list to the client file — that is your evidence if a dispute comes.')+'</p></div>';
+ return h;
+}
+function sopPaintAll(){
+ var done=sopList(),N=SOP_STEPS.length,i,on,dot,row;
+ for(i=0;i<N;i++){on=done.indexOf(String(i))>=0;dot=$('sopDot'+i);row=$('sopRow'+i);
+  if(dot){dot.textContent=on?'✓':String(i+1);dot.style.background=on?'#16a34a':'#fff';dot.style.borderColor=on?'#16a34a':'#c7d2e5';dot.style.color=on?'#fff':'#334155';}
+  if(row){row.style.opacity=on?'0.55':'1';}
+ }
+ var bar=$('sopBar'),pg=$('sopProg');
+ if(bar)bar.style.width=Math.round(done.length/N*100)+'%';
+ if(pg)pg.textContent=done.length+' / '+N;
+}
+function qcPaintAll(){
+ var done=qcList(),N=QC_ITEMS.length,i,on,dot;
+ for(i=0;i<N;i++){on=done.indexOf(String(i))>=0;dot=$('qcDot'+i);
+  if(dot){dot.textContent=on?'✓':'';dot.style.background=on?'#16a34a':'#fff';dot.style.borderColor=on?'#16a34a':'#c7d2e5';}
+ }
+ var bar=$('qcBar'),pg=$('qcProg');
+ if(bar)bar.style.width=Math.round(done.length/N*100)+'%';
+ if(pg)pg.textContent=done.length+' / '+N;
+}
+function sopToggle(i){
+ var a=sopList(),k=String(i),p=a.indexOf(k);
+ if(p>=0)a.splice(p,1);else a.push(k);
+ save('sopDone',a);sopPaintAll();
+ if(p<0&&a.length===SOP_STEPS.length){toast(TX('6 步全走完，可以进「复购转介」铺下一单了','All 6 steps done — head to Reorder for the next order'));}
+}
+function qcToggle(i){
+ var a=qcList(),k=String(i),p=a.indexOf(k);
+ if(p>=0)a.splice(p,1);else a.push(k);
+ save('qcDone',a);qcPaintAll();
+ if(p<0&&a.length===QC_ITEMS.length){toast(TX('验货全过，可以放心出货了','All checks passed — safe to ship'));}
+}
+function sopReset(){save('sopDone',[]);sopPaintAll();toast(TX('已重置 SOP 进度','SOP progress reset'));}
+function qcReset(){save('qcDone',[]);qcPaintAll();toast(TX('已重置验货进度','QC progress reset'));}
 /* ============ 复盘增长 ============ */
 function viewReview(){
  var h=shead('review',TX('周/月复盘 + AI 洞察。看转化率与复购率，别只看流水。','Weekly/monthly review + AI insights. Watch conversion, not just revenue.')+'');
@@ -2607,6 +2709,10 @@ document.addEventListener('click',function(e){
  else if(a==='kpiEditClient'){kpiEditClient(el.dataset.id);}
  else if(a==='clearClient'){clearClient();}
  else if(a==='deliverUse'){S._activeClient=el.dataset.id||'';save('_activeClient',S._activeClient);refreshAll();}
+ else if(a==='sopToggle'){sopToggle(parseInt(el.dataset.i,10));}
+ else if(a==='sopReset'){sopReset();}
+ else if(a==='qcToggle'){qcToggle(parseInt(el.dataset.i,10));}
+ else if(a==='qcReset'){qcReset();}
  else if(a==='dealNew'){dealNew();}
  else if(a==='dealEdit'){dealEdit();}
  else if(a==='dealSave'){dealSave();}
