@@ -337,7 +337,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','leads','trash','tasks','scripts','coach','docs','deals','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -418,6 +418,7 @@ function buildState(){
   view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
   lang:load('lang','zh'),
   me:load('me',{name:'',company:'',years:'',product:'',market:'',whatsapp:''}),
+  mails:load('mails',[]),
   leads:load('leads',null),trash:load('trash',[]),
   tasks:load('tasks',null),
   scripts:load('scripts',[]),
@@ -2567,7 +2568,7 @@ function renderNav(){
  NAV.forEach(function(n){
   if(S.hidden.indexOf(n.k)>=0) return;
   var lock=(n.k==='home');
-  var num=n.k==='lib'?(S.scripts.length?S.scripts.length:''):(n.k==='mails'?(S.mails.length?S.mails.length:''):n.n);
+  var num=n.k==='lib'?((S.scripts&&S.scripts.length)?S.scripts.length:''):(n.k==='mails'?((S.mails&&S.mails.length)?S.mails.length:''):n.n);
   var hot=(n.k==='lib'&&S.scripts.length>0)?' hot':'';
   h+='<button class="navitem '+(S.view===n.k?'on':'')+hot+'" data-action="nav" data-view="'+n.k+'">'+ICON[n.k]+'<span>'+TX(n.t,n.te)+'</span>'+(num?'<span class="num">'+num+'</span>':'')+(lock?'':'<span class="x" data-action="navHide" data-view="'+n.k+'" title="'+TX('隐藏此模块','Hide module')+'">×</span>')+'</button>';
  });
@@ -2597,13 +2598,12 @@ function renderView(){
  $('view').innerHTML=h;
 }
 function refreshAll(){
- renderNav();
- renderView();
- renderToday();
- if(S.view==='find'){renderLeads();renderPrio();}
- if(S.view==='repeat')renderFest();
- if(S.view==='review')renderIns();
- if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat')renderSceneFields();
+ var _rf=[renderNav,renderView,renderToday];
+ for(var _i=0;_i<_rf.length;_i++){try{_rf[_i]();}catch(e){try{console.error('[render]',e);}catch(_e){}}}
+ try{if(S.view==='find'){renderLeads();renderPrio();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='repeat')renderFest();}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='review')renderIns();}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat')renderSceneFields();}catch(e){try{console.error('[render]',e);}catch(_e){}}
 }
 /* ============ 弹窗 ============ */
 function openModal(title,body,onOk){
