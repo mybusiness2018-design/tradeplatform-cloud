@@ -2696,7 +2696,7 @@ document.addEventListener('click',function(e){
  }
  else if(a==='docOpen'){docOpen(el.dataset.id);}
  else if(a==='docToggle'){docToggle(el.dataset.id);}
- else if(a==='docGen'){docGen(el.dataset.id);}
+ else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
  else if(a==='saveScene'){saveScene();}
  else if(a==='taskDone'){taskDone(el.dataset.id);}
@@ -3010,7 +3010,7 @@ function viewDocs(){
  h+='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>'+TX('备单进度','Doc readiness')+'</b><span class="tag score">'+done+' / '+total+'</span></div><div style="height:8px;background:var(--line);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:6px"></div></div><div class="hint" style="margin-top:8px">'+TX('核心类 7 张每票必出（发票 / 箱单 / 重量单 / 提单 / 空运单 / 保险单 / 产地证）；其余按交易条件（木包装 / 信用证 / 目的国 / 运输方式）出具。共 27 张，分 6 类。','Core 7 every shipment (Invoice/Packing/Weight/BL/AWB/Insurance/C.O.); rest by condition (wood/LC/dest/transport). 27 docs in 6 groups.')+'</div></div>';
  h+='<div class="card" style="margin-bottom:14px"><div class="grid g3"><select id="dealSel">'+(S.deals||[]).map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+(x.cnee||TX('未命名交易','Untitled'))+'</option>';}).join('')+'</select><button class="btn ghost mini" data-action="dealNew">'+TX('新建交易','New')+'</button><button class="btn ghost mini" data-action="dealEdit">'+TX('编辑交易','Edit')+'</button></div>';
  h+='<div class="muted" style="font-size:12.5px;margin-top:6px">'+(linked?TX('已关联客户','Linked customer')+'：'+esc(linked.name)+'（'+esc(linked.market||'')+'）':'<span style="color:#b45309">'+TX('未关联客户（可在「编辑交易」里关联）','Not linked to a customer (use Edit deal)')+'</span>')+'</div>';
- h+='<div class="row" style="margin-top:10px"><button class="btn mini" data-action="docRec">'+TX('AI 智能选单','AI pick docs')+'</button><button class="btn mini" data-action="docCheck">'+TX('AI 一致性校验','AI consistency')+'</button><button class="btn mini ghost" data-action="docDef">'+TX('单证预设','Doc presets')+'</button></div>';
+ h+='<div class="row" style="margin-top:10px"><button class="btn mini" data-action="docRec">'+TX('AI 智能选单','AI pick docs')+'</button><button class="btn mini" data-action="docCheck">'+TX('AI 一致性校验','AI consistency')+'</button><button class="btn mini ghost" data-action="docDef">'+TX('单证预设','Doc presets')+'</button><button class="btn mini ghost" data-action="docExportAll">'+TX('导出备单清单Excel','Export checklist')+'</button></div>';
  if(S._recShow)h+=docRecPanel(d);
  if(S._chkShow)h+=docChkPanel(d);
  if(S._defShow)h+=docDefPanel();
@@ -3040,7 +3040,7 @@ function viewDocs(){
    h+='<div class="grid g2">';
    dd.fields.forEach(function(f){var lbl=DOC_FIELDS[f]?DOC_FIELDS[f].l:f;var dv='';if(S._docVals&&S._docVals[f]!=null&&S._docVals[f]!=='')dv=S._docVals[f];else if(SHARED.indexOf(f)>=0)dv=(d[f]||'');else if(f==='desc')dv='Muslim prayer pillow';h+='<div class="field"><label>'+esc(lbl)+'</label><input id="doc_'+f+'" value="'+esc(dv)+'" placeholder="'+esc(lbl)+'"></div>';});
    h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-action="docGen" data-id="'+dd.id+'">'+TX('生成单证草稿','Generate draft')+'</button></div>';
-   if(S._docTpl){h+='<div id="docTplOut" style="margin-top:10px">'+S._docTpl+'</div><div class="row" style="margin-top:8px"><button class="btn ghost mini" data-action="copy" data-copy="docTplOut">'+TX('复制单证文本','Copy text')+'</button><button class="btn ghost mini" data-action="docPrint">'+TX('打印 / 导出PDF','Print / PDF')+'</button></div>';}
+   if(S._docTpl){h+='<div id="docTplOut" style="margin-top:10px">'+S._docTpl+'</div><div class="row" style="margin-top:8px"><button class="btn ghost mini" data-action="copy" data-copy="docTplOut">'+TX('复制单证文本','Copy text')+'</button><button class="btn ghost mini" data-action="docPrint">'+TX('打印 / 导出PDF','Print / PDF')+'</button><button class="btn ghost mini" data-action="docExport" data-id="'+dd.id+'">'+TX('导出Excel','Export Excel')+'</button></div>';}
    else{h+='<div class="out muted" style="margin-top:10px">'+TX('填好变量点"生成单证草稿"。','Fill vars and tap Generate.')+'</div>';}
    h+='</div>';
   }
@@ -3065,6 +3065,51 @@ function docOpen(id){S._docOpen=id;S._docVals={};S._docTpl=null;refreshAll();}
  S._docTpl=out;refreshAll();
  if(missing.length)toast(TX('已生成，以下变量未填：','Generated, unfilled: ')+missing.join('、'));
  else toast(TX('单证已生成，可复制','Draft ready, copy it'));
+}
+function docExport(id){
+ var dd=DOC_DEF.find(function(x){return x.id===id;});if(!dd)return;
+ var d=activeDeal();
+ var getVal=function(f){
+  var inp=document.getElementById('doc_'+f);
+  if(inp&&inp.value.trim()!=='')return inp.value.trim();
+  if(S._docVals&&S._docVals[f]!=null&&S._docVals[f]!=='')return S._docVals[f];
+  if(typeof SHARED!=='undefined'&&SHARED.indexOf(f)>=0)return (d&&d[f]!=null)?d[f]:'';
+  if(f==='desc')return 'Muslim prayer pillow';
+  return '';
+ };
+ var rows='';
+ dd.fields.forEach(function(f){var lbl=DOC_FIELDS[f]?DOC_FIELDS[f].l:f;var val=getVal(f);rows+='<tr><td style="font-weight:bold;background:#f3f4f6">'+esc(lbl)+'</td><td>'+esc(val)+'</td></tr>';});
+ var st=docStatus(id);
+ var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>td{border:1px solid #999;padding:4px 8px;font-size:12px}th{background:#1f2937;color:#fff;font-size:13px}</style></head><body><table border="1" cellpadding="0" cellspacing="0">'
+  +'<tr><th colspan="2">'+esc(dd.zh)+' / '+esc(dd.en)+'</th></tr>'
+  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('分类','Category')+'</td><td>'+esc(dd.cat)+'</td></tr>'
+  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('交易方','Buyer')+'</td><td>'+esc((d&&d.cnee)||'')+'</td></tr>'
+  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('发票号','Invoice No.')+'</td><td>'+esc((d&&d.no)||'')+'</td></tr>'
+  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('状态','Status')+'</td><td>'+esc(st==='done'?TX('已出','Done'):TX('待办','To do'))+'</td></tr>'
+  +'<tr><td colspan="2" style="background:#eef2ff;font-weight:bold">'+TX('单证字段','Document fields')+'</td></tr>'
+  +rows
+  +'</table></body></html>';
+ var name=(dd.zh||'doc')+'_'+todayStr()+'.xls';
+ dlFile(html,name,'application/vnd.ms-excel');
+ toast(TX('已导出 Excel：','Exported Excel: ')+name);
+}
+function docExportAll(){
+ var d=activeDeal();if(!d){toast(TX('先新建一笔交易再导出清单','Create a deal first'));return;}
+ var rec=docRecMap(d);
+ var catLabel={contract:TX('合同报价','Contract'),core:TX('核心货运','Core'),clearance:TX('清关','Clearance'),inspection:TX('保险检验','Insurance'),negotiation:TX('结汇','Negotiation'),advice:TX('通知','Advice')};
+ var body='<tr><th>'+TX('分类','Category')+'</th><th>'+TX('单证','Doc')+'</th><th>'+TX('英文','EN')+'</th><th>'+TX('出具方','Issuer')+'</th><th>'+TX('必出/建议','Req')+'</th><th>'+TX('状态','Status')+'</th></tr>';
+ DOC_DEF.forEach(function(x){var tag=rec[x.id]==='req'?TX('必出','Req'):(rec[x.id]==='cond'?TX('建议','Sug'):'—');var st=docStatus(x.id);body+='<tr><td>'+esc(catLabel[x.cat]||x.cat)+'</td><td>'+esc(x.zh)+'</td><td>'+esc(x.en)+'</td><td>'+esc(x.issuer)+'</td><td>'+esc(tag)+'</td><td>'+esc(st==='done'?TX('已出','Done'):TX('待办','To do'))+'</td></tr>';});
+ var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>td,th{border:1px solid #999;padding:4px 8px;font-size:12px}th{background:#1f2937;color:#fff}</style></head><body><table border="1" cellpadding="0" cellspacing="0"><tr><th colspan="6">'+TX('备单清单','Document checklist')+' — '+esc(d.cnee||'')+' ('+todayStr()+')</th></tr>'+body+'</table></body></html>';
+ var name='备单清单_'+(d.cnee||'deal')+'_'+todayStr()+'.xls';
+ dlFile(html,name,'application/vnd.ms-excel');
+ toast(TX('已导出备单清单 Excel','Exported checklist'));
+}
+function docPrint(){
+ if(!S._docTpl){toast(TX('请先生成单证草稿','Generate draft first'));return;}
+ var w=window.open('','_blank');
+ if(!w){toast(TX('浏览器拦截了打印窗口，请允许弹窗','Allow popups to print'));return;}
+ w.document.write('<html><head><meta charset="utf-8"><title>'+TX('单证','Doc')+'</title><style>body{font-family:sans-serif;padding:24px;line-height:1.6}pre{white-space:pre-wrap;font-size:13px}</style></head><body>'+S._docTpl+'</body></html>');
+ w.document.close();w.focus();setTimeout(function(){try{w.print();}catch(e){}},300);
 }
 function hubStatus(k,l,follow,days,docPct){
  switch(k){
