@@ -621,6 +621,12 @@ var SCENES={
  quote:{title:'报价与逼单',te:'Quote & Close',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'price',l:'单价$'}],
   gen:function(v,me){var en='Hi '+v.client+', quotation for '+v.product+': $'+v.price+'/pc FOB, MOQ 500 pcs, lead time 15-20 days. For orders confirmed before the 10th, we hold the current price. Shall I issue the PI?';
   var zh='原理：给明确价格+MOQ+交期+限时，逼出决策。禁忌：含糊报价；不催不关。';return {en:en,zh:zh};}},
+ quote_tier:{title:'阶梯报价(量大优惠)',te:'Tiered Pricing',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'price',l:'基础单价$'},{k:'qty1',l:'档1数量'},{k:'price1',l:'档1单价$'},{k:'qty2',l:'档2数量'}],
+  gen:function(v,me){var en='Hi '+v.client+', quotation for '+v.product+': $'+v.price+'/pc (MOQ 500). Volume breaks: '+v.qty1+' pcs → $'+v.price1+'/pc; '+v.qty2+' pcs+ → even better — tell me your target and I will quote exactly. Which tier fits your first order?';
+  var zh='原理：用数量换单价，引导把单做厚；让客户自己算账。禁忌：价差太小没吸引力；含糊不给具体档。';return {en:en,zh:zh};}},
+ quote_valid:{title:'报价有效期/紧迫',te:'Quote Validity',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'price',l:'单价$'},{k:'valid',l:'有效期(如 7 天)'}],
+  gen:function(v,me){var en='Hi '+v.client+', formal quote for '+v.product+': $'+v.price+'/pc FOB, valid for '+v.valid+'. Raw material and Ramadan-season capacity are moving — locking now protects both your price and lead time. Shall I issue the PI today?';
+  var zh='原理：给截止日+理由(原料/斋月)制造合理紧迫，把催单包装成帮客户锁价锁期。禁忌：虚高紧迫感被识破；无理由硬催。';return {en:en,zh:zh};}},
  reorder:{title:'老客返单提醒',te:'Reorder Nudge',fields:[{k:'client',l:'客户名'},{k:'product',l:'上次产品'}],
   gen:function(v,me){var en='Hi '+v.client+', hope '+v.product+' sold well. Ramadan 2027 is around Feb 8 — now is the time to reserve stock so you do not miss the season. Shall I prepare a repeat order plan?';
   var zh='原理：用节期制造返单理由，比"在吗"强十倍。禁忌：无理由催单。';return {en:en,zh:zh};}},
@@ -630,7 +636,11 @@ var SCENES={
  post_show:{title:'展会后跟进',te:'Post-Show Follow-up',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'稳定斋月库存 + 可定制'}],
   gen:function(v,me){var en='Hi '+v.client+', great meeting you at the show. As promised, here are our best-sellers for '+v.product+': stable Ramadan/Hajj stock, MOQ 500 pcs, lead time 15-20 days. Shall I send the catalog and a sample so you can check the quality?';var zh='原理：趁展会记忆新鲜 48h 内跟进，把承诺变成动作。禁忌：展后失联、群发无差别跟进。';return {en:en,zh:zh};}},
  social:{title:'LinkedIn/社媒开发',te:'Social / LinkedIn',fields:[{k:'client',l:'客户名'},{k:'company',l:'客户公司'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'快打样 + 私牌定制'}],
-  gen:function(v,me){var en='Hi '+v.client+', noticed '+v.company+' sources '+v.product+': we help buyers with '+v.edge+'. Could I share our portfolio so you can see the quality and MOQ?';var zh='原理：先证明做过功课（知道他卖什么、在哪卖），用看作品集这种零压力动作开场。禁忌：一上来报底价、硬广刷屏。';return {en:en,zh:zh};}}
+  gen:function(v,me){var en='Hi '+v.client+', noticed '+v.company+' sources '+v.product+': we help buyers with '+v.edge+'. Could I share our portfolio so you can see the quality and MOQ?';var zh='原理：先证明做过功课（知道他卖什么、在哪卖），用看作品集这种零压力动作开场。禁忌：一上来报底价、硬广刷屏。';return {en:en,zh:zh};}},
+ factory:{title:'视频看厂/工厂直播邀请',te:'Factory Video Tour',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'}],
+  gen:function(v,me){var en='Hi '+v.client+', to give you full confidence before ordering, would you like a short live video call to see our workshop and the '+v.product+' production line? I can walk you through our QC steps in real time. When suits you — I will arrange it.';var zh='原理：用透明度建立信任，让买家"亲眼看到"比说一百句都强。禁忌：只发工厂照片不互动；约好临时爽约。';return {en:en,zh:zh};}},
+ assure:{title:'首单质保/风险逆转',te:'First-Order Guarantee',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'}],
+  gen:function(v,me){var en='Hi '+v.client+', I know trusting a new supplier is a big step. For your first '+v.product+' order we can start with a 300 pcs trial, and we provide a pre-shipment inspection report. If anything is off, we re-produce or refund — your risk is covered.';var zh='原理：把"新供应商风险"从买家身上拿走，用试单+验货报告+质保承诺降低决策门槛。禁忌：空头承诺无凭据；夸大产能交不了货。';return {en:en,zh:zh};}}
 };
 function scTitle(k){var s=SCENES[k];return (S.lang==='en'&&s.te)?s.te:s.title;}
 function nm(me){return me.name||'（你的名字）';}
@@ -2013,18 +2023,21 @@ function viewReach(){
  h+=sceneBox(['cold_email','rfq','whatsapp','post_show','social']);
  return h;
 }
-function viewTrust(){var h=shead('trust',TX('电话破冰 + 样品策略：信任不是推销，是给买家"确定感"。','Call opener + sample strategy: trust = giving the buyer certainty.'));
- h+=sceneBox(['phone','sample']);return h;}
-function viewDeal(){var h=shead('deal',TX('报价PI + 三大异议处理。先给明确价格，再处理抗拒。','Quote PI + 3 objection handlers. Clear price first, then resistance.'));
- h+=sceneBox(['quote']);
+function viewTrust(){var h=shead('trust',TX('电话破冰 + 样品策略 + 看厂透明 + 首单保障：信任不是推销，是给买家"确定感"。','Call opener + sample + transparent factory + first-order guarantee: trust = giving the buyer certainty.'));
+ h+=sceneBox(['phone','sample','factory','assure']);return h;}
+function viewDeal(){var h=shead('deal',TX('报价PI + 四大异议处理。先给明确价格，再处理抗拒。','Quote PI + 4 objection handlers. Clear price first, then resistance.'));
+ h+=sceneBox(['quote','quote_tier','quote_valid']);
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('常见异议处理（照读）','Common objections (read-aloud)')+'</h3>';
  var objs=[
   [TX('价格太高','Price too high'),'I understand. Our price reflects steady supply and quality control. To lower unit cost we can adjust material or raise MOQ — which matters more to you, price or lead time?',TX('原理：把"贵"翻译成可交换的变量（材质/数量），不硬扛。','Turn "expensive" into tradable variables (material/qty); don’t just hold.')],
   [TX('MOQ太大','MOQ too big'),'Standard MOQ is 500 pcs; for first trial we can do 300 to lower your risk. If it sells, we scale up together.',TX('原理：用试单降低对方决策门槛。','Lower decision risk with a trial order.')],
-  [TX('交期太长','Lead time too long'),'Current lead time is 15-20 days; if you confirm by the 10th we prioritize your batch. What is your hard deadline?',TX('原理：把交期变成对方要配合的动作。','Make lead time something they must act on.')]
+  [TX('交期太长','Lead time too long'),'Current lead time is 15-20 days; if you confirm by the 10th we prioritize your batch. What is your hard deadline?',TX('原理：把交期变成对方要配合的动作。','Make lead time something they must act on.')],
+  [TX('新供应商不敢信','New supplier trust'),'We are happy to start small: 300 pcs trial + pre-shipment inspection report + 30% deposit with balance against B/L copy. Many of our buyers began this way. What would make you comfortable?',TX('原理：用"小步试单+验货报告+稳妥付款"把信任风险量化、分摊。','Use trial + inspection + safe payment to quantify and share the trust risk.')]
  ];
  objs.forEach(function(o){h+='<div class="keypts" style="margin:0 0 8px"><b>'+o[0]+'</b><div class="out" style="margin:6px 0">'+esc(o[1])+'</div><div class="muted">'+o[2]+'</div></div>';});
- h+='</div>';return h;}
+ h+='</div>';
+ h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 6px;font-size:15px">'+TX('需要正式报价单 / PI？','Need a formal Quotation / PI?')+'</h3><p class="muted" style="margin:0 0 8px">'+TX('上面生成的是报价话术；要带抬头、品名、单价、金额、贸易术语的正式单据，去「外贸单证」一键生成可打印 PDF。','The above is quote copy; for a formal doc with letterhead, items, amount & Incoterms, generate a printable PDF in Docs.')+'</p><button class="btn ghost" data-action="nav" data-view="docs">'+TX('去外贸单证生成报价单 →','Go to Docs →')+'</button></div>';
+ return h;}
 function viewRepeat(){var h=shead('repeat',TX('节期日历驱动复购 + 转介绍。老客返单比开发新客便宜太多。','Festival calendar drives reorder + referral. Reorders beat new leads.')+'');
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('2027 节期备货日历','2027 Festival Calendar')+'</h3><div id="festCal"></div></div>';
  h+=sceneBox(['festival','reorder','referral']);
