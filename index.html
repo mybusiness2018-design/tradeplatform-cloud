@@ -324,6 +324,7 @@ var NAV=[
  {k:'docs',t:'外贸单据',te:'Trade Docs',n:'单证'},
  {k:'repeat',t:'复购转介',te:'Reorder',n:'7'},
  {k:'lib',t:'话术邮件模版',te:'Email Templates',n:''},
+ {k:'mails',t:'邮件发送记录',te:'Sent Mails',n:''},
  {k:'review',t:'复盘增长',te:'Review',n:'8'},
  {k:'coach',t:'教练诊断',te:'Coach',n:'帮人'},
  {k:'me',t:'我的资料',te:'My Profile',n:''},
@@ -341,6 +342,7 @@ var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
  me:load('me',{name:'',company:'',years:'',product:'',market:'',whatsapp:''}),
+ mails:load('mails',[]),
  leads:load('leads',null),trash:load('trash',[]),
  tasks:load('tasks',null),
  scripts:load('scripts',[]),
@@ -681,6 +683,7 @@ var STAGE_META={
  docs:{t:'外贸单据',te:'Trade Documents',d:'一笔出口全套单证，一个都不能少',de:'The complete export document set — nothing missing'},
  repeat:{t:'复购转介',te:'Reorder',d:'节期日历 + 返单/转介绍',de:'Festival calendar + reorder / referral'},
  review:{t:'复盘增长',te:'Review',d:'周/月复盘 + AI 洞察',de:'Weekly/monthly review + AI insights'},
+ mails:{t:'邮件发送记录',te:'Sent Mails',d:'所有发出去的邮件/WhatsApp 留痕，可一键重发',de:'A log of every email/WhatsApp sent — re-send in one tap'},
  coach:{t:'教练诊断',te:'Coach',d:'给别的销售做业务体检',de:'Run a diagnostic for other salespeople'},
  me:{t:'我的资料',te:'My Profile',d:'第一次填一次，话术自动署名',de:'Fill once, scripts auto-sign'},
  backup:{t:'备份',te:'Backup',d:'数据本地，导出/重置/发给别人',de:'Local data, export / reset / share'}
@@ -2077,7 +2080,7 @@ function sceneBox(keys){
  var meTip=needMe?'<div class="client-banner" style="border-color:#f59e0b">'+TX('提示：去「我的资料」填姓名/公司/年数，话术署名才完整。','Tip: fill My Profile (name/company/years) so signatures are complete.')+' <button class="btn ghost mini" data-action="nav" data-view="me">'+TX('去填资料','Fill profile')+'</button></div>':'';
  var h=banner+meTip+'<div class="grid g2">';
  h+='<div class="card"><div class="field"><label>'+TX('场景','Scene')+'</label><select id="sc_sel">'+keys.map(function(k){return '<option value="'+k+'">'+scTitle(k)+'</option>';}).join('')+'</select></div><div id="sc_fields"></div><button class="btn" data-action="genScene">'+TX('生成话术','Generate script')+'</button><div class="hint">'+TX('第一次填"我的资料"后，署名自动带入。','After filling My Profile once, signature auto-fills.')+'</div></div>';
- h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('英文（照发）','English (send as-is)')+'</h3><div style="margin:6px 0 10px"><label style="font-size:12px;color:var(--sub);margin-right:6px">'+TX('发送给','Send to')+'</label><select id="sc_pick" onchange="scPick(this.value)">'+_pickOpts+'</select>'+(!S._activeClient?'<button class="btn ghost mini" data-action="leadNew" style="margin-left:6px">＋ '+TX('加为新线索','Add as lead')+'</button>':'')+'</div><div class="out" id="sc_en">'+TX('选择场景并填变量后生成。','Pick a scene and fill vars.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="sc_en" style="margin:8px 6px 0 0">'+TX('复制英文','Copy EN')+'</button><button class="btn ghost mini" data-action="saveScene" style="margin-top:8px">'+TX('存到话术库','Save to library')+'</button><button class="btn ghost mini" data-action="nav" data-view="lib" style="margin-top:8px">'+TX('查看话术库 →','View library →')+'</button><button class="btn amber mini" data-action="sceneSend" data-ch="wa" style="margin:8px 6px 0 0">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost mini" data-action="sceneSend" data-ch="email" style="margin:8px 6px 0 0">'+TX('发邮件','Send Email')+'</button><h3 style="margin:14px 0 8px;font-size:15px">'+TX('中文（原理/禁忌）','Chinese (why/taboo)')+'</h3><div class="out zh" id="sc_zh"></div></div>';
+ h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('英文（照发）','English (send as-is)')+'</h3><div style="margin:6px 0 10px"><label style="font-size:12px;color:var(--sub);margin-right:6px">'+TX('发送给','Send to')+'</label><select id="sc_pick" onchange="scPick(this.value)">'+_pickOpts+'</select>'+(!S._activeClient?'<button class="btn ghost mini" data-action="leadNew" style="margin-left:6px">＋ '+TX('加为新线索','Add as lead')+'</button>':'')+'</div><div class="out" id="sc_en">'+TX('选择场景并填变量后生成。','Pick a scene and fill vars.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="sc_en" style="margin:8px 6px 0 0">'+TX('复制英文','Copy EN')+'</button><button class="btn ghost mini" data-action="saveScene" style="margin-top:8px">'+TX('存到话术库','Save to library')+'</button><button class="btn ghost mini" data-action="nav" data-view="lib" style="margin-top:8px">'+TX('查看话术库 →','View library →')+'</button><button class="btn ghost mini" data-action="nav" data-view="mails" style="margin-top:8px">'+TX('发送记录','Sent log')+'</button><button class="btn amber mini" data-action="sceneSend" data-ch="wa" style="margin:8px 6px 0 0">'+TX('发 WhatsApp','Send WA')+'</button><button class="btn ghost mini" data-action="sceneSend" data-ch="email" style="margin:8px 6px 0 0">'+TX('发邮件','Send Email')+'</button><h3 style="margin:14px 0 8px;font-size:15px">'+TX('中文（原理/禁忌）','Chinese (why/taboo)')+'</h3><div class="out zh" id="sc_zh"></div></div>';
  h+='</div>';
  return h;
 }
@@ -2564,7 +2567,7 @@ function renderNav(){
  NAV.forEach(function(n){
   if(S.hidden.indexOf(n.k)>=0) return;
   var lock=(n.k==='home');
-  var num=n.k==='lib'?(S.scripts.length?S.scripts.length:''):n.n;
+  var num=n.k==='lib'?(S.scripts.length?S.scripts.length:''):(n.k==='mails'?(S.mails.length?S.mails.length:''):n.n);
   var hot=(n.k==='lib'&&S.scripts.length>0)?' hot':'';
   h+='<button class="navitem '+(S.view===n.k?'on':'')+hot+'" data-action="nav" data-view="'+n.k+'">'+ICON[n.k]+'<span>'+TX(n.t,n.te)+'</span>'+(num?'<span class="num">'+num+'</span>':'')+(lock?'':'<span class="x" data-action="navHide" data-view="'+n.k+'" title="'+TX('隐藏此模块','Hide module')+'">×</span>')+'</button>';
  });
@@ -2587,6 +2590,7 @@ function renderView(){
  else if(v==='repeat')h=viewRepeat();
  else if(v==='review')h=viewReview();
  else if(v==='lib')h=viewScripts();
+ else if(v==='mails')h=viewMails();
  else if(v==='coach')h=viewCoach();
  else if(v==='me')h=viewMe();
  else if(v==='backup')h=viewBackup();
@@ -2681,10 +2685,10 @@ document.addEventListener('click',function(e){
  else if(a==='lead360Save'){lead360Save(el.dataset.id);}
  else if(a==='leadRestore'){leadRestore(el.dataset.id);}
  else if(a==='trashEmpty'){trashEmpty();}
- else if(a==='emGmail'){var g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(el.dataset.to)+'&su='+el.dataset.su+'&body='+el.dataset.bd;if(openUrl(g)){toast(TX('已打开 Gmail 撰写页，按发送即可','Gmail compose opened, tap send'));}else{copySilent('To: '+(el.dataset.to||'')+'\n\n'+dU(el.dataset.bd));toast(TX('Gmail 未能自动打开（可能被拦截），邮件已复制，粘贴到任意邮箱即可','Gmail blocked; email copied to clipboard'));}logSend(el.dataset.id,'email',dU(el.dataset.bd));}
- else if(a==='emOutlook'){var _to2=el.dataset.to||'';var _su2=dU(el.dataset.su||'');var _bd2=dU(el.dataset.bd||'');var _full2='To: '+_to2+'\nSubject: '+_su2+'\n\n'+_bd2;copySilent(_full2);var ou='https://outlook.live.com/mail/0/compose?to='+encodeURIComponent(_to2)+'&subject='+encodeURIComponent(_su2)+'&body='+encodeURIComponent(_bd2);if(openUrl(ou)){toast(TX('已打开 Outlook 网页版撰写页；邮件全文已复制备用，若未自动填入请粘贴。','Outlook web compose opened; full email copied, paste if not auto-filled.'));}else{toast(TX('Outlook 网页版未能自动打开（浏览器拦截），邮件全文已复制，请打开 outlook.live.com 并粘贴发送。','Could not auto-open Outlook; full email copied, open outlook.live.com and paste.'));}logSend(el.dataset.id,'email',_bd2);}
- else if(a==='emClient'){var mt=el.dataset.mailto||'';var _to=dU(mt.replace(/^mailto:/,'').split('?')[0]);var _su=dU((/[?&]subject=([^&]*)/.exec(mt)||[])[1]||'');var _bd=dU((/[?&]body=([^&]*)/.exec(mt)||[])[1]||'');var _full='To: '+_to+'\nSubject: '+_su+'\n\n'+_bd;copySilent(_full);var _g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(_to)+'&su='+encodeURIComponent(_su)+'&body='+encodeURIComponent(_bd);try{openMailto(mt);}catch(e){}toast(TX('正在尝试调用本机邮件客户端…','Trying to open your mail app…'));var _la=false;var _bf=function(){_la=true;};if(typeof window!=='undefined'){try{window.addEventListener('blur',_bf,{once:true});}catch(e){}}setTimeout(function(){try{if(typeof window!=='undefined'){window.removeEventListener('blur',_bf);}}catch(e){}if(!_la&&(typeof document==='undefined'||document.hasFocus())){if(openUrl(_g)){toast(TX('本机未设置默认邮件程序，已自动为你打开 Gmail 网页撰写窗口（收件人/主题/正文已填好），登录点发送即可；邮件全文也已复制备用。','No default mail app — opened Gmail web compose (pre-filled). Full email copied too.'));}else{toast(TX('本机未设置默认邮件程序且网页窗口被拦截；邮件全文已复制，请打开 mail.google.com 粘贴发送。','No default mail app and web blocked; full email copied, open Gmail to paste.'));}}},1000);logSend(el.dataset.id,'email',_bd);}
- else if(a==='emCopy'){var full='To: '+(el.dataset.to||'')+'\nSubject: '+dU(el.dataset.su)+'\n\n'+dU(el.dataset.bd);copyText(full);logSend(el.dataset.id,'email',dU(el.dataset.bd));}
+ else if(a==='emGmail'){var g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(el.dataset.to)+'&su='+el.dataset.su+'&body='+el.dataset.bd;if(openUrl(g)){toast(TX('已打开 Gmail 撰写页，按发送即可','Gmail compose opened, tap send'));}else{copySilent('To: '+(el.dataset.to||'')+'\n\n'+dU(el.dataset.bd));toast(TX('Gmail 未能自动打开（可能被拦截），邮件已复制，粘贴到任意邮箱即可','Gmail blocked; email copied to clipboard'));}recordMail(el.dataset.id,el.dataset.to,dU(el.dataset.su),dU(el.dataset.bd),'email');logSend(el.dataset.id,'email',dU(el.dataset.bd));}
+ else if(a==='emOutlook'){var _to2=el.dataset.to||'';var _su2=dU(el.dataset.su||'');var _bd2=dU(el.dataset.bd||'');var _full2='To: '+_to2+'\nSubject: '+_su2+'\n\n'+_bd2;copySilent(_full2);var ou='https://outlook.live.com/mail/0/compose?to='+encodeURIComponent(_to2)+'&subject='+encodeURIComponent(_su2)+'&body='+encodeURIComponent(_bd2);if(openUrl(ou)){toast(TX('已打开 Outlook 网页版撰写页；邮件全文已复制备用，若未自动填入请粘贴。','Outlook web compose opened; full email copied, paste if not auto-filled.'));}else{toast(TX('Outlook 网页版未能自动打开（浏览器拦截），邮件全文已复制，请打开 outlook.live.com 并粘贴发送。','Could not auto-open Outlook; full email copied, open outlook.live.com and paste.'));}recordMail(el.dataset.id,_to2,_su2,_bd2,'email');logSend(el.dataset.id,'email',_bd2);}
+ else if(a==='emClient'){var mt=el.dataset.mailto||'';var _to=dU(mt.replace(/^mailto:/,'').split('?')[0]);var _su=dU((/[?&]subject=([^&]*)/.exec(mt)||[])[1]||'');var _bd=dU((/[?&]body=([^&]*)/.exec(mt)||[])[1]||'');var _full='To: '+_to+'\nSubject: '+_su+'\n\n'+_bd;copySilent(_full);var _g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(_to)+'&su='+encodeURIComponent(_su)+'&body='+encodeURIComponent(_bd);try{openMailto(mt);}catch(e){}toast(TX('正在尝试调用本机邮件客户端…','Trying to open your mail app…'));var _la=false;var _bf=function(){_la=true;};if(typeof window!=='undefined'){try{window.addEventListener('blur',_bf,{once:true});}catch(e){}}setTimeout(function(){try{if(typeof window!=='undefined'){window.removeEventListener('blur',_bf);}}catch(e){}if(!_la&&(typeof document==='undefined'||document.hasFocus())){if(openUrl(_g)){toast(TX('本机未设置默认邮件程序，已自动为你打开 Gmail 网页撰写窗口（收件人/主题/正文已填好），登录点发送即可；邮件全文也已复制备用。','No default mail app — opened Gmail web compose (pre-filled). Full email copied too.'));}else{toast(TX('本机未设置默认邮件程序且网页窗口被拦截；邮件全文已复制，请打开 mail.google.com 粘贴发送。','No default mail app and web blocked; full email copied, open Gmail to paste.'));}}},1000);recordMail(el.dataset.id,_to,_su,_bd,'email');logSend(el.dataset.id,'email',_bd);}
+ else if(a==='emCopy'){var full='To: '+(el.dataset.to||'')+'\nSubject: '+dU(el.dataset.su)+'\n\n'+dU(el.dataset.bd);copyText(full);recordMail(el.dataset.id,el.dataset.to,dU(el.dataset.su),dU(el.dataset.bd),'email');logSend(el.dataset.id,'email',dU(el.dataset.bd));}
  else if(a==='genCadence'){genCadence();}
  else if(a==='quickCadence'){
   if(!(S.leads&&S.leads.length)){toast(TX('还没有客户，先去「找客户」加一个','No clients yet — add one in Find Leads'));S.view='find';save('view',S.view);S._activeClient='';refreshAll();return;}
@@ -2698,7 +2702,7 @@ document.addEventListener('click',function(e){
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
- else if(a==='saveScene'){saveScene();}
+ else if(a==='saveScene'){saveScene();}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}
  else if(a==='taskDone'){taskDone(el.dataset.id);}
  else if(a==='todayDel'){todayDel(el.dataset.type, el.dataset.id);}
  else if(a==='todayEdit'){todayEdit(el.dataset.type, el.dataset.id);}
@@ -2886,6 +2890,58 @@ function addLead(){
 function leadAdv(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=PIPE.indexOf(l.stage);if(i<PIPE.length-1)l.stage=PIPE[i+1];l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
 function leadTouch(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var note=prompt(TX('记录本次跟进（如：发了绣金样品质检）：','Log this follow-up (e.g. sent embroidered sample QC):'),l.note||'');if(note!==null){l.logs=l.logs||[];l.logs.unshift({date:todayStr(),text:note});l.note=note;l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();toast(TX('已记录','Logged'));}}
 function logSend(id,channel,text){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;l.logs=l.logs||[];var sn=(text||'').replace(/\s+/g,' ').trim().slice(0,40);var ch=channel==='wa'?TX('WhatsApp','WhatsApp'):TX('邮件','Email');l.logs.unshift({date:todayStr(),text:ch+'：'+(sn||TX('(已发起联系)','contact initiated'))});l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
+function recordMail(leadId,to,subject,body,channel){try{S.mails=S.mails||[];var lead=(S.leads||[]).find(function(x){return x.id===leadId;});S.mails.unshift({id:uid(),leadId:leadId||'',toName:(lead?lead.name:''),to:to||'',subject:subject||'',body:body||'',channel:channel||'email',date:todayStr()});save('mails',S.mails);}catch(e){}}
+function viewMails(){
+ var h=shead('mails',TX('所有发出去的邮件 / WhatsApp 都会留痕在这里。点「重发」可一键再次调取原内容发送——适合跟进、催单、节期问候的重复触达。','Every sent email / WhatsApp is logged here. Hit “Re-send” to pull the original content and send again — great for follow-ups, balance chasing and festival greetings.'));
+ var list=S.mails||[];
+ if(!list.length){
+  h+='<div class="card" style="text-align:center;color:var(--sub);padding:30px 16px">'+TX('还没有发送记录。去「触达建联 / 建立信任 / 报价成交 / 交付履约 / 复购转介」任一板块生成话术后点「发邮件 / 发 WhatsApp」即可留痕。','No records yet. Generate a script in any board and hit “Send” to log it here.')+'</div>';
+  return h;
+ }
+ h+='<div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn ghost mini" data-action="mailClear">'+TX('清空记录','Clear all')+'</button></div>';
+ h+='<div id="mailWrap">'+mailListHTML()+'</div>';
+ return h;
+}
+function mailListHTML(){
+ var list=S.mails||[],html='';
+ list.forEach(function(m){
+  var sub=m.subject||TX('（无主题）','（no subject）');
+  var ch=m.channel==='wa'?TX('WhatsApp','WhatsApp'):TX('邮件','Email');
+  var sn=(m.body||'').replace(/\s+/g,' ').trim().slice(0,80);
+  html+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:14px">'+esc(sub)+'</b><span class="tag">'+esc(ch)+'</span></div>';
+  html+='<div class="muted" style="font-size:12.5px;margin-bottom:4px">'+TX('收件','To')+': '+esc(m.toName||'')+' &lt;'+esc(m.to||'')+'&gt; · '+esc(m.date||'')+'</div>';
+  if(sn)html+='<div class="out" style="margin-bottom:8px">'+esc(sn)+(sn.length>=80?'…':'')+'</div>';
+  html+='<div style="margin-top:6px"><button class="btn amber mini" data-action="resendMail" data-id="'+m.id+'">'+TX('重发','Re-send')+'</button><button class="btn ghost mini" data-action="mailDel" data-id="'+m.id+'" style="margin-left:6px;color:var(--red)">'+TX('删除','Delete')+'</button></div>';
+  html+='</div>';
+ });
+ return html;
+}
+function mailList360(id){
+ var list=(S.mails||[]).filter(function(m){return m.leadId===id;});
+ if(!list.length)return '<div class="muted">'+TX('暂无发送给该客户的邮件记录','No emails sent to this client yet')+'</div>';
+ var html='';
+ list.forEach(function(m){
+  var sub=m.subject||TX('（无主题）','（no subject）');
+  var sn=(m.body||'').replace(/\s+/g,' ').trim().slice(0,60);
+  html+='<div style="padding:6px 0;border-top:1px dashed var(--line);font-size:13px"><span class="tag b">'+esc(m.date||'')+'</span> '+esc(sub)+(sn?' <span class="muted">'+esc(sn)+'…</span>':'')+' <button class="btn ghost mini" data-action="resendMail" data-id="'+m.id+'" style="margin-left:6px">'+TX('重发','Re')+'</button></div>';
+ });
+ return html;
+}
+function resendMail(id){
+ var m=(S.mails||[]).find(function(x){return x.id===id;});if(!m){toast(TX('记录不存在','Record missing'));return;}
+ var l=S.leads.find(function(x){return x.id===m.leadId;});
+ if(!l){l={name:m.toName||'',email:m.to||''};}
+ openEmailModal(l,m.subject||'',m.body||'');
+}
+function mailDel(id){
+ var arr=S.mails||[];var i=arr.findIndex(function(x){return x.id===id;});
+ if(i>=0){arr.splice(i,1);save('mails',arr);}
+ refreshAll();toast(TX('已删除','Deleted'));
+}
+function mailClear(){
+ if(!(typeof confirm==='function'?confirm(TX('清空全部发送记录？此操作不可恢复','Permanently clear all sent records?')):true)){return;}
+ S.mails=[];save('mails',S.mails);refreshAll();toast(TX('已清空','Cleared'));
+}
 function leadDel(id){snapLeads();if(!confirm(TX('确定删除该线索？可进回收站恢复','Delete this lead? Goes to Trash, recoverable'))){return;}var l=S.leads.find(function(x){return x.id===id;});if(!l)return;l.delAt=todayStr();S.trash=S.trash||[];S.trash.unshift(l);S.leads=S.leads.filter(function(x){return x.id!==id;});save('trash',S.trash);save('leads',S.leads);refreshAll();toast(TX('已移入回收站','Moved to Trash'));}
 function trashToggle(){S._trashShow=!S._trashShow;refreshAll();}
 function renderTrash(){var t=S.trash||[];if(!t.length)return '<div class="card muted" style="text-align:center">'+TX('回收站为空。','Trash is empty.')+'</div>';var h='<div class="card"><h3 style="margin:0 0 10px;font-size:15px">'+TX('回收站','Trash')+'（'+t.length+'）</h3>';t.forEach(function(l){h+='<div class="list-item"><div class="main"><div class="t"><b>'+esc(l.name)+'</b> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.delAt?' <span class="muted" style="font-size:12px">'+TX('删除于','Deleted')+' '+esc(l.delAt)+'</span>':'')+'</div></div><div class="ops"><button class="btn mini" data-action="leadRestore" data-id="'+l.id+'">'+TX('恢复','Restore')+'</button></div></div>';});h+='<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn danger ghost mini" data-action="trashEmpty">'+TX('清空回收站','Empty trash')+'</button></div></div>';return h;}
@@ -2925,7 +2981,7 @@ function leadWa(id){var l=S.leads.find(function(x){return x.id===id;});if(!l){re
 function leadEmail(id){var l=S.leads.find(function(x){return x.id===id;});if(!l||!l.email){toast(TX('未填写邮箱，无法发送邮件','No email filled, cannot send'));return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email)){toast(TX('邮箱格式不正确，无法发送邮件','Invalid email, cannot send'));return;}var prod=l.product||TX('prayer pillow','prayer pillow');var sc=SCENES.cold_email.gen({client:l.name,product:prod,country:l.market||l.country||'',edge:clientEdge(l)},S.me);var subject=prod+' for '+(l.market||l.country||'')+' buyers';openEmailModal(l,subject,sc.en);}
 function openEmailModal(l,subject,body){var to=l.email;var su=encodeURIComponent(subject),bd=encodeURIComponent(body);var mailto='mailto:'+to+'?subject='+su+'&body='+bd;var html='<div style="font-weight:600;margin-bottom:6px">'+TX('发邮件给','Send email to')+' '+esc(l.name)+'</div>'+'<div class="row" style="margin-bottom:8px"><span class="tag">'+TX('收件人','To')+'</span><span>'+esc(to)+'</span></div>'+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('主题','Subject')+'</div>'+'<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;white-space:pre-wrap;font-size:14px">'+esc(subject)+'</div>'+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('正文','Body')+'</div>'+'<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap;max-height:240px;overflow:auto;font-size:14px;line-height:1.55">'+esc(body)+'</div>'+'<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:14px">'+'<button class="btn amber" data-action="emGmail" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('用 Gmail 网页发送','Send via Gmail')+'</button>'+'<button class="btn" data-action="emOutlook" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('用 Outlook 网页发送','Send via Outlook')+'</button>'+'<button class="btn" data-action="emClient" data-mailto="'+esc(mailto)+'" data-id="'+l.id+'">'+TX('用本机邮件客户端','Desktop mail app')+'</button>'+'<button class="btn ghost" data-action="emCopy" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('复制全文','Copy all')+'</button>'+'<button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button>'+'</div>'+'<div class="muted" style="margin-top:8px">'+TX('没有本机邮件客户端？「Gmail 网页」或「Outlook 网页」都能在浏览器直接发；或「复制全文」粘贴到任意邮箱。','No desktop mail app? Use Gmail or Outlook web in browser, or copy all to paste anywhere.')+'</div>';$('modalBody').innerHTML='<h3>'+TX('邮件','Email')+'：'+esc(l.name)+'</h3>'+html;$('modal').classList.add('show');}
 function clientEdge(l){if(!l)return '';var p=[];if(l.product)p.push(l.product);if(l.amount)p.push('$'+l.amount);if(l.note)p.push(l.note);if(!p.length)p.push(TX('稳定斋月库存','stable Ramadan stock'));return p.join(' · ');}
-function sendTo(lead,text,channel){if(!lead){toast(TX('请先选择要发送的客户','Select a client first'));return;}text=(text||'').trim();if(!text){toast(TX('没有可发送的内容','Nothing to send'));return;}var hasWa=lead.wa&&/^\+?\d[\d\s\-]{5,}$/.test(lead.wa);var hasEmail=lead.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email);if(channel!=='email'&&hasWa){var num=lead.wa.replace(/[^\d+]/g,'');if(num.charAt(0)!=='+')num='+'+num;var wu='https://wa.me/'+num+'?text='+encodeURIComponent(text);var w=((typeof window!=='undefined')&&window.open)?window.open(wu,'_blank'):null;if(!w){copyText(wu);toast(TX('已复制 WhatsApp 链接，粘贴到浏览器或微信打开','WhatsApp link copied, paste into browser'));}else{toast(TX('已拉起 WhatsApp，按发送即可','WhatsApp opened, tap send'));}logSend(lead.id,'wa',text);}else if(hasEmail){var sj=TX('关于','Re:')+' '+(lead.product||S.me.product||'');var su=encodeURIComponent(sj),bd=encodeURIComponent(text);var gu='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(lead.email)+'&su='+su+'&body='+bd;var _full='To: '+lead.email+'\nSubject: '+sj+'\n\n'+text;copySilent(_full);if(openUrl(gu)){toast(TX('已为你打开 Gmail 撰写窗口（内容已填好），登录后点发送即可；邮件全文也已复制备用。','Gmail compose opened with content pre-filled. Log in and click Send. Full email also copied.'));}else{toast(TX('Gmail 未能自动打开（浏览器拦截），邮件全文已复制，请打开 mail.google.com 并粘贴发送。','Could not auto-open Gmail; full email copied, open Gmail and paste to send.'));}logSend(lead.id,'email',text);}else{toast(TX('该客户既无有效 WhatsApp 也无邮箱，无法发送','This client has no valid WhatsApp or email'));}}
+function sendTo(lead,text,channel){if(!lead){toast(TX('请先选择要发送的客户','Select a client first'));return;}text=(text||'').trim();if(!text){toast(TX('没有可发送的内容','Nothing to send'));return;}var hasWa=lead.wa&&/^\+?\d[\d\s\-]{5,}$/.test(lead.wa);var hasEmail=lead.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email);if(channel!=='email'&&hasWa){var num=lead.wa.replace(/[^\d+]/g,'');if(num.charAt(0)!=='+')num='+'+num;var wu='https://wa.me/'+num+'?text='+encodeURIComponent(text);var w=((typeof window!=='undefined')&&window.open)?window.open(wu,'_blank'):null;if(!w){copyText(wu);toast(TX('已复制 WhatsApp 链接，粘贴到浏览器或微信打开','WhatsApp link copied, paste into browser'));}else{toast(TX('已拉起 WhatsApp，按发送即可','WhatsApp opened, tap send'));}logSend(lead.id,'wa',text);}else if(hasEmail){var _subj='',_body=text;var _sm=/^\s*Subject:\s*(.*?)\n/i.exec(text);if(_sm){_subj=_sm[1].trim();_body=text.slice(_sm[0].length).replace(/^\s+/,'');}else{_subj=TX('关于','Re:')+' '+(lead.product||S.me.product||'');}openEmailModal(lead,_subj,_body);}else{toast(TX('该客户既无有效 WhatsApp 也无邮箱，无法发送','This client has no valid WhatsApp or email'));}}
 function taskDone(id){var t=S.tasks.find(function(x){return x.id===id;});if(!t)return;t.done=true;save('tasks',S.tasks);refreshAll();toast(TX('已完成','Done'));}
 function todayDel(type,id){
  if(type==='task'){
@@ -3159,6 +3215,7 @@ function lead360(id){
   +'</div>'
   +'<h4 style="margin:12px 0 4px">'+TX('跟进时间线','Follow-up timeline')+'</h4>'+logs
   +'<h4 style="margin:12px 0 4px">'+TX('关联交易','Linked deals')+'</h4>'+dlist
+  +'<h4 style="margin:12px 0 4px">'+TX('邮件发送记录','Sent emails')+'</h4>'+mailList360(id)
   +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+'<button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="lead360Save" data-id="'+id+'">'+TX('保存修改','Save')+'</button></div></div>';
  $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3>'+body;
  $('modal').classList.add('show');
