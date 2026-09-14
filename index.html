@@ -354,6 +354,8 @@ var S={
  _recShow:false,_chkShow:false,
  _activeClient:load('_activeClient',''),
  _cadText:load('_cadText',''),
+ docDefaults:load('docDefaults',{}),
+ _defShow:false,
  hidden:load('hidden',[]),
  comp:load('comp',[]),
  _cpKw:load('_cpKw',''),
@@ -427,6 +429,8 @@ function buildState(){
   _recShow:false,_chkShow:false,
   _activeClient:load('_activeClient',''),
   _cadText:load('_cadText',''),
+  docDefaults:load('docDefaults',{}),
+  _defShow:false,
   hidden:load('hidden',[]),
   comp:load('comp',[]),
   _cpKw:load('_cpKw',''),
@@ -2719,6 +2723,8 @@ document.addEventListener('click',function(e){
  else if(a==='dealSel'){dealSel();}
  else if(a==='docRec'){docRec();}
  else if(a==='docCheck'){docChk();}
+ else if(a==='docDef'){docDef();}
+ else if(a==='docDefApply'){docDefApply(el.dataset.pid);}
  else if(a==='coachNext'){coachNext();}
  else if(a==='coachGen'){coachGen();}
  else if(a==='coachSave'){coachSave();}
@@ -2994,29 +3000,33 @@ function viewDocs(){
  var d=activeDeal();
  var h=shead('docs',TX('一笔出口要用到的全套单证（合同报价 / 货运 / 清关 / 保险检验 / 结汇 / 通知 6 大类），按交易串起来，可直接生成、打印、导出 PDF。','The full export document set (contracts, shipping, clearance, insurance, negotiation, advice) linked to a deal — generate, print, export PDF.'));
  if(!d){
-  h+='<div class="card muted" style="text-align:center;padding:18px">'+TX('还没有交易。先点「新建交易」建立一笔出口（可关联客户 + 填一次公共信息，15 张单全部继承）。','No deal yet. Create one to link a customer and fill shared info once for all 15 docs.')+'</div>';
+  h+='<div class="card muted" style="text-align:center;padding:18px">'+TX('还没有交易。先点「新建交易」建立一笔出口（可关联客户 + 填一次公共信息，27 张单全部继承）。','No deal yet. Create one to link a customer and fill shared info once for all 27 docs.')+'</div>';
   h+='<button class="btn" data-action="dealNew">'+TX('新建交易','New deal')+'</button>';
   return h;
  }
  var done=DOC_DEF.filter(function(x){return d.docs[x.id]==='done';}).length;
  var total=DOC_DEF.length;var pct=total?Math.round(done/total*100):0;
  var linked=(S.leads&&d.leadId)?S.leads.find(function(x){return x.id===d.leadId;}):null;
- h+='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>'+TX('备单进度','Doc readiness')+'</b><span class="tag score">'+done+' / '+total+'</span></div><div style="height:8px;background:var(--line);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:6px"></div></div><div class="hint" style="margin-top:8px">'+TX('核心 10 项每票必出；后 5 项按条件（木包装 / 信用证 / 目的国要求）出具。','Core 10 ship every time; last 5 only when required.')+'</div></div>';
+ h+='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>'+TX('备单进度','Doc readiness')+'</b><span class="tag score">'+done+' / '+total+'</span></div><div style="height:8px;background:var(--line);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:6px"></div></div><div class="hint" style="margin-top:8px">'+TX('核心类 7 张每票必出（发票 / 箱单 / 重量单 / 提单 / 空运单 / 保险单 / 产地证）；其余按交易条件（木包装 / 信用证 / 目的国 / 运输方式）出具。共 27 张，分 6 类。','Core 7 every shipment (Invoice/Packing/Weight/BL/AWB/Insurance/C.O.); rest by condition (wood/LC/dest/transport). 27 docs in 6 groups.')+'</div></div>';
  h+='<div class="card" style="margin-bottom:14px"><div class="grid g3"><select id="dealSel">'+(S.deals||[]).map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+(x.cnee||TX('未命名交易','Untitled'))+'</option>';}).join('')+'</select><button class="btn ghost mini" data-action="dealNew">'+TX('新建交易','New')+'</button><button class="btn ghost mini" data-action="dealEdit">'+TX('编辑交易','Edit')+'</button></div>';
  h+='<div class="muted" style="font-size:12.5px;margin-top:6px">'+(linked?TX('已关联客户','Linked customer')+'：'+esc(linked.name)+'（'+esc(linked.market||'')+'）':'<span style="color:#b45309">'+TX('未关联客户（可在「编辑交易」里关联）','Not linked to a customer (use Edit deal)')+'</span>')+'</div>';
- h+='<div class="row" style="margin-top:10px"><button class="btn mini" data-action="docRec">'+TX('AI 智能选单','AI pick docs')+'</button><button class="btn mini" data-action="docCheck">'+TX('AI 一致性校验','AI consistency')+'</button></div>';
+ h+='<div class="row" style="margin-top:10px"><button class="btn mini" data-action="docRec">'+TX('AI 智能选单','AI pick docs')+'</button><button class="btn mini" data-action="docCheck">'+TX('AI 一致性校验','AI consistency')+'</button><button class="btn mini ghost" data-action="docDef">'+TX('单证预设','Doc presets')+'</button></div>';
  if(S._recShow)h+=docRecPanel(d);
  if(S._chkShow)h+=docChkPanel(d);
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，15 单继承）','Deal shared info (fill once, inherited by all 15)')+'</h3><div class="grid g3">';
+ if(S._defShow)h+=docDefPanel();
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，27 单继承）','Deal shared info (fill once, inherited by all 27)')+'</h3><div class="grid g3">';
  [['cnee',TX('买方/Consignee','Buyer')],['no',TX('发票号/No.','Invoice No.')],['date',TX('日期','Date')],['amt',TX('金额 USD','Amount')],['qty',TX('数量 pcs','Qty')],['pkg',TX('件数 CTNS','Packages')],['gross',TX('毛重 KGS','G.W.')],['net',TX('净重 KGS','N.W.')],['vessel',TX('船名航次','Vessel')],['port',TX('目的港','Port')],['eta',TX('到港 ETA','ETA')],['incoterms',TX('贸易术语','Incoterms')]].forEach(function(p){h+='<label style="font-size:12px">'+p[1]+'<input id="deal_'+p[0]+'" value="'+esc(d[p[0]]||'')+'"></label>';});
  h+='</div><div class="grid g2" style="margin-top:8px"><label style="font-size:12px">'+TX('目的国','Dest country')+'<input id="deal_destCountry" value="'+esc(d.destCountry||'')+'" placeholder="如 UAE / Egypt / 加纳"></label><label style="font-size:12px">'+TX('运输方式','Transport')+'<select id="deal_transport"><option value="sea"'+(d.transport!=='air'?' selected':'')+'>'+TX('海运','Sea')+'</option><option value="air"'+(d.transport==='air'?' selected':'')+'>'+TX('空运','Air')+'</option></select></label></div>';
  h+='<div class="row" style="margin-top:8px"><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_woodPkg"'+(d.woodPkg?' checked':'')+'>'+TX('木包装（需熏蒸证）','Wood packing (fumigation)')+'</label><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_lc"'+(d.lc?' checked':'')+'>'+TX('信用证 L/C（需受益人/船公司证明）','L/C (beneficiary cert)')+'</label></div>';
  h+='<button class="btn mini" data-action="dealSave" style="margin-top:8px">'+TX('保存交易信息','Save deal')+'</button></div>';
  var rec=docRecMap(d);
- var groups=[{cat:'core',t:TX('核心必备（每票都出）','Core — every shipment')},{cat:'cond',t:TX('按条件出具','Conditional')}];
- groups.forEach(function(g){
-  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+g.t+'</h3>';
-  DOC_DEF.filter(function(x){return x.cat===g.cat;}).forEach(function(x){
+ var catOrder=['contract','core','clearance','inspection','negotiation','advice'];
+ var catLabel={contract:TX('一、合同报价类（成交前后用）','1. Contracts & Quotes'),core:TX('二、核心货运类（每票必出）','2. Core shipping — every shipment'),clearance:TX('三、清关类','3. Customs clearance'),inspection:TX('四、保险与检验类','4. Insurance & Inspection'),negotiation:TX('五、结汇议付类','5. Negotiation & payment'),advice:TX('六、通知与其他类','6. Advice & others')};
+ catOrder.forEach(function(cat){
+  var list=DOC_DEF.filter(function(x){return x.cat===cat;});if(!list.length)return;
+  var reqCnt=list.filter(function(x){return rec[x.id]==='req';}).length;
+  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+catLabel[cat]+(reqCnt?' <span class="muted" style="font-size:12px;font-weight:normal">（必出 '+reqCnt+'）</span>':'')+'</h3>';
+  list.forEach(function(x){
    var st=docStatus(x.id);
    h+='<div class="list-item" style="padding:8px 0;border-top:1px dashed var(--line)"><div class="main"><div class="t">'+esc(x.zh)+' <span class="muted" style="font-size:12px">'+esc(x.en)+'</span> <span class="tag '+(st==='done'?'a':'b')+'">'+TX(st==='done'?'已出':'待办',st==='done'?'done':'todo')+'</span>'+(rec[x.id]==='req'?' <span class="tag a">'+TX('必出','Req')+'</span>':'')+(rec[x.id]==='cond'?' <span class="tag b">'+TX('建议','Sug')+'</span>':'')+'</div><div class="s">'+TX('出具方','Issuer')+'：'+esc(x.issuer)+' · '+TX('时点','When')+'：'+esc(x.when)+'</div></div>';
    h+='<div class="ops"><button class="btn '+(st==='done'?'ghost':'green')+' mini" data-action="docToggle" data-id="'+x.id+'">'+(st==='done'?TX('撤销','Undo'):TX('标记已出','Mark done'))+'</button><button class="btn ghost mini" data-action="docOpen" data-id="'+x.id+'">'+TX('填模板','Fill')+'</button></div></div>';
@@ -3040,12 +3050,18 @@ function viewDocs(){
 function docStatus(id){var d=activeDeal();return (d&&d.docs&&d.docs[id])?d.docs[id]:'todo';}
 function docToggle(id){var d=activeDeal();if(!d)return;d.docs[id]=(d.docs[id]==='done'?'todo':'done');save('deals',S.deals);refreshAll();toast(d.docs[id]==='done'?TX('已标记已出','Marked done'):TX('已撤销','Undone'));}
 function docOpen(id){S._docOpen=id;S._docVals={};S._docTpl=null;refreshAll();}
-function docGen(id){
+ function docGen(id){
  var dd=DOC_DEF.find(function(x){return x.id===id;});if(!dd)return;
+ var d=activeDeal();
  var v={company:S.me.company||'（你的公司）',name:S.me.name||'（你的名字）'};
  S._docVals={};var missing=[];
  dd.fields.forEach(function(f){var val=$('doc_'+f).value.trim();v[f]=val;S._docVals[f]=val;if(!val)missing.push(DOC_FIELDS[f]?DOC_FIELDS[f].l:f);});
- var out=dd.tpl;Object.keys(v).forEach(function(k){out=out.split('{'+k+'}').join(v[k]);});
+ var out=dd.tpl;
+ // 完整替换映射：声明的字段 + 交易共享字段 + 公司/署名，避免漏填字段出现 undefined
+ var sm={company:v.company,name:v.name};
+ Object.keys(v).forEach(function(k){sm[k]=v[k];});
+ if(typeof SHARED!=='undefined')SHARED.forEach(function(f){sm[f]=(d&&d[f]!=null&&d[f]!=='')?d[f]:(sm[f]!=null?sm[f]:'');});
+ out=out.replace(/\{(\w+)\}/g,function(m,k){return (sm[k]!=null&&sm[k]!=='')?sm[k]:'';});
  S._docTpl=out;refreshAll();
  if(missing.length)toast(TX('已生成，以下变量未填：','Generated, unfilled: ')+missing.join('、'));
  else toast(TX('单证已生成，可复制','Draft ready, copy it'));
@@ -3183,6 +3199,38 @@ function docChkPanel(d){
  else h+=is.map(function(s){return '<div style="padding:4px 0;color:#b45309;font-size:13px">'+TX('注意：','Note: ')+s+'</div>';}).join('');
  h+='<div class="muted" style="font-size:12px;margin-top:6px">'+TX('提示：保险金额建议为发票110%；提单数量应与发票一致——这些单证共用同一笔交易数据，天然一致。','Tip: insurance ≈110% of invoice; BL qty should match invoice — all docs share this deal, so they stay consistent.')+'</div></div>';
  return h;
+}
+var DOC_PRESETS=[
+ {id:'sea',zh:'标准海运 (CIF/FOB)',en:'Standard Sea',set:{transport:'sea',woodPkg:false,lc:false,destCountry:''},docs:['invoice','packing','weight_note','bl','insurance','coo','shipping_advice','customs_decl','booking_note','inspection']},
+ {id:'air',zh:'空运小包',en:'Air Parcel',set:{transport:'air',woodPkg:false,lc:false,destCountry:''},docs:['invoice','packing','weight_note','awb','insurance','coo','shipping_advice','booking_note','inspection']},
+ {id:'lc',zh:'信用证 L/C 交易',en:'L/C Payment',set:{transport:'sea',lc:true,woodPkg:false,destCountry:''},docs:['invoice','packing','weight_note','bl','insurance','coo','draft','beneficiary','shipping_co','shipping_advice','customs_decl','booking_note']},
+ {id:'wood',zh:'木包装 (需熏蒸)',en:'Wood Packing',set:{transport:'sea',woodPkg:true,lc:false,destCountry:''},docs:['invoice','packing','weight_note','bl','insurance','coo','fumigation','shipping_advice','customs_decl','booking_note']},
+ {id:'me',zh:'中东出口 (领事发票)',en:'Middle East',set:{transport:'sea',destCountry:'UAE',woodPkg:false,lc:false},docs:['invoice','packing','weight_note','bl','insurance','coo','consular','shipping_advice','customs_decl','booking_note','inspection']},
+ {id:'full',zh:'全套保守 (27张全勾)',en:'Full Conservative',set:{},docs:[]}
+];
+function docDef(){S._defShow=!S._defShow;S._recShow=false;S._chkShow=false;refreshAll();}
+function docDefPanel(){
+ var h='<div class="card" style="margin:10px 0;background:#f5f3ff"><h4 style="margin:0 0 6px">'+TX('单证场景预设','Doc scenario presets')+'</h4>';
+ h+='<div class="muted" style="font-size:12.5px;margin-bottom:8px">'+TX('选一个常见出口场景，一键设置交易条件并预勾对应单证；之后逐项核对实际出单情况，未出的取消勾选即可。','Pick a common export scenario to set conditions and pre-check its docs; then verify against what you actually issue.')+'</div>';
+ h+='<div class="row" style="flex-wrap:wrap;gap:8px">';
+ DOC_PRESETS.forEach(function(p){h+='<button class="btn ghost mini" data-action="docDefApply" data-pid="'+p.id+'">'+esc(p.zh)+'</button>';});
+ h+='</div></div>';
+ return h;
+}
+function docDefApply(pid){
+ var d=activeDeal();if(!d)return;
+ var p=DOC_PRESETS.find(function(x){return x.id===pid;});if(!p)return;
+ if(p.set.transport)d.transport=p.set.transport;
+ if(typeof p.set.woodPkg==='boolean')d.woodPkg=p.set.woodPkg;
+ if(typeof p.set.lc==='boolean')d.lc=p.set.lc;
+ if('destCountry'in p.set)d.destCountry=p.set.destCountry;
+ DOC_DEF.forEach(function(x){d.docs[x.id]='todo';});
+ var ids=(pid==='full')?DOC_DEF.map(function(x){return x.id;}):p.docs;
+ ids.forEach(function(id){if(d.docs[id]!==undefined)d.docs[id]='done';});
+ save('deals',S.deals);
+ S._defShow=false;S._chkShow=false;S._recShow=false;
+ refreshAll();
+ toast(TX('已按【'+p.zh+'】套用：已设置交易条件并预勾所需单证，请逐项核对实际出单后取消未出的勾选','Applied preset: '+p.en+'. Review and uncheck docs not actually issued.'));
 }
 /* ============ 初始化 ============ */
 function init(){hotDailyCheck();hotStartTimer();refreshAll();}
