@@ -351,7 +351,7 @@ var S={
  docs:load('docs',null),
  deals:load('deals',null),
  _dealId:load('_dealId',''),
- _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false},_holFilter:{region:'',country:'',q:''},_festCtx:'',_trashShow:false,
+ _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,
  _custView:load('_custView','card'),
  _custSheet:load('_custSheet','cust'),
  _recShow:false,_chkShow:false,
@@ -427,7 +427,7 @@ function buildState(){
   docs:load('docs',null),
   deals:load('deals',null),
   _dealId:load('_dealId',''),
-  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false},_holFilter:{region:'',country:'',q:''},_festCtx:'',_trashShow:false,
+  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,
   _custView:load('_custView','card'),
   _custSheet:load('_custSheet','cust'),
   _recShow:false,_chkShow:false,
@@ -1606,7 +1606,7 @@ function renderLeads(){
 }
 /* ============ 客户汇总（AI 联动中枢） ============ */
 function docAvgCal(lines){if(!lines.length)return 0;var s=0,c=0;lines.forEach(function(x){if(x.docPct!==null){s+=x.docPct;c++;}});return c?Math.round(s/c):0;}
-function nextRamadan(){var tbl={'2025':'2025-03-01','2026':'2026-02-19','2027':'2027-02-08','2028':'2028-01-27','2029':'2029-01-15','2030':'2030-01-05','2031':'2031-12-25','2032':'2032-12-13'};var t=todayStr();for(var y=2025;y<=2032;y++){if(tbl[String(y)]&&tbl[String(y)]>=t)return tbl[String(y)];}return '2027-02-08';}
+/* nextRamadan 已改为按回历历法自动推算（见全球节假日日历引擎），支持任意年份 */
 function custInsight(){
  var leads=S.leads||[];
  var total=leads.length;
@@ -2090,101 +2090,153 @@ function viewDeal(){var h=shead('deal',TX('报价PI + 四大异议处理。先�
  h+='</div>';
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 6px;font-size:15px">'+TX('需要正式报价单 / PI？','Need a formal Quotation / PI?')+'</h3><p class="muted" style="margin:0 0 8px">'+TX('上面生成的是报价话术；要带抬头、品名、单价、金额、贸易术语的正式单据，去「外贸单证」一键生成可打印 PDF。','The above is quote copy; for a formal doc with letterhead, items, amount & Incoterms, generate a printable PDF in Docs.')+'</p><button class="btn ghost" data-action="nav" data-view="docs">'+TX('去外贸单证生成报价单 →','Go to Docs →')+'</button></div>';
  return h;}
-/* ============ 全球节假日日历 2027（主要外贸市场） ============ */
-var REGIONS=['中东','东南亚','南亚','欧美','非洲','南美','东亚'];
-var HOLIDAYS_2027={
- CN:{name:'中国',region:'东亚',items:[{d:'2027-01-01',t:'元旦',te:'New Year',c:'n'},{d:'2027-02-06',t:'春节',te:'Spring Festival',c:'n'},{d:'2027-04-05',t:'清明节',te:'Qingming',c:'n'},{d:'2027-05-01',t:'劳动节',te:'Labour Day',c:'n'},{d:'2027-09-15',t:'中秋节',te:'Mid-Autumn',c:'n'},{d:'2027-10-01',t:'国庆节',te:'National Day',c:'n'}]},
- TW:{name:'中国台湾',region:'东亚',items:[{d:'2027-02-06',t:'农历新年',te:'Lunar New Year',c:'n'},{d:'2027-10-10',t:'双十节',te:'National Day',c:'n'}]},
- HK:{name:'中国香港',region:'东亚',items:[{d:'2027-02-06',t:'农历新年',te:'Lunar New Year',c:'n'},{d:'2027-10-01',t:'国庆日',te:'National Day',c:'n'}]},
- JP:{name:'日本',region:'东亚',items:[{d:'2027-01-01',t:'元旦',te:'New Year',c:'n'},{d:'2027-01-11',t:'成人式',te:'Coming of Age',c:'n'},{d:'2027-04-29',t:'昭和日',te:'Golden Week',c:'n'},{d:'2027-05-05',t:'儿童节',te:'Children Day',c:'n'}]},
- KR:{name:'韩国',region:'东亚',items:[{d:'2027-02-07',t:'农历新年',te:'Seollal',c:'n'},{d:'2027-08-15',t:'光复节',te:'Liberation Day',c:'n'},{d:'2027-09-15',t:'秋夕',te:'Chuseok',c:'n'}]},
- AE:{name:'阿联酋',region:'中东',items:[{d:'2027-02-08',t:'斋月始',te:'Ramadan begins',c:'r'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-12-02',t:'国庆日',te:'National Day',c:'n'}]},
- SA:{name:'沙特阿拉伯',region:'中东',items:[{d:'2027-02-08',t:'斋月始',te:'Ramadan begins',c:'r'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-09-23',t:'国庆日',te:'National Day',c:'n'}]},
- QA:{name:'卡塔尔',region:'中东',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-12-18',t:'国庆日',te:'National Day',c:'n'}]},
- KW:{name:'科威特',region:'中东',items:[{d:'2027-02-25',t:'国庆日',te:'National Day',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'}]},
- OM:{name:'阿曼',region:'中东',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-11-18',t:'国庆日',te:'National Day',c:'n'}]},
- BH:{name:'巴林',region:'中东',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-12-16',t:'国庆日',te:'National Day',c:'n'}]},
- IQ:{name:'伊拉克',region:'中东',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-07-14',t:'共和国日',te:'Republic Day',c:'n'}]},
- JO:{name:'约旦',region:'中东',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-05-25',t:'独立日',te:'Independence Day',c:'n'}]},
- LB:{name:'黎巴嫩',region:'中东',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-11-22',t:'独立日',te:'Independence Day',c:'n'}]},
- EG:{name:'埃及',region:'中东',items:[{d:'2027-01-07',t:'科普特圣诞',te:'Coptic Christmas',c:'r'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-07-23',t:'革命日',te:'Revolution Day',c:'n'}]},
- TR:{name:'土耳其',region:'中东',items:[{d:'2027-02-08',t:'斋月始',te:'Ramadan begins',c:'r'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-10-29',t:'共和国日',te:'Republic Day',c:'n'}]},
- IR:{name:'伊朗',region:'中东',items:[{d:'2027-02-11',t:'伊斯兰革命日',te:'Islamic Revolution',c:'n'},{d:'2027-03-21',t:'诺鲁孜节',te:'Nowruz',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'}]},
- IL:{name:'以色列',region:'中东',items:[{d:'2027-04-22',t:'逾越节',te:'Passover',c:'r'},{d:'2027-05-12',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-09-12',t:'犹太新年',te:'Rosh Hashanah',c:'r'}]},
- SY:{name:'叙利亚',region:'中东',items:[{d:'2027-02-08',t:'斋月始',te:'Ramadan begins',c:'r'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'}]},
- ID:{name:'印度尼西亚',region:'东南亚',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-03-09',t:'静居日',te:'Nyepi',c:'n'},{d:'2027-08-17',t:'独立日',te:'Independence Day',c:'n'}]},
- MY:{name:'马来西亚',region:'东南亚',items:[{d:'2027-02-06',t:'农历新年',te:'Chinese New Year',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-08-31',t:'独立日',te:'Merdeka',c:'n'}]},
- SG:{name:'新加坡',region:'东南亚',items:[{d:'2027-02-06',t:'农历新年',te:'Chinese New Year',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Hari Raya Puasa',c:'r'},{d:'2027-08-09',t:'国庆日',te:'National Day',c:'n'},{d:'2027-10-29',t:'屠妖节',te:'Deepavali',c:'r'}]},
- TH:{name:'泰国',region:'东南亚',items:[{d:'2027-04-06',t:'却克里日',te:'Chakri Day',c:'n'},{d:'2027-04-13',t:'宋干节',te:'Songkran',c:'n'},{d:'2027-07-28',t:'国王诞辰',te:'King Birthday',c:'n'}]},
- VN:{name:'越南',region:'东南亚',items:[{d:'2027-02-06',t:'春节',te:'Tet',c:'n'},{d:'2027-09-02',t:'国庆日',te:'National Day',c:'n'}]},
- PH:{name:'菲律宾',region:'东南亚',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-06-12',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'},{d:'2027-12-30',t:'黎刹日',te:'Rizal Day',c:'n'}]},
- MM:{name:'缅甸',region:'东南亚',items:[{d:'2027-01-04',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-04-13',t:'泼水节',te:'Thingyan',c:'n'}]},
- KH:{name:'柬埔寨',region:'东南亚',items:[{d:'2027-04-13',t:'柬埔寨新年',te:'Khmer New Year',c:'n'},{d:'2027-11-09',t:'独立日',te:'Independence Day',c:'n'}]},
- IN:{name:'印度',region:'南亚',items:[{d:'2027-01-26',t:'共和国日',te:'Republic Day',c:'n'},{d:'2027-03-23',t:'胡里节',te:'Holi',c:'r'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-08-15',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-10-29',t:'排灯节',te:'Diwali',c:'r'}]},
- PK:{name:'巴基斯坦',region:'南亚',items:[{d:'2027-03-23',t:'巴基斯坦日',te:'Pakistan Day',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-08-14',t:'独立日',te:'Independence Day',c:'n'}]},
- BD:{name:'孟加拉国',region:'南亚',items:[{d:'2027-03-26',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'}]},
- LK:{name:'斯里兰卡',region:'南亚',items:[{d:'2027-02-04',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-04-13',t:'僧伽罗新年',te:'Sinhala New Year',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'}]},
- NP:{name:'尼泊尔',region:'南亚',items:[{d:'2027-05-29',t:'共和国日',te:'Republic Day',c:'n'},{d:'2027-10-10',t:'德赛节',te:'Dashain',c:'n'}]},
- US:{name:'美国',region:'欧美',items:[{d:'2027-07-04',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-09-06',t:'劳动节',te:'Labor Day',c:'n'},{d:'2027-11-25',t:'感恩节',te:'Thanksgiving',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- GB:{name:'英国',region:'欧美',items:[{d:'2027-01-01',t:'元旦',te:'New Year',c:'n'},{d:'2027-03-26',t:'耶稣受难日',te:'Good Friday',c:'r'},{d:'2027-03-29',t:'复活节星期一',te:'Easter Monday',c:'r'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'},{d:'2027-12-26',t:'节礼日',te:'Boxing Day',c:'n'}]},
- DE:{name:'德国',region:'欧美',items:[{d:'2027-05-01',t:'劳动节',te:'Labour Day',c:'n'},{d:'2027-10-03',t:'统一日',te:'Unity Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- FR:{name:'法国',region:'欧美',items:[{d:'2027-05-01',t:'劳动节',te:'Labour Day',c:'n'},{d:'2027-07-14',t:'国庆日',te:'Bastille Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- IT:{name:'意大利',region:'欧美',items:[{d:'2027-05-01',t:'劳动节',te:'Labour Day',c:'n'},{d:'2027-06-02',t:'共和国日',te:'Republic Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- ES:{name:'西班牙',region:'欧美',items:[{d:'2027-05-01',t:'劳动节',te:'Labour Day',c:'n'},{d:'2027-10-12',t:'国庆日',te:'National Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- NL:{name:'荷兰',region:'欧美',items:[{d:'2027-04-27',t:'国王日',te:"King's Day",c:'n'},{d:'2027-05-05',t:'解放日',te:'Liberation Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- PL:{name:'波兰',region:'欧美',items:[{d:'2027-05-03',t:'宪法日',te:'Constitution Day',c:'n'},{d:'2027-11-11',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- PT:{name:'葡萄牙',region:'欧美',items:[{d:'2027-06-10',t:'葡国日',te:'Portugal Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- BE:{name:'比利时',region:'欧美',items:[{d:'2027-07-21',t:'国庆日',te:'National Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- NG:{name:'尼日利亚',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-29',t:'民主日',te:'Democracy Day',c:'n'},{d:'2027-10-01',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-12-25',t:'圣诞节',te:'Christmas',c:'r'}]},
- ZA:{name:'南非',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-04-27',t:'自由日',te:'Freedom Day',c:'n'},{d:'2027-09-24',t:'传统日',te:'Heritage Day',c:'n'},{d:'2027-12-16',t:'和解日',te:'Reconciliation Day',c:'n'}]},
- KE:{name:'肯尼亚',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-10-20',t:'英雄日',te:'Mashujaa Day',c:'n'},{d:'2027-12-12',t:'独立日',te:'Jamhuri Day',c:'n'}]},
- MA:{name:'摩洛哥',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-07-30',t:'登基日',te:'Throne Day',c:'n'},{d:'2027-11-18',t:'独立日',te:'Independence Day',c:'n'}]},
- DZ:{name:'阿尔及利亚',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-07-05',t:'独立日',te:'Independence Day',c:'n'}]},
- TN:{name:'突尼斯',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-05-16',t:'宰牲节',te:'Eid al-Adha',c:'r'},{d:'2027-03-20',t:'独立日',te:'Independence Day',c:'n'}]},
- GH:{name:'加纳',region:'非洲',items:[{d:'2027-03-06',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-08-04',t:' founder日',te:'Founder Day',c:'n'},{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'}]},
- ET:{name:'埃塞俄比亚',region:'非洲',items:[{d:'2027-03-09',t:'开斋节',te:'Eid al-Fitr',c:'r'},{d:'2027-09-11',t:'埃历新年',te:'Enkutatash',c:'n'},{d:'2027-09-27',t:'十字节',te:'Meskel',c:'n'}]},
- BR:{name:'巴西',region:'南美',items:[{d:'2027-02-09',t:'狂欢节',te:'Carnival',c:'n'},{d:'2027-04-21',t:'蒂拉登特斯日',te:'Tiradentes',c:'n'},{d:'2027-09-07',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-11-15',t:'共和国日',te:'Republic Day',c:'n'}]},
- MX:{name:'墨西哥',region:'南美',items:[{d:'2027-02-02',t:'亡灵节',te:'Day of the Dead',c:'n'},{d:'2027-09-16',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-11-20',t:'革命日',te:'Revolution Day',c:'n'}]},
- AR:{name:'阿根廷',region:'南美',items:[{d:'2027-04-02',t:'马岛日',te:'Malvinas Day',c:'n'},{d:'2027-05-25',t:'革命日',te:'Revolution Day',c:'n'},{d:'2027-07-09',t:'独立日',te:'Independence Day',c:'n'}]},
- CL:{name:'智利',region:'南美',items:[{d:'2027-05-21',t:'海军节',te:'Navy Day',c:'n'},{d:'2027-09-18',t:'独立日',te:'Independence Day',c:'n'}]},
- CO:{name:'哥伦比亚',region:'南美',items:[{d:'2027-07-20',t:'独立日',te:'Independence Day',c:'n'},{d:'2027-10-12',t:'种族日',te:'Dia de la Raza',c:'n'}]},
- PE:{name:'秘鲁',region:'南美',items:[{d:'2027-07-28',t:'独立日',te:'Independence Day',c:'n'}]},
- AU:{name:'澳大利亚',region:'东亚',items:[{d:'2027-01-26',t:'国庆日',te:'Australia Day',c:'n'},{d:'2027-04-25',t:'澳新军团日',te:'Anzac Day',c:'n'}]},
- CA:{name:'加拿大',region:'欧美',items:[{d:'2027-07-01',t:'国庆日',te:'Canada Day',c:'n'},{d:'2027-10-11',t:'感恩节',te:'Thanksgiving',c:'n'}]},
- RU:{name:'俄罗斯',region:'欧美',items:[{d:'2027-01-01',t:'元旦',te:'New Year',c:'n'},{d:'2027-02-23',t:'祖国保卫者日',te:'Defender Day',c:'n'},{d:'2027-05-09',t:'胜利日',te:'Victory Day',c:'n'}]}
+/* ============ 全球节假日日历（多年自动推算） ============
+   规则四类：固定公历(f) / 第n个星期(nth) / 复活节偏移(ea) / 回历(is) / 农历·天文表(lk)
+   固定与星期类规则可自动推算任意年份；回历按标准历法换算；农历/犹太历/印度历需逐年校准（表内可续） */
+var REGIONS=['中东','东南亚','南亚','欧美','非洲','美洲','东亚','大洋洲'];
+function hFix(md,t,te,k){return {f:md,t:t,te:te,c:k||'n'};}
+function hNth(m,w,n,t,te,k){return {nth:[m,w,n],t:t,te:te,c:k||'n'};}
+function hIsl(e,t,te,k){return {is:e,t:t,te:te,c:k||'r'};}
+function hLun(e,t,te,k){return {lk:e,t:t,te:te,c:k||'r'};}
+function hEas(off,t,te,k){return {ea:off,t:t,te:te,c:k||'r'};}
+/* 农历 / 犹太历 / 印度历 / 巴厘历 —— 逐年收录，新年度可继续续写 */
+var LUNAR_TBL={
+ cny:{2026:'02-17',2027:'02-06',2028:'01-26',2029:'02-13',2030:'02-03',2031:'01-23',2032:'02-11',2033:'01-31'},
+ midautumn:{2026:'09-25',2027:'09-15',2028:'10-03',2029:'09-22',2030:'09-12',2031:'10-01',2032:'09-19',2033:'09-08'},
+ holi:{2026:'03-04',2027:'03-23',2028:'03-11',2029:'03-01',2030:'03-20',2031:'03-10',2032:'02-27'},
+ diwali:{2026:'11-08',2027:'10-29',2028:'10-17',2029:'11-05',2030:'10-26',2031:'11-14',2032:'11-02'},
+ passover:{2026:'04-02',2027:'04-22',2028:'04-11',2029:'03-31',2030:'04-18',2031:'04-08',2032:'03-27'},
+ roshHashanah:{2026:'09-12',2027:'10-02',2028:'09-21',2029:'09-10',2030:'09-28',2031:'09-18',2032:'09-06'},
+ ilIndep:{2026:'04-22',2027:'05-12',2028:'05-02',2029:'04-20',2030:'05-09'},
+ nyepi:{2026:'03-19',2027:'03-08',2028:'03-26',2029:'03-15',2030:'03-05'},
+ dashain:{2026:'10-20',2027:'10-10',2028:'09-28',2029:'10-17',2030:'10-06'}
 };
+var HOLIDAYS={
+ CN:{name:'中国',region:'东亚',items:[hFix('01-01','元旦','New Year'),hLun('cny','春节','Spring Festival'),hFix('04-05','清明节','Qingming'),hFix('05-01','劳动节','Labour Day'),hLun('midautumn','中秋节','Mid-Autumn'),hFix('10-01','国庆节','National Day')]},
+ TW:{name:'中国台湾',region:'东亚',items:[hLun('cny','农历新年','Lunar New Year'),hFix('10-10','双十节','National Day')]},
+ HK:{name:'中国香港',region:'东亚',items:[hLun('cny','农历新年','Lunar New Year'),hFix('10-01','国庆日','National Day')]},
+ JP:{name:'日本',region:'东亚',items:[hFix('01-01','元旦','New Year'),hNth(1,1,2,'成人式','Coming of Age Day'),hFix('04-29','昭和日(黄金周)','Golden Week'),hFix('05-05','儿童节','Children Day')]},
+ KR:{name:'韩国',region:'东亚',items:[hLun('cny','春节 Seollal','Seollal'),hFix('08-15','光复节','Liberation Day'),hLun('midautumn','秋夕 Chuseok','Chuseok')]},
+ AE:{name:'阿联酋',region:'中东',items:[hIsl('ramadan','斋月始','Ramadan begins'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('12-02','国庆日','National Day')]},
+ SA:{name:'沙特阿拉伯',region:'中东',items:[hIsl('ramadan','斋月始','Ramadan begins'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('09-23','国庆日','National Day')]},
+ QA:{name:'卡塔尔',region:'中东',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('12-18','国庆日','National Day')]},
+ KW:{name:'科威特',region:'中东',items:[hFix('02-25','国庆日','National Day'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha')]},
+ OM:{name:'阿曼',region:'中东',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('11-18','国庆日','National Day')]},
+ BH:{name:'巴林',region:'中东',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('12-16','国庆日','National Day')]},
+ IQ:{name:'伊拉克',region:'中东',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('07-14','共和国日','Republic Day')]},
+ JO:{name:'约旦',region:'中东',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('05-25','独立日','Independence Day')]},
+ LB:{name:'黎巴嫩',region:'中东',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('11-22','独立日','Independence Day')]},
+ EG:{name:'埃及',region:'中东',items:[hFix('01-07','科普特圣诞','Coptic Christmas'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('07-23','革命日','Revolution Day')]},
+ TR:{name:'土耳其',region:'中东',items:[hIsl('ramadan','斋月始','Ramadan begins'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('10-29','共和国日','Republic Day')]},
+ IR:{name:'伊朗',region:'中东',items:[hFix('02-11','伊斯兰革命日','Islamic Revolution'),hFix('03-21','诺鲁孜节','Nowruz'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha')]},
+ IL:{name:'以色列',region:'中东',items:[hLun('passover','逾越节','Passover'),hLun('ilIndep','独立日','Independence Day'),hLun('roshHashanah','犹太新年','Rosh Hashanah')]},
+ SY:{name:'叙利亚',region:'中东',items:[hIsl('ramadan','斋月始','Ramadan begins'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha')]},
+ ID:{name:'印度尼西亚',region:'东南亚',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hLun('nyepi','静居日','Nyepi'),hFix('08-17','独立日','Independence Day')]},
+ MY:{name:'马来西亚',region:'东南亚',items:[hLun('cny','农历新年','Chinese New Year'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('08-31','独立日','Merdeka')]},
+ SG:{name:'新加坡',region:'东南亚',items:[hLun('cny','农历新年','Chinese New Year'),hIsl('eidFitr','开斋节','Hari Raya Puasa'),hFix('08-09','国庆日','National Day'),hLun('diwali','屠妖节','Deepavali')]},
+ TH:{name:'泰国',region:'东南亚',items:[hFix('04-06','却克里日','Chakri Day'),hFix('04-13','宋干节','Songkran'),hFix('07-28','国王诞辰','King Birthday')]},
+ VN:{name:'越南',region:'东南亚',items:[hLun('cny','春节 Tet','Tet'),hFix('09-02','国庆日','National Day')]},
+ PH:{name:'菲律宾',region:'东南亚',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hFix('06-12','独立日','Independence Day'),hFix('12-25','圣诞节','Christmas'),hFix('12-30','黎刹日','Rizal Day')]},
+ MM:{name:'缅甸',region:'东南亚',items:[hFix('01-04','独立日','Independence Day'),hFix('04-13','泼水节','Thingyan')]},
+ KH:{name:'柬埔寨',region:'东南亚',items:[hFix('04-13','柬埔寨新年','Khmer New Year'),hFix('11-09','独立日','Independence Day')]},
+ IN:{name:'印度',region:'南亚',items:[hFix('01-26','共和国日','Republic Day'),hLun('holi','胡里节','Holi'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hFix('08-15','独立日','Independence Day'),hLun('diwali','排灯节','Diwali')]},
+ PK:{name:'巴基斯坦',region:'南亚',items:[hFix('03-23','巴基斯坦日','Pakistan Day'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('08-14','独立日','Independence Day')]},
+ BD:{name:'孟加拉国',region:'南亚',items:[hFix('03-26','独立日','Independence Day'),hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha')]},
+ LK:{name:'斯里兰卡',region:'南亚',items:[hFix('02-04','独立日','Independence Day'),hFix('04-13','僧伽罗新年','Sinhala New Year'),hIsl('eidFitr','开斋节','Eid al-Fitr')]},
+ NP:{name:'尼泊尔',region:'南亚',items:[hFix('05-29','共和国日','Republic Day'),hLun('dashain','德赛节','Dashain')]},
+ US:{name:'美国',region:'欧美',items:[hFix('07-04','独立日','Independence Day'),hNth(9,1,1,'劳动节','Labor Day'),hNth(11,4,4,'感恩节','Thanksgiving'),hFix('12-25','圣诞节','Christmas')]},
+ GB:{name:'英国',region:'欧美',items:[hFix('01-01','元旦','New Year'),hEas(-2,'耶稣受难日','Good Friday'),hEas(1,'复活节星期一','Easter Monday'),hFix('12-25','圣诞节','Christmas'),hFix('12-26','节礼日','Boxing Day')]},
+ DE:{name:'德国',region:'欧美',items:[hFix('05-01','劳动节','Labour Day'),hFix('10-03','统一日','Unity Day'),hFix('12-25','圣诞节','Christmas')]},
+ FR:{name:'法国',region:'欧美',items:[hFix('05-01','劳动节','Labour Day'),hFix('07-14','国庆日','Bastille Day'),hFix('12-25','圣诞节','Christmas')]},
+ IT:{name:'意大利',region:'欧美',items:[hFix('05-01','劳动节','Labour Day'),hFix('06-02','共和国日','Republic Day'),hFix('12-25','圣诞节','Christmas')]},
+ ES:{name:'西班牙',region:'欧美',items:[hFix('05-01','劳动节','Labour Day'),hFix('10-12','国庆日','National Day'),hFix('12-25','圣诞节','Christmas')]},
+ NL:{name:'荷兰',region:'欧美',items:[hFix('04-27','国王日',"King's Day"),hFix('05-05','解放日','Liberation Day'),hFix('12-25','圣诞节','Christmas')]},
+ PL:{name:'波兰',region:'欧美',items:[hFix('05-03','宪法日','Constitution Day'),hFix('11-11','独立日','Independence Day'),hFix('12-25','圣诞节','Christmas')]},
+ PT:{name:'葡萄牙',region:'欧美',items:[hFix('06-10','葡国日','Portugal Day'),hFix('12-25','圣诞节','Christmas')]},
+ BE:{name:'比利时',region:'欧美',items:[hFix('07-21','国庆日','National Day'),hFix('12-25','圣诞节','Christmas')]},
+ CA:{name:'加拿大',region:'欧美',items:[hFix('07-01','国庆日','Canada Day'),hNth(10,1,2,'感恩节','Thanksgiving')]},
+ RU:{name:'俄罗斯',region:'欧美',items:[hFix('01-01','元旦','New Year'),hFix('02-23','祖国保卫者日','Defender Day'),hFix('05-09','胜利日','Victory Day')]},
+ NG:{name:'尼日利亚',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hFix('05-29','民主日','Democracy Day'),hFix('10-01','独立日','Independence Day'),hFix('12-25','圣诞节','Christmas')]},
+ ZA:{name:'南非',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hFix('04-27','自由日','Freedom Day'),hFix('09-24','传统日','Heritage Day'),hFix('12-16','和解日','Reconciliation Day')]},
+ KE:{name:'肯尼亚',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hFix('10-20','英雄日','Mashujaa Day'),hFix('12-12','独立日','Jamhuri Day')]},
+ MA:{name:'摩洛哥',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('07-30','登基日','Throne Day'),hFix('11-18','独立日','Independence Day')]},
+ DZ:{name:'阿尔及利亚',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('07-05','独立日','Independence Day')]},
+ TN:{name:'突尼斯',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hIsl('eidAdha','宰牲节','Eid al-Adha'),hFix('03-20','独立日','Independence Day')]},
+ GH:{name:'加纳',region:'非洲',items:[hFix('03-06','独立日','Independence Day'),hFix('08-04','建国者日','Founders Day'),hIsl('eidFitr','开斋节','Eid al-Fitr')]},
+ ET:{name:'埃塞俄比亚',region:'非洲',items:[hIsl('eidFitr','开斋节','Eid al-Fitr'),hFix('09-11','埃历新年','Enkutatash'),hFix('09-27','十字节','Meskel')]},
+ BR:{name:'巴西',region:'美洲',items:[hEas(-47,'狂欢节','Carnival'),hFix('04-21','蒂拉登特斯日','Tiradentes'),hFix('09-07','独立日','Independence Day'),hFix('11-15','共和国日','Republic Day')]},
+ MX:{name:'墨西哥',region:'美洲',items:[hFix('09-16','独立日','Independence Day'),hFix('11-02','亡灵节','Day of the Dead'),hFix('11-20','革命日','Revolution Day')]},
+ AR:{name:'阿根廷',region:'美洲',items:[hFix('04-02','马岛日','Malvinas Day'),hFix('05-25','革命日','Revolution Day'),hFix('07-09','独立日','Independence Day')]},
+ CL:{name:'智利',region:'美洲',items:[hFix('05-21','海军节','Navy Day'),hFix('09-18','独立日','Independence Day')]},
+ CO:{name:'哥伦比亚',region:'美洲',items:[hFix('07-20','独立日','Independence Day'),hFix('10-12','种族日','Dia de la Raza')]},
+ PE:{name:'秘鲁',region:'美洲',items:[hFix('07-28','独立日','Independence Day')]},
+ AU:{name:'澳大利亚',region:'大洋洲',items:[hFix('01-26','国庆日','Australia Day'),hFix('04-25','澳新军团日','Anzac Day'),hFix('12-25','圣诞节','Christmas')]},
+ NZ:{name:'新西兰',region:'大洋洲',items:[hFix('02-06','国庆日','Waitangi Day'),hFix('04-25','澳新军团日','Anzac Day'),hFix('12-25','圣诞节','Christmas')]}
+};
+/* —— 日期推算引擎 —— */
+function hpad(n){return (n<10?'0':'')+n;}
+function hJdToGreg(jd){var a=jd+32044,b=Math.floor((4*a+3)/146097),c=a-Math.floor(146097*b/4),d=Math.floor((4*c+3)/1461),e=c-Math.floor(1461*d/4),m=Math.floor((5*e+2)/153),day=e-Math.floor((153*m+2)/5)+1,month=m+3-12*Math.floor(m/10),year=100*b+d-4800+Math.floor(m/10);return [year,month,day];}
+function hHijriJd(y,m,d){return Math.floor((11*y+3)/30)+354*y+30*m-Math.floor((m-1)/2)+d+1948440-385;}
+var ISL_MAP={ramadan:[9,1],eidFitr:[10,1],eidAdha:[12,10],hijri:[1,1],mawlid:[3,12]};
+function hIslMd(y,key){var mm=ISL_MAP[key];if(!mm)return '';var base=Math.floor((y-622)*33/32);for(var h=base-2;h<=base+3;h++){var g=hJdToGreg(hHijriJd(h,mm[0],mm[1]));if(g[0]===y)return hpad(g[1])+'-'+hpad(g[2]);}return '';}
+function hNthMd(y,m,w,n){var first=new Date(Date.UTC(y,m-1,1)).getUTCDay();var day=1+((7-first+w)%7)+(n-1)*7;var dim=new Date(Date.UTC(y,m,0)).getUTCDate();if(day>dim)day-=7;return hpad(m)+'-'+hpad(day);}
+function hEasterMd(y,off){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),hh=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-hh-k)%7,m=Math.floor((a+11*hh+22*l)/451),mo=Math.floor((hh+l-7*m+114)/31),da=((hh+l-7*m+114)%31)+1;var dt=new Date(Date.UTC(y,mo-1,da+off));return hpad(dt.getUTCMonth()+1)+'-'+hpad(dt.getUTCDate());}
+function holidayMd(y,it){
+ if(it.f)return it.f;
+ if(it.nth)return hNthMd(y,it.nth[0],it.nth[1],it.nth[2]);
+ if(it.ea!=null)return hEasterMd(y,it.ea);
+ if(it.is)return hIslMd(y,it.is);
+ if(it.lk){var tb=LUNAR_TBL[it.lk]||{};return tb[y]||'';}
+ return '';
+}
+function holidayYear(){var f=S._holFilter||{};return f.year||new Date().getFullYear();}
+function holidayYears(){var y=new Date().getFullYear();return [y,y+1,y+2,y+3];}
+function holidayItems(cc,y){var c=HOLIDAYS[cc];if(!c)return [];var out=[];(c.items||[]).forEach(function(it){var md=holidayMd(y,it);if(!md)return;out.push({cc:cc,country:c.name,region:c.region,d:y+'-'+md,t:it.t,te:it.te||'',c:it.c||'n',est:!!(it.is||it.lk||it.ea!=null)});});return out;}
+function holidayAll(y,flt){var rows=[];Object.keys(HOLIDAYS).forEach(function(cc){holidayItems(cc,y).forEach(function(r){if(flt&&!flt(r))return;rows.push(r);});});rows.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});return rows;}
+function holidayMissing(y){var n=0;Object.keys(HOLIDAYS).forEach(function(cc){HOLIDAYS[cc].items.forEach(function(it){if(!holidayMd(y,it))n++;});});return n;}
+function nextRamadan(){var y=new Date().getFullYear();for(var i=0;i<6;i++){var md=hIslMd(y+i,'ramadan');if(md){var d=(y+i)+'-'+md;if(d>=todayStr())return d;}}var md2=hIslMd(y,'ramadan');return md2?(y+'-'+md2):todayStr();}
+function holYear(y){S._holFilter=S._holFilter||{};S._holFilter.year=parseInt(y,10)||0;S._holFilter.country='';save('_holFilter',S._holFilter);refreshAll();}
 function holidayFilterBar(){
- var f=S._holFilter||{};
+ var f=S._holFilter||{};var cur=f.year||new Date().getFullYear();
+ var tabs=holidayYears().map(function(y){var n=holidayAll(y).length;return '<button class="btn '+(y===cur?'amber':'ghost')+' mini" data-action="holYear" data-y="'+y+'">'+y+' · '+n+'</button>';}).join('');
  var ropts='<option value="">'+TX('全部地区','All regions')+'</option>'+REGIONS.map(function(r){return '<option value="'+r+'"'+(f.region===r?' selected':'')+'>'+r+'</option>';}).join('');
- var keys=Object.keys(HOLIDAYS_2027).filter(function(k){return !f.region||HOLIDAYS_2027[k].region===f.region;});
- var copts='<option value="">'+TX('全部国家','All countries')+'</option>'+keys.map(function(k){return '<option value="'+k+'"'+(f.country===k?' selected':'')+'>'+HOLIDAYS_2027[k].name+'</option>';}).join('');
- return '<div class="grid" style="grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-bottom:8px"><select id="hf_region">'+ropts+'</select><select id="hf_country">'+copts+'</select><input id="hf_q" placeholder="'+TX('搜索节日/国家','Search holiday/country')+'" value="'+esc(f.q||'')+'"></div>';
+ var keys=Object.keys(HOLIDAYS).filter(function(k){return !f.region||HOLIDAYS[k].region===f.region;});
+ var copts='<option value="">'+TX('全部国家','All countries')+'</option>'+keys.map(function(k){return '<option value="'+k+'"'+(f.country===k?' selected':'')+'>'+HOLIDAYS[k].name+'</option>';}).join('');
+ return '<div class="row" style="gap:6px;margin-bottom:8px;flex-wrap:wrap">'+tabs+'<span class="muted" style="font-size:12.5px;margin-left:4px">'+TX('自动推算未来年份 →','future years auto-calculated →')+'</span></div><div class="grid" style="grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-bottom:8px"><select id="hf_region">'+ropts+'</select><select id="hf_country">'+copts+'</select><input id="hf_q" placeholder="'+TX('搜索节日/国家','Search holiday/country')+'" value="'+esc(f.q||'')+'"></div>';
 }
 function holidayFilterFromDom(){
- var f={region:($('hf_region')?$('hf_region').value:''),country:($('hf_country')?$('hf_country').value:''),q:($('hf_q')?$('hf_q').value.trim().toLowerCase():'')};
+ var f=S._holFilter||{};
+ f.year=f.year||0;
+ f.region=($('hf_region')?$('hf_region').value:'');
+ f.country=($('hf_country')?$('hf_country').value:'');
+ f.q=($('hf_q')?$('hf_q').value.trim().toLowerCase():'');
  S._holFilter=f;save('_holFilter',f);renderHolidays();
 }
 function renderHolidays(){
  var box=$('holList');if(!box)return;
- var f=S._holFilter||{};var today=todayStr();var rows=[];
- Object.keys(HOLIDAYS_2027).forEach(function(cc){var c=HOLIDAYS_2027[cc];
-  if(f.region&&c.region!==f.region)return;
-  if(f.country&&cc!==f.country)return;
-  c.items.forEach(function(it){if(f.q){var q=f.q;if((c.name+it.t+(it.te||'')).toLowerCase().indexOf(q)<0)return;}rows.push({cc:cc,country:c.name,region:c.region,d:it.d,t:it.t,te:it.te||'',c:it.c});});
+ var f=S._holFilter||{};var y=f.year||new Date().getFullYear();var today=todayStr();
+ var rows=holidayAll(y,function(r){
+  if(f.region&&r.region!==f.region)return false;
+  if(f.country&&r.cc!==f.country)return false;
+  if(f.q){var q=f.q;if((r.country+r.t+(r.te||'')).toLowerCase().indexOf(q)<0)return false;}
+  return true;
  });
- rows.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});
  if(!rows.length){box.innerHTML='<div class="card muted" style="text-align:center">'+TX('没有匹配的节假日。','No matching holidays.')+'</div>';return;}
- var html='';
+ var up=rows.filter(function(r){return r.d>=today;}).length;
+ var soon=rows.filter(function(r){var d2=daysBetween(today,r.d);return d2>=0&&d2<=30;}).length;
+ var html='<div class="hint" style="margin-bottom:4px">'+y+TX(' 年：共 ',' — ')+rows.length+TX(' 个节日','holidays')+(y===new Date().getFullYear()?TX('；未来 30 天 ',' — next 30 days: ')+soon+TX(' 个',''):TX('；今日之后 ',' — upcoming ')+up+TX(' 个',''))+'</div>';
  rows.forEach(function(r){var past=r.d<today;var dd=daysBetween(today,r.d);
-  html+='<div class="ti" style="display:flex;gap:10px;padding:8px 0;border-top:1px dashed var(--line)"><span class="tag '+(r.c==='r'?'r':(r.c==='b'?'a':'n'))+'">'+r.d+'</span><div style="flex:1"><b>'+r.t+(r.te?(' · '+r.te):'')+'</b> <span class="tag">'+r.country+'</span>'+(past?' <span class="tag">'+TX('已过','past')+'</span>':' <span class="tag '+(r.c==='r'?'r':'a')+'">'+TX('还有','in')+' '+dd+' '+TX('天','days')+'</span>')+'<div class="muted" style="font-size:12.5px">'+r.region+'</div></div><button class="btn ghost mini" data-action="holidayGreet" data-cc="'+r.cc+'" data-h="'+esc(r.t)+'" data-he="'+esc(r.te||'')+'">'+TX('发问候','Greet')+'</button></div>';
+  html+='<div class="ti" style="display:flex;gap:10px;padding:8px 0;border-top:1px dashed var(--line)"><span class="tag '+(r.c==='r'?'r':(r.c==='b'?'a':'n'))+'">'+r.d+'</span><div style="flex:1"><b>'+r.t+(r.te?(' · '+r.te):'')+'</b> <span class="tag">'+r.country+'</span>'+(r.est?' <span class="tag" title="'+TX('按历法推算，可能与官方公布相差 1-2 天','Calculated — may differ 1-2 days from official')+'">≈</span>':'')+(past?' <span class="tag">'+TX('已过','past')+'</span>':' <span class="tag '+(r.c==='r'?'r':'a')+'">'+TX('还有','in')+' '+dd+' '+TX('天','days')+'</span>')+'<div class="muted" style="font-size:12.5px">'+r.region+'</div></div><button class="btn ghost mini" data-action="holidayGreet" data-cc="'+r.cc+'" data-h="'+esc(r.t)+'" data-he="'+esc(r.te||'')+'" data-d="'+r.d+'">'+TX('发问候','Greet')+'</button></div>';
  });
+ var miss=holidayMissing(y);
+ if(miss)html+='<div class="hint" style="margin-top:8px">'+TX('另有 '+miss+' 个农历/天文观测类节日（农历、犹太历、印度历等）在 '+y+' 年暂未收录，需逐年校准；日期以各国官方公布为准。',''+miss+' lunar/observational holidays are not yet tabulated for '+y+' — dates follow official announcements.')+'</div>';
  box.innerHTML=html;
 }
-function holidayGreet(cc,h,he){
- var c=HOLIDAYS_2027[cc];var country=c?c.name:cc;
+function holidayGreet(cc,h,he,d){
+ var c=HOLIDAYS[cc];var country=c?c.name:cc;
  var hit=null;(S.leads||[]).forEach(function(l){if(!hit&&l.country&&l.country.indexOf(country)>=0)hit=l;});
  S._activeClient=hit?hit.id:'';
- S._festCtx={sel:'holiday',country:country,holiday:(he||h),client:hit?hit.name:''};
+ S._festCtx={sel:'holiday',country:country,holiday:(he||h),date:(d||''),client:hit?hit.name:''};
  S.view='repeat';save('view',S.view);refreshAll();
 }
 function greetLead(id){S._activeClient=id||'';S._festCtx={sel:'festival'};S.view='repeat';save('view',S.view);refreshAll();}
@@ -2219,24 +2271,33 @@ function referralPanel(){
 }
 function viewRepeat(){
  var h=shead('repeat',TX('节期日历 + 全球节假日驱动复购，老客返单比开发新客便宜太多。','Festival + global holidays drive reorders; reorders beat new leads.')+'');
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('2027 节期备货日历','2027 Festival Calendar')+'</h3><div id="festCal"></div></div>';
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('全球节假日日历 2027','Global Holidays 2027')+'</h3>'+holidayFilterBar()+'<div id="holList"></div><div class="hint">'+TX('覆盖主要外贸市场（中东/东南亚/南亚/欧美/非洲/南美/东亚等约 60 国）。伊斯兰历与农历日期为天文估算，最终以各国官方公布为准。点「发问候」可一键生成该国节假日的复购触达话术。','Covers major export markets (~60 countries). Islamic & lunar dates are astronomical estimates — defer to official announcements. “Greet” drafts a country-specific reorder touch.')+'</div></div>';
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('节期备货日历（回历自动推算 · 未来 18 个月）','Festival stocking calendar (auto by Hijri · next 18 months)')+'</h3><div id="festCal"></div></div>';
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('全球节假日日历','Global Holidays')+' <span class="muted" style="font-size:12.5px;font-weight:400">'+TX('2026 起 · 未来年份自动推算','from 2026 · future years auto-calculated')+'</span></h3>'+holidayFilterBar()+'<div id="holList"></div><div class="hint">'+TX('覆盖约 60 个主要外贸市场（中东/东南亚/南亚/欧美/非洲/美洲/东亚/大洋洲）。固定公历节日与国家假日、星期制节日（如美国感恩节）、复活节系、伊斯兰节日（回历换算）均可自动推算任意年份；农历/犹太历/印度历节日逐年收录（优先已收录 2026–2033，更远的年份届时补齐）。标 ≈ 的为按历法推算，可能与各国官方公布相差 1–2 天。点「发问候」可一键生成该国节假日的复购触达话术。','Covers ~60 major export markets. Fixed-date, weekday-based, Easter-based and Islamic (Hijri) holidays are auto-computed for any year; lunar/Jewish/Hindu feasts are tabulated year by year (2026–2033 included). Dates marked ≈ are calculated and may differ 1–2 days from official announcements. “Greet” drafts a country-specific reorder touch.')+'</div></div>';
  h+=repeatDealsPanel();
  h+=referralPanel();
  h+=sceneBox(['festival','holiday','reorder','referral']);
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('联动：把养老客落到行动','Act on retention')+'</h3><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="nav" data-view="review">'+TX('去复盘增长（看复购率）','Review board')+'</button><button class="btn ghost mini" data-action="nav" data-view="cust">'+TX('客户驾驶舱','Customer Hub')+'</button><button class="btn ghost mini" data-action="nav" data-view="mails">'+TX('邮件发送记录','Sent log')+'</button><button class="btn ghost mini" data-action="reviewDrill" data-kind="reorder">'+TX('找客户·仅看成交老客','Leads: deals only')+'</button></div></div>';
  return h;
 }
+function festPlan(){
+ var y0=new Date().getFullYear();var out=[];
+ for(var y=y0;y<=y0+2;y++){
+  var rm=hIslMd(y,'ramadan'),ef=hIslMd(y,'eidFitr'),ea=hIslMd(y,'eidAdha');
+  if(rm)out.push({d:addDays(y+'-'+rm,-60),t:TX('斋月备货启动','Ramadan stocking starts'),c:'r',x:TX('提前 2 个月联系老客，推绣金/礼盒款试样，锁定产能','Reach old clients ~2 months ahead: embroidered/gift samples, book capacity')});
+  if(rm)out.push({d:y+'-'+rm,t:TX('斋月 Ramadan 始','Ramadan begins'),c:'r',x:TX('礼品/祷告枕需求高峰，避免缺货','Peak demand for gifts/prayer pillows; avoid stock-out')});
+  if(ef)out.push({d:y+'-'+ef,t:TX('开斋节 Eid al-Fitr','Eid al-Fitr'),c:'a',x:TX('节前 3-4 周是下单高峰，节中静默','Orders peak 3-4 weeks before; silence during the feast')});
+  if(ea)out.push({d:addDays(y+'-'+ea,-62),t:TX('朝觐备货启动','Hajj stocking starts'),c:'a',x:TX('推朝觐礼盒/配套，提前 2 个月排产','Push Hajj gift boxes/bundles; schedule ~2 months ahead')});
+  if(ea)out.push({d:y+'-'+ea,t:TX('宰牲节 Eid al-Adha','Eid al-Adha'),c:'a',x:TX('礼赠配套最后一波','Last wave of gift bundles')});
+ }
+ var today=todayStr();
+ out=out.filter(function(it){return it.d>=addDays(today,-20);});
+ out.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});
+ return out.slice(0,8);
+}
 function renderFest(){
  var box=$('festCal');if(!box)return;
- var items=[
-  {d:'2026-12-01',t:TX('斋月备货启动','Ramadan stocking starts'),c:'r',x:TX('联系老客推绣金/礼盒款试样','Reach old clients, push embroidered/gift samples')},
-  {d:'2027-02-08',t:TX('斋月 Ramadan 始','Ramadan begins'),c:'r',x:TX('礼品/祷告枕需求高峰，避免缺货','Peak demand for gifts/pillows; avoid stock-out')},
-  {d:'2027-03-15',t:TX('朝觐备货启动','Hajj stocking starts'),c:'a',x:TX('推朝觐礼盒/配套','Push Hajj gift boxes/bundles')},
-  {d:'2027-05-16',t:TX('宰牲节 Eid','Eid al-Adha'),c:'a',x:TX('礼赠配套最后一波','Last wave of gift bundles')}
- ];
- var today=todayStr();
- var html='';
+ var items=festPlan();var today=todayStr();var html='';
+ if(!items.length){box.innerHTML='<div class="muted">'+TX('暂无节期安排。','No festival window found.')+'</div>';return;}
  items.forEach(function(it){var past=it.d<today;var dd=daysBetween(today,it.d);html+='<div class="ti" style="display:flex;gap:10px;padding:8px 0;border-top:1px dashed var(--line)"><span class="tag '+(it.c==='r'?'r':'a')+'">'+it.d+'</span><div style="flex:1"><b>'+it.t+'</b>'+(past?' <span class="tag">'+TX('已过','past')+'</span>':' <span class="tag '+(it.c==='r'?'r':'a')+'">'+TX('还有','in')+' '+dd+' '+TX('天','days')+'</span>')+'<div class="muted" style="font-size:12.5px">'+it.x+'</div></div></div>';});
  box.innerHTML=html;
 }
