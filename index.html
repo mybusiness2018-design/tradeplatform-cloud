@@ -641,9 +641,9 @@ var SCENES={
  referral:{title:'转介绍话术',te:'Referral Ask',fields:[{k:'client',l:'客户名'}],
   gen:function(v,me){var en='Hi '+v.client+', glad to work with you. If you know other importers who need prayer pillows or gift items, I would appreciate an intro — I will treat them as well as I treat you.';
   var zh='原理：成交后趁信任高要转介绍。禁忌：没建立信任就开口。';return {en:en,zh:zh};}},
- holiday:{title:'节假日问候',te:'Holiday Greeting',fields:[{k:'client',l:'客户名'},{k:'country',l:'国家/市场'},{k:'holiday',l:'节假日名称'}],
-  gen:function(v,me){var en='Dear '+(v.client||'friend')+',\n\nWarmest greetings on '+(v.holiday||'the upcoming holiday')+' in '+(v.country||'your country')+'. We hope this season brings prosperity to your business.\n\nAs '+yr(me)+', we would like to reserve production capacity and share our seasonal best-sellers (gift & premium lines) so you never miss the peak. Shall I prepare a tailored offer for '+(v.country||'your market')+'?\n\nBest,\n'+nm(me)+'\n'+co(me);
-  var zh='原理：借本地节假日制造有温度的复购触点，比群发广告更被接受。禁忌：把别人节日内涵说错；催单太硬。';return {en:en,zh:zh};}},
+ holiday:{title:'节假日问候',te:'Holiday Greeting',fields:[{k:'client',l:'客户名'},{k:'country',l:'国家/市场'},{k:'holiday',l:'节假日名称'},{k:'date',l:'节日日期',ph:'2027-03-10'}],
+  gen:function(v,me){var _dt=v.date?(' ('+v.date+')'):'';var en='Dear '+(v.client||'friend')+',\n\nWarmest greetings on '+(v.holiday||'the upcoming holiday')+_dt+' in '+(v.country||'your country')+'. We hope this season brings prosperity to your business.\n\nAs '+yr(me)+', we would like to reserve production capacity and share our seasonal best-sellers (gift & premium lines) so you never miss the peak. Shall I prepare a tailored offer for '+(v.country||'your market')+'?\n\nBest,\n'+nm(me)+'\n'+co(me);
+  var zh='原理：借本地节假日制造有温度的复购触点，比群发广告更被接受；最佳发送时机是节前 3–4 周，而不是节日当天。禁忌：把别人节日内涵说错；催单太硬。';return {en:en,zh:zh};}},
  post_show:{title:'展会后跟进',te:'Post-Show Follow-up',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'稳定斋月库存 + 可定制'}],
   gen:function(v,me){var en='Hi '+v.client+', great meeting you at the show. As promised, here are our best-sellers for '+v.product+': stable Ramadan/Hajj stock, MOQ 500 pcs, lead time 15-20 days. Shall I send the catalog and a sample so you can check the quality?';var zh='原理：趁展会记忆新鲜 48h 内跟进，把承诺变成动作。禁忌：展后失联、群发无差别跟进。';return {en:en,zh:zh};}},
  social:{title:'LinkedIn/社媒开发',te:'Social / LinkedIn',fields:[{k:'client',l:'客户名'},{k:'company',l:'客户公司'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'快打样 + 私牌定制'}],
@@ -2192,19 +2192,25 @@ function holidayMd(y,it){
  return '';
 }
 function holidayYear(){var f=S._holFilter||{};return f.year||new Date().getFullYear();}
-function holidayYears(){var y=new Date().getFullYear();return [y,y+1,y+2,y+3];}
+/* 年份窗口：默认「今年 + 未来 3 年」自动滚动；若记忆的年份落在窗口外，窗口自动移到该年 */
+function holidayYears(){var nowY=new Date().getFullYear();var f=S._holFilter||{};var sel=f.year||0;var start=(sel&&(sel<nowY||sel>nowY+3))?sel:nowY;var out=[];for(var i=0;i<4;i++)out.push(start+i);return out;}
 function holidayItems(cc,y){var c=HOLIDAYS[cc];if(!c)return [];var out=[];(c.items||[]).forEach(function(it){var md=holidayMd(y,it);if(!md)return;out.push({cc:cc,country:c.name,region:c.region,d:y+'-'+md,t:it.t,te:it.te||'',c:it.c||'n',est:!!(it.is||it.lk||it.ea!=null)});});return out;}
 function holidayAll(y,flt){var rows=[];Object.keys(HOLIDAYS).forEach(function(cc){holidayItems(cc,y).forEach(function(r){if(flt&&!flt(r))return;rows.push(r);});});rows.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});return rows;}
 function holidayMissing(y){var n=0;Object.keys(HOLIDAYS).forEach(function(cc){HOLIDAYS[cc].items.forEach(function(it){if(!holidayMd(y,it))n++;});});return n;}
 function nextRamadan(){var y=new Date().getFullYear();for(var i=0;i<6;i++){var md=hIslMd(y+i,'ramadan');if(md){var d=(y+i)+'-'+md;if(d>=todayStr())return d;}}var md2=hIslMd(y,'ramadan');return md2?(y+'-'+md2):todayStr();}
 function holYear(y){S._holFilter=S._holFilter||{};S._holFilter.year=parseInt(y,10)||0;S._holFilter.country='';save('_holFilter',S._holFilter);refreshAll();}
+function holClear(){S._holFilter={region:'',country:'',q:'',year:0};save('_holFilter',S._holFilter);refreshAll();toast(TX('已重置节假日筛选','Filters reset'));}
 function holidayFilterBar(){
- var f=S._holFilter||{};var cur=f.year||new Date().getFullYear();
- var tabs=holidayYears().map(function(y){var n=holidayAll(y).length;return '<button class="btn '+(y===cur?'amber':'ghost')+' mini" data-action="holYear" data-y="'+y+'">'+y+' · '+n+'</button>';}).join('');
+ var f=S._holFilter||{};var cur=f.year||new Date().getFullYear();var nowY=new Date().getFullYear();var today=todayStr();
+ var tabs=holidayYears().map(function(y){
+  var all=holidayAll(y);var n=(y===nowY)?all.filter(function(r){return r.d>=today;}).length:all.length;
+  var lab=(y===nowY)?(y+' · '+TX('余','left')+n):(y+' · '+n);
+  return '<button class="btn '+(y===cur?'amber':'ghost')+' mini" data-action="holYear" data-y="'+y+'" title="'+TX('查看 '+y+' 年全部节假日','View all holidays in '+y)+'">'+lab+'</button>';
+ }).join('');
  var ropts='<option value="">'+TX('全部地区','All regions')+'</option>'+REGIONS.map(function(r){return '<option value="'+r+'"'+(f.region===r?' selected':'')+'>'+r+'</option>';}).join('');
  var keys=Object.keys(HOLIDAYS).filter(function(k){return !f.region||HOLIDAYS[k].region===f.region;});
  var copts='<option value="">'+TX('全部国家','All countries')+'</option>'+keys.map(function(k){return '<option value="'+k+'"'+(f.country===k?' selected':'')+'>'+HOLIDAYS[k].name+'</option>';}).join('');
- return '<div class="row" style="gap:6px;margin-bottom:8px;flex-wrap:wrap">'+tabs+'<span class="muted" style="font-size:12.5px;margin-left:4px">'+TX('自动推算未来年份 →','future years auto-calculated →')+'</span></div><div class="grid" style="grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-bottom:8px"><select id="hf_region">'+ropts+'</select><select id="hf_country">'+copts+'</select><input id="hf_q" placeholder="'+TX('搜索节日/国家','Search holiday/country')+'" value="'+esc(f.q||'')+'"></div>';
+ return '<div class="row" style="gap:6px;margin-bottom:8px;flex-wrap:wrap">'+tabs+'<span class="muted" style="font-size:12.5px;margin-left:4px">'+TX('自动推算未来年份 →','future years auto-calculated →')+'</span></div><div class="grid" style="grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-bottom:8px"><select id="hf_region">'+ropts+'</select><select id="hf_country">'+copts+'</select><input id="hf_q" placeholder="'+TX('搜索节日/国家','Search holiday/country')+'" value="'+esc(f.q||'')+'"></div>'+((f.region||f.country||f.q)?('<div class="row" style="margin-bottom:8px"><button class="btn ghost mini" data-action="holClear">'+TX('重置筛选','Reset filters')+'</button></div>'):'');
 }
 function holidayFilterFromDom(){
  var f=S._holFilter||{};
@@ -2276,7 +2282,7 @@ function referralPanel(){
 function viewRepeat(){
  var h=shead('repeat',TX('节期日历 + 全球节假日驱动复购，老客返单比开发新客便宜太多。','Festival + global holidays drive reorders; reorders beat new leads.')+'');
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('节期备货日历（回历自动推算 · 未来 18 个月）','Festival stocking calendar (auto by Hijri · next 18 months)')+'</h3><div id="festCal"></div></div>';
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('全球节假日日历','Global Holidays')+' <span class="muted" style="font-size:12.5px;font-weight:400">'+TX('2026 起 · 未来年份自动推算','from 2026 · future years auto-calculated')+'</span></h3>'+holidayFilterBar()+'<div id="holList"></div><div class="hint">'+TX('覆盖约 60 个主要外贸市场（中东/东南亚/南亚/欧美/非洲/美洲/东亚/大洋洲）。固定公历节日与国家假日、星期制节日（如美国感恩节）、复活节系、伊斯兰节日（回历换算）均可自动推算任意年份；农历/犹太历/印度历节日逐年收录（优先已收录 2026–2033，更远的年份届时补齐）。标 ≈ 的为按历法推算，可能与各国官方公布相差 1–2 天。点「发问候」可一键生成该国节假日的复购触达话术。','Covers ~60 major export markets. Fixed-date, weekday-based, Easter-based and Islamic (Hijri) holidays are auto-computed for any year; lunar/Jewish/Hindu feasts are tabulated year by year (2026–2033 included). Dates marked ≈ are calculated and may differ 1–2 days from official announcements. “Greet” drafts a country-specific reorder touch.')+'</div></div>';
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('全球节假日日历','Global Holidays')+' <span class="muted" style="font-size:12.5px;font-weight:400">'+TX('2026 起 · 未来年份自动推算','from 2026 · future years auto-calculated')+'</span></h3>'+holidayFilterBar()+'<div id="holList" style="max-height:560px;overflow:auto;padding-right:4px"></div><div class="hint">'+TX('覆盖约 60 个主要外贸市场（中东/东南亚/南亚/欧美/非洲/美洲/东亚/大洋洲）。固定公历节日与国家假日、星期制节日（如美国感恩节）、复活节系、伊斯兰节日（回历换算）均可自动推算任意年份；农历/犹太历/印度历节日逐年收录（优先已收录 2026–2033，更远的年份届时补齐）。标 ≈ 的为按历法推算，可能与各国官方公布相差 1–2 天。点「发问候」可一键生成该国节假日的复购触达话术。','Covers ~60 major export markets. Fixed-date, weekday-based, Easter-based and Islamic (Hijri) holidays are auto-computed for any year; lunar/Jewish/Hindu feasts are tabulated year by year (2026–2033 included). Dates marked ≈ are calculated and may differ 1–2 days from official announcements. “Greet” drafts a country-specific reorder touch.')+'</div></div>';
  h+=repeatDealsPanel();
  h+=referralPanel();
  h+=sceneBox(['festival','holiday','reorder','referral']);
@@ -2338,6 +2344,7 @@ function renderSceneFields(){
  if(S._festCtx){
   if($('sc_country')&&S._festCtx.country)$('sc_country').value=S._festCtx.country;
   if($('sc_holiday')&&S._festCtx.holiday)$('sc_holiday').value=S._festCtx.holiday;
+  if($('sc_date')&&S._festCtx.date)$('sc_date').value=S._festCtx.date;
   if($('sc_client')&&S._festCtx.client)$('sc_client').value=S._festCtx.client;
   S._festCtx='';
  }
@@ -2876,7 +2883,7 @@ function refreshAll(){
  var _rf=[renderNav,renderView,renderToday];
  for(var _i=0;_i<_rf.length;_i++){try{_rf[_i]();}catch(e){try{console.error('[render]',e);}catch(_e){}}}
  try{if(S.view==='find'){renderLeads();renderPrio();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
- try{if(S.view==='repeat')renderFest();}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='repeat'){renderFest();renderHolidays();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='review')renderIns();}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat')renderSceneFields();}catch(e){try{console.error('[render]',e);}catch(_e){}}
 }
@@ -2985,7 +2992,7 @@ document.addEventListener('click',function(e){
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
- else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}else if(a==='holidayGreet'){holidayGreet(el.dataset.cc,el.dataset.h,el.dataset.he);}else if(a==='greetLead'){greetLead(el.dataset.id);}
+ else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}else if(a==='holidayGreet'){holidayGreet(el.dataset.cc,el.dataset.h,el.dataset.he,el.dataset.d);}else if(a==='holYear'){holYear(el.dataset.y);}else if(a==='holClear'){holClear();}else if(a==='greetLead'){greetLead(el.dataset.id);}
  else if(a==='kpiJump'){kpiJump(el.dataset.where, el.dataset.id);}
  else if(a==='kpiTaskDone'){kpiTaskDone(el.dataset.id);}
  else if(a==='kpiEditTask'){kpiEditTask(el.dataset.id);}
@@ -3025,6 +3032,7 @@ document.addEventListener('click',function(e){
  else if(a==='libTab'){S._libTab=el.dataset.tab;var lw=$('libWrap');if(lw)lw.innerHTML=libInner();}
  else if(a==='tplStage'){S._tplStage=el.dataset.stage;var lw2=$('libWrap');if(lw2)lw2.innerHTML=libInner();}
  else if(a==='tplSave'){tplSave(el.dataset.i);}
+ else if(a==='libDel'){libDel(el.dataset.id);}
  else if(a==='closeModal'){closeModal();}
  else if(a==='scOpen'){scOpen(parseInt(el.dataset.i,10));}
 });
@@ -3036,7 +3044,7 @@ document.addEventListener('change',function(e){
  if(e.target&&e.target.id==='sc_sel'){renderSceneFields();var en=$('sc_en'),zh=$('sc_zh');if(en)en.textContent=TX('选择场景并填变量后生成。','Pick a scene and fill vars.');if(zh)zh.textContent='';}
  if(e.target&&(e.target.id==='lf_q'||e.target.id==='lf_market'||e.target.id==='lf_stage'||e.target.id==='lf_source')){S._leadFilter={q:($('lf_q')?$('lf_q').value.trim().toLowerCase():''),market:($('lf_market')?$('lf_market').value:''),stage:($('lf_stage')?$('lf_stage').value:''),source:($('lf_source')?$('lf_source').value:''),since:'',stages:[],overdue:false,reorder:false};renderLeads();}
  if(e.target&&e.target.id==='dealSel'){dealSel();}
- if(e.target&&e.target.id==='hf_region'){S._holFilter.region=($('hf_region')?$('hf_region').value:'');S._holFilter.country='';save('_holFilter',S._holFilter);refreshAll();}
+ if(e.target&&e.target.id==='hf_region'){S._holFilter=S._holFilter||{};S._holFilter.region=($('hf_region')?$('hf_region').value:'');S._holFilter.country='';save('_holFilter',S._holFilter);refreshAll();}
  else if(e.target&&(e.target.id==='hf_country'||e.target.id==='hf_q')){holidayFilterFromDom();}
 });
 document.addEventListener('input',function(e){if(e.target&&e.target.id==='hf_q'){holidayFilterFromDom();}});
