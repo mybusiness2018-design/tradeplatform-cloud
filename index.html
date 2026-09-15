@@ -1637,7 +1637,7 @@ function custInsight(){
   return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,country:(l.country||''),product:(l.product||''),wa:(l.wa||''),email:(l.email||''),source:(l.source||''),note:(l.note||''),dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
  }).sort(function(a,b){return (b.follow?1:0)-(a.follow?1:0)|| b.score-a.score;});
  var midEast=leads.filter(function(l){return l.market==='中东';}).length;
- var d8=daysBetween(todayStr(),nextRamadan());
+ var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
  var summary=TX('共 ','Total ')+total+TX(' 个客户，',' clients, ')+active+TX(' 个在谈。',' in pipeline. ');
  if(overdue.length)summary+=overdue.length+TX(' 个已逾期跟进（风险最高）：',' overdue (highest risk): ')+overdue.map(function(l){return l.name;}).join('、')+'。';
  else summary+=TX('暂无逾期，跟进节奏良好。','No overdue — rhythm is good. ');
@@ -2173,6 +2173,8 @@ var HOLIDAYS={
  AU:{name:'澳大利亚',region:'大洋洲',items:[hFix('01-26','国庆日','Australia Day'),hFix('04-25','澳新军团日','Anzac Day'),hFix('12-25','圣诞节','Christmas')]},
  NZ:{name:'新西兰',region:'大洋洲',items:[hFix('02-06','国庆日','Waitangi Day'),hFix('04-25','澳新军团日','Anzac Day'),hFix('12-25','圣诞节','Christmas')]}
 };
+/* 为已过伊斯兰节日的国家补充「圣纪节 Mawlid（12 Rabi al-awwal）」，统一充实穆斯林市场节期覆盖；以色列(犹太历)等不含 is 项的国家不受影响 */
+(function(){Object.keys(HOLIDAYS).forEach(function(cc){var its=HOLIDAYS[cc].items;if(its.some(function(it){return it.is;})&&!its.some(function(it){return it.is==='mawlid';})){its.push(hIsl('mawlid','圣纪节','Mawlid'));}});})();
 /* —— 日期推算引擎 —— */
 function hpad(n){return (n<10?'0':'')+n;}
 function hJdToGreg(jd){var a=jd+32044,b=Math.floor((4*a+3)/146097),c=a-Math.floor(146097*b/4),d=Math.floor((4*c+3)/1461),e=c-Math.floor(1461*d/4),m=Math.floor((5*e+2)/153),day=e-Math.floor((153*m+2)/5)+1,month=m+3-12*Math.floor(m/10),year=100*b+d-4800+Math.floor(m/10);return [year,month,day];}
@@ -2233,8 +2235,10 @@ function renderHolidays(){
  box.innerHTML=html;
 }
 function holidayGreet(cc,h,he,d){
- var c=HOLIDAYS[cc];var country=c?c.name:cc;
- var hit=null;(S.leads||[]).forEach(function(l){if(!hit&&l.country&&l.country.indexOf(country)>=0)hit=l;});
+ var c=HOLIDAYS[cc];var country=c?c.name:cc;var region=c?c.region:'';
+ var leads=S.leads||[];
+ /* 联动匹配：优先按市场(地区)匹配老客，其次按国家名，再次按老客国家含地区名，避免「发问候」静默落空 */
+ var hit=leads.find(function(l){return l.market&&region&&l.market===region;})||leads.find(function(l){return l.country&&country&&l.country.indexOf(country)>=0;})||leads.find(function(l){return l.country&&region&&l.country.indexOf(region)>=0;});
  S._activeClient=hit?hit.id:'';
  S._festCtx={sel:'holiday',country:country,holiday:(he||h),date:(d||''),client:hit?hit.name:''};
  S.view='repeat';save('view',S.view);refreshAll();
@@ -2601,7 +2605,7 @@ function renderIns(){
  var cnt={};_ls2.forEach(function(l){if(l.stage!=='成交')cnt[l.stage]=(cnt[l.stage]||0)+1;});
  var bot='—',max=0;Object.keys(cnt).forEach(function(k){if(cnt[k]>max){max=cnt[k];bot=k;}});
  var w=0;_ls2.forEach(function(l){var p=(l.stage==='成交'?1:(STAGE_W[l.stage]||0)/100);w+=(l.amount||0)*p;});
- var d8=daysBetween(todayStr(),nextRamadan());
+ var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
  var html='';
  html+='<div class="insight"><b>'+TX('转化率','Conversion')+'</b> '+conv+'%（'+TX('成交','deals')+' '+deal+' / '+TX('线索','leads')+' '+total+'）。'+(conv<20?TX('偏低：多数线索卡在','Low: most stuck at')+'「'+bot+'」，'+TX('先集中推进该阶段。','push that stage first.')+'':TX('健康，保持节奏。','Healthy, keep rhythm.'))+'</div>';
  if(bot!=='—')html+='<div class="insight"><b>'+TX('最大瓶颈','Top bottleneck')+'</b> '+max+' '+TX('条卡在','stuck at')+'「'+bot+'」。'+TX('建议：用 AI 跟进序列自动排程，别靠记忆跟。','Use the AI cadence to auto-schedule; don’t rely on memory.')+'</div>';
@@ -2753,7 +2757,7 @@ function demoStep(n,title,sub,what,out,ai,jump,extra){
 }
 function viewDemo(){
  var me=demoMe();
- var d8=daysBetween(todayStr(),nextRamadan());
+ var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
  var dl=demoLead();
  var dlScore=scoreLead(dl);
  var s3=SCENES.cold_email.gen({client:'Ahmed',product:'prayer pillow',country:'UAE',edge:'stable $2 FOB + Ramadan stock'},me);
