@@ -3667,7 +3667,7 @@ function hubStatus(k,l,follow,days,docPct){
   case 'deal':return {t:TX('报价成交','Quote'),s:(l.stage==='报价'?TX('待报价','to quote'):'—'),c:(l.stage==='报价'?'r':'')};
   case 'deliver':return {t:TX('交付履约','Delivery'),s:(l.stage==='成交'?TX('交付中','delivering'):'—'),c:(l.stage==='成交'?'y':'')};
   case 'docs':return {t:TX('外贸单据','Docs'),s:(docPct!==null?docPct+'%':'—'),c:(docPct===null?'':(docPct>=100?'g':'y'))};
-  case 'repeat':return {t:TX('复购转介','Reorder'),s:(l.stage==='成交'?TX('待复购','to reorder'):'—'),c:(l.stage==='成交'?'y':'')};
+  case 'repeat':{var rs=l.repeatStatus;if(rs)return {t:TX('复购转介','Reorder'),s:rs,c:(rs==='已返单'?'g':(rs==='放弃'?'r':'y'))};return {t:TX('复购转介','Reorder'),s:(l.stage==='成交'?TX('待复购','to reorder'):'—'),c:(l.stage==='成交'?'y':'')};}
   case 'today':return {t:TX('今天要处理','Today'),s:(follow?(days+TX('天逾期','d late')):TX('正常','OK')),c:(follow?'r':'g')};
   case 'review':return {t:TX('复盘增长','Review'),s:String(scoreLead(l)),c:''};
  }
@@ -3708,11 +3708,18 @@ function lead360(id){
   +'<h4 style="margin:12px 0 4px">'+TX('跟进时间线','Follow-up timeline')+'</h4>'+logs
   +'<h4 style="margin:12px 0 4px">'+TX('关联交易','Linked deals')+'</h4>'+dlist
   +'<h4 style="margin:12px 0 4px">'+TX('邮件发送记录','Sent emails')+'</h4>'+mailList360(id)
+  +'<h4 style="margin:12px 0 4px">'+TX('复购 / 转介绍','Reorder / Referral')+' <a href="javascript:void(0)" class="mini-link" data-action="custJump" data-where="repeat" data-id="'+id+'">'+TX('在「复购转介」板块中管理 ›','Manage in Reorder/Referral board ›')+'</a></h4>'
+  +'<div class="modal-form">'
+  +'<label>'+TX('返单状态','Reorder status')+'<select id="v360_repeatStatus"><option value="">'+TX('— 未设置 —','— not set —')+'</option>'+REPEAT_STATUS.map(function(s){return '<option'+(s===l.repeatStatus?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label>'
+  +'<label>'+TX('转介绍状态','Referral status')+'<select id="v360_referralStatus"><option value="">'+TX('— 未设置 —','— not set —')+'</option>'+REFERRAL_STATUS.map(function(s){return '<option'+(s===l.referralStatus?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label>'
+  +'<label>'+TX('推荐人','Referrer')+'<input id="v360_referrer" value="'+esc(l.referrer||'')+'"></label>'
+  +'<label>'+TX('转介绍备注','Referral note')+'<input id="v360_referralNote" value="'+esc(l.referralNote||'')+'"></label>'
+  +'</div>'
   +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+'<button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="lead360Save" data-id="'+id+'">'+TX('保存修改','Save')+'</button></div></div>';
- $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3>'+body;
+ $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3><div class="muted" style="margin:-2px 0 10px;font-size:12.5px">'+TX('统一客户档案：下方字段与「复购转介」面板、邮件记录、复盘共用同一份数据，改一处处处同步。','Unified profile — shared with the Reorder/Referral board, email log and review; edit once, synced everywhere.')+'</div>'+body;
  $('modal').classList.add('show');
 }
-function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');l.wa=g('v360_wa');l.email=g('v360_email');l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.source=g('v360_source');l.note=g('v360_note');snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
+function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');l.wa=g('v360_wa');l.email=g('v360_email');l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.source=g('v360_source');l.note=g('v360_note');var rsEl=document.getElementById('v360_repeatStatus');if(rsEl)l.repeatStatus=rsEl.value;var rfEl=document.getElementById('v360_referralStatus');if(rfEl)l.referralStatus=rfEl.value;var rbEl=document.getElementById('v360_referrer');if(rbEl)l.referrer=rbEl.value;var rnbEl=document.getElementById('v360_referralNote');if(rnbEl)l.referralNote=rnbEl.value;snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
 function dealNew(){
  var d={id:uid(),leadId:'',cnee:'',no:'INV-'+new Date().getFullYear()+'-'+(S.deals.length+1),date:todayStr(),amt:0,qty:0,pkg:0,gross:0,net:0,vessel:'',port:'',eta:'',incoterms:'FOB',transport:'sea',woodPkg:false,lc:false,destCountry:'',docs:{},docVals:{}};
  DOC_DEF.forEach(function(x){d.docs[x.id]='todo';});
