@@ -345,7 +345,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -358,7 +358,7 @@ var S={
  docs:load('docs',null),
  deals:load('deals',null),
  _dealId:load('_dealId',''),
- _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),
+ _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),
  _custView:load('_custView','card'),
  _custSheet:load('_custSheet','cust'),
  _recShow:false,_chkShow:false,
@@ -434,7 +434,7 @@ function buildState(){
   docs:load('docs',null),
   deals:load('deals',null),
   _dealId:load('_dealId',''),
-  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),
+  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),
   _custView:load('_custView','card'),
   _custSheet:load('_custSheet','cust'),
   _recShow:false,_chkShow:false,
@@ -2842,58 +2842,319 @@ function renderIns(){
  box.innerHTML=html;
 }
 /* ============ 教练诊断（帮别人） ============ */
-var COACH_Q=DEC("DGi/VGIHto3yoSKoxGjRI5ymAeCCRZvMnWm8ztvP9k6BCtLHscHzT619KncvBqHTMLpAbWlRgP5zANm+uUJb6LpUhCqVdau4BXxHhFLnodTH3rCL97pgBQuqxCd/v19eI82RPRLv8U69EKBrVCVO2o+pcHzdDYvMBUklZcxVdQ9BJCPWLKd9RRGIpQdv0RS/fdyHcqkcTLpIX5wXuAND1KjQW4ywopRy8BABM9JJY8r4y9yPMSm4Ya54lEmITFvkf5fh2a6pwE9VBL/thdHQHeCCo4oIfCHe1quHllu7+hMvueYhq7ugrX0KEfsS7cM/OUSlLEHUWR4zrK/oJa8bzpXAxbqjUWnFNJ/DQeC2S3fe0kZPB5S31KZDC2Yd6v9UZM/jUi4sUPpvgZU3V+ZeP7faGTuXNpXYIYqIaYgxYwkQjOILzD7AstXcLqqaziPUoxu8/k24egBlufra/AXtBzF24ScoUP/j6cBEOsONgZyBOgsGbbfcy7Qx2hFqlod+heF5af6ZpiINFvedP1brhVAeVfyMJTNBFRnvb4Y6KPlh7tjuC8BRxOBkSMgIgja9OgYNGWqdT2gQQWzg7/6le9AoJlhoLPPLG6nXlbK6jDcRJr70fz3hIzeRZy0G")
-function viewCoach(){
- if(S._coachStep===undefined)S._coachStep=0;
- if(S._coachAns===undefined)S._coachAns={};
- var h=shead('coach',TX('给别的销售做业务体检：6 个问题 → 七项检验 → 指出先修哪一段。这就是你能提供的 coaching。','Diagnose other salespeople: 6 questions → 7 checks → tell them what to fix first.')+'');
- if(S._coachDone){
-  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0;font-size:15px">'+TX('诊断报告','Diagnostic report')+'</h3><button class="btn ghost mini" data-action="coachRestart">'+TX('重新诊断','Restart')+'</button></div><div class="out" id="coachOut">'+esc(S._coachDone)+'</div><button class="btn ghost mini" data-action="copy" data-copy="coachOut" style="margin-top:8px">'+TX('复制报告','Copy report')+'</button><button class="btn mini" data-action="coachSave" style="margin-top:8px;margin-left:6px">'+TX('存档','Save')+'</button></div>';
-  return h;
- }
- var step=S._coachStep;
- if(step<COACH_Q.length){
-  var qq=COACH_Q[step];
-  h+='<div class="card"><div class="muted" style="margin-bottom:6px">'+TX('问题 ','Question ')+(step+1)+' / '+COACH_Q.length+'</div><label style="font-weight:700;font-size:15px;display:block;margin-bottom:10px">'+esc(qq.q)+'</label><textarea id="coach_a" rows="3" placeholder="'+TX('让对方照实答，答不了标不清楚','Let them answer honestly; mark unclear if not')+'">'+esc(S._coachAns[qq.k]||'')+'</textarea><div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn" data-action="coachNext">'+TX('下一题','Next')+'</button></div></div>';
- }else{
-  h+='<div class="card" style="text-align:center"><p class="muted">'+TX('6 个问题已收齐，点下方生成诊断。','All 6 answered. Generate the diagnostic below.')+'</p><button class="btn amber big-cta" data-action="coachGen">'+TX('生成诊断报告','Generate report')+'</button></div>';
- }
+var COACH_Q=DEC("DGi/VGIHto3yoSKoxGjRI5ymAeCCRZvMnWm8ztvP9k6BCtLHscHzT619KncvBqHTMLpAbWlRgP5zANm+uUJb6LpUhCqVdau4BXxHhFLnodTH3rCL97pgBQv7yi049kdGVtWCIFHuvELmDvdxBaesBlUV8PoDrRwF6M73tEOW6QJ9L+Upyi6Vl9lcWIa3T9Bi7UIdv2Sa8ehHGoRQ8Q1bh+ifAA5MMF3MKdaAkdN9fcn45dKfDCm4YadYlUm3blnfSFNxTq2n3kxlFbfgoRZitH5bDVWMqa0HD29WeZ1LLIPSCHPGRDd5G38/UvcQ64BrYge5JErIT1J1763gaOAZQHQ4RDwJyswA81pDnUpj0bIkT9jrwFQACjg8qRli7o87WGHpaAYqbtxugqH9LPjA8T2tmHHxP8eRMt7RfiGj8/7XQULVVvdBZiBMwmFdbZBAFKdxpEQUspucOGJEOukdh62Le+LTh1hhYRaHtyhcRDo0eFFf7UBQWkL5VqnKFj23i+4U5hMKC/fZhG16uIUOwl5TQruVLiseSgOhYdciJrh4rYyiiSLDDV69jG6ijSKzOysrFkG+T2IVQULV5eagcdwxLFViJ/PZ0/vWz9eH6Y9ARLCCFTKJdz03ovTlD8P78ZlJDXDOR7HDGsevtZil1UA0TIlrptKZmS8tptguq5oT+FLVhYGpr1ZTzXX6iAFtqFqsl3I9V0yoaHDzAil32o6/zMnnRd10BtLgIUBFOFElDa5TszC+rUQpbY5MMALllsjjqxpU7dwg3/F8FQ8uw55/o4ZIbEkA8H1Z2vjTOE8rueuERs1cgDjVYp3r/OcANPvztioyDlqe3slH6NS/5be3Bcy0kOeckWrDZ+yw4u4SmAsPyQizY9SxQayHcGJy369FFri57dLPOceb7t84/+R83dEcjzwRPH7Cbk2zGFC4ocxWQkdq4jR9qD817Z7PkQ3lu2fxX60t94FByS/mpGQvuskv0lgvvBnSpsqjjHVyD15ySZxrraGqSpVRWrVnoDeN53JU3P02cTC1YEuJ14JERebcLojFhGvTy+fkLPWuEei3PwHCiBuyZT4Jiv2lDWZaiPJu6SofgvNhTR9YMlNGA+JtWeh3TwhU++jWyeHseLM=")
+function coachQText(i){var x=COACH_Q[i];return x?TX(x.q,x.qe):'';}
+function coachA(k){return String(((S._coachAns||{})[k])||'').trim();}
+function coachAnswered(k){var v=coachA(k);return !!v&&v!=='不清楚'&&v!=='unclear'&&v!=='\uff08不清楚\uff09';}
+function coachFilledCount(){var n=0;for(var i=0;i<COACH_Q.length;i++){if(coachAnswered(COACH_Q[i].k))n++;}return n;}
+/* 七项检验：结构化（红绿灯 + 对应板块 → 联动整个系统） */
+function coachChecks(a){
+ a=a||{};
+ var has=function(x){return /[\u4e00-\u9fa5a-zA-Z0-9]/.test(String(x||''));};
+ var bands=String(a.price||'').split(/[\/、,，;；|+]+/).filter(function(x){return /\d/.test(x);}).length;
+ var L=[];
+ var add=function(k,n,ok,no,yes,view,vlab){L.push({k:k,n:n,ok:!!ok,no:no,yes:yes,view:view,vlab:vlab});};
+ add('product',TX('印钞机·产品说得清','Moneymaker · product is clear'),has(a.product),
+  TX('产品还说不清。先说出"颜色/规格/材质"，对方脑子里没画面，就等于没有产品。','Product is unclear. Name color/spec/material — if they cannot picture it, you have no product.'),
+  TX('产品具体存在，机器可以转起来。','Product is concrete; the machine runs.'),
+  'pos',TX('去定位选品','Positioning'));
+ add('price',TX('定价·至少两条价格带','Pricing · at least 2 tiers'),bands>=2,
+  TX('只有单价格带 → 按引流款/利润款分层（价差拉到 10 倍），别只卖最便宜那一种。','Single tier → split drain/profit tiers (10x gap); do not sell only the cheapest one.'),
+  TX('有 '+bands+' 条价格带，结构合理。','Has '+bands+' tiers — structure is sound.'),
+  'pos',TX('去定位选品','Positioning'));
+ add('buyer',TX('需求·买家画像清楚','Demand · buyer profile clear'),has(a.buyer),
+  TX('买家画像缺失。B2B 买家是为转售/节期供应而采购，真实需求是"确定感+不缺货"，要写清"市场+客户类型"。','Buyer profile missing. B2B buyers purchase to resell / for season; the real need is certainty + no stock-out. Write market + buyer type.'),
+  TX('买家类型明确，需求真实存在。','Buyer type is clear; real demand.'),
+  'find',TX('去找客户','Find leads'));
+ add('channel',TX('流量-变现·有获客渠道','Flow · acquisition channel'),has(a.channel),
+  TX('没有稳定获客渠道 → 只靠熟客介绍，迟早断粮。先搭一条可重复的（关键词矩阵/冷邮件/展会后跟进），别每次从零开发。','No steady channel — you live on warm referrals and will run dry. Build one repeatable source first.'),
+  TX('已有获客渠道。注意：获客与成交别挤在同一个地方。','Channel exists. Keep acquisition and closing separate.'),
+  'find',TX('去找客户','Find leads'));
+ add('deliver',TX('道德·真实交易与交付','Ethics · real trade & delivery'),has(a.deliver),
+  TX('交付路径不明 → 先确认这条链路真能交货收款，别接了自己交不出。','Delivery path unclear — confirm you can really ship and get paid before taking orders.'),
+  TX('实物贸易、真实交易就是好模式；红海里别为保毛利降质隐瞒。','Physical trade, real deals = good model. Do not cut quality to protect margin.'),
+  'deliver',TX('去交付单证','Delivery'));
+ var ok5=L.filter(function(x){return x.ok;}).length;
+ add('scale',TX('规模化·能交出去做','Scale · SOP-able'),ok5>=4,
+  TX('前 5 项只过了 '+ok5+' 项，还谈不上交助理。先把漏掉的那几段补上。','Only '+ok5+'/5 earlier checks passed — not SOP-ready yet. Fix the gaps first.'),
+  TX('前 5 项过了 '+ok5+' 项，开发端可 SOP 化交助理；信任与选品留给你本人。','Passed '+ok5+'/5 — SOP the development side; keep trust & selection yourself.'),
+  'deliver',TX('去交付单证','Delivery'));
+ add('level',TX('成长层级·有人买单','Growth level · people pay'),/\d/.test(a.sales||''),
+  TX('说不清月销 → 还没进入"有人买单"这一层。先做成一单能被复述的成交。','Monthly sales unclear — not yet at "people pay". Land one deal you can repeat.'),
+  TX('已经有人买单（第 3 层）。下一步做实"持续获客系统"，别跳层想品牌。','People pay (L3). Build "sustained acquisition" next; do not skip to brand.'),
+  'review',TX('去复盘增长','Review'));
+ return L;
+}
+function coachFix(chk){
+ var order=['product','price','buyer','channel','deliver','level'];
+ var by={};(chk||[]).forEach(function(c){by[c.k]=c;});
+ for(var i=0;i<order.length;i++){var c=by[order[i]];if(c&&!c.ok)return c;}
+ return null;
+}
+function coachMoves(chk,fx){
+ var m=[];
+ if(fx)m.push(TX('补「'+fx.n+'」：','Fix “'+fx.n+'”: ')+fx.no);
+ m.push(TX('把 3 个老客户放上「复购转介」板，节期前 30 天各发一次问候。','Put 3 old clients on the Reorder board; greet each 30 days before their festival.'));
+ m.push(TX('每天固定 30 分钟做获客（关键词矩阵/冷邮件），并记进「邮件发送记录」。','Block 30 min/day for acquisition and log it in the Sent log.'));
+ m.push(TX('30 天后重做一次本诊断，点「对比」看哪几项从 ✗ 变 ✓。','Re-run this diagnostic in 30 days and hit “Compare”.'));
+ return m.slice(0,4);
+}
+function coachTextFrom(chk,ans,when){
+ var a=ans||S._coachAns||{};chk=chk||coachChecks(a);
+ var rep='【'+TX('外贸业务体检报告','Foreign Trade Diagnostic')+'】 '+(when||todayStr())+'\n';
+ rep+=TX('产品','Product')+'：'+(a.product||TX('未填','—'))+'\n'+TX('价格','Price')+'：'+(a.price||TX('未填','—'))+'\n'+TX('客户','Buyer')+'：'+(a.buyer||TX('未填','—'))+'\n'+TX('获客','Acquisition')+'：'+(a.channel||TX('未填','—'))+'\n'+TX('交付','Delivery')+'：'+(a.deliver||TX('未填','—'))+'\n'+TX('月销','Monthly sales')+'：'+(a.sales||TX('未填','—'))+'\n\n';
+ var okN=chk.filter(function(c){return c.ok;}).length;
+ rep+='—— '+TX('七项检验','Seven Checks')+'（'+okN+'/'+chk.length+' '+TX('通过','passed')+'）——\n';
+ chk.forEach(function(c,i){rep+=(i+1)+'. '+(c.ok?'[✓] ':'[✗] ')+c.n+'：'+(c.ok?c.yes:c.no)+'\n';});
+ var fx=coachFix(chk);
+ rep+='\n—— '+TX('结论','Conclusion')+' ——\n'+TX('总分','Score')+'：'+okN+'/'+chk.length+'\n';
+ if(fx)rep+=TX('最大短板','Biggest gap')+'：'+fx.n+'\n'+TX('先修哪一段','Fix first')+'：'+fx.vlab+'\n';
+ else rep+=TX('结论','Conclusion')+'：'+TX('七项全过，可以进入"持续获客系统"阶段了。','All 7 passed — move to the sustained-acquisition stage.')+'\n';
+ rep+=TX('30 天动作','30-day moves')+'：\n'+coachMoves(chk,fx).map(function(t,i){return '  '+(i+1)+'. '+t;}).join('\n')+'\n';
+ return rep;
+}
+/* ---- 答题界面 ---- */
+function coachStepsHTML(){
+ var h='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0 0 8px;font-size:15px">'+TX('体检进度','Progress')+' <span class="muted" style="font-size:12px;font-weight:400">'+coachFilledCount()+'/'+COACH_Q.length+' '+TX('已答','answered')+'</span></h3><button class="btn ghost mini" data-action="coachClearAll">'+TX('清空重来','Clear all')+'</button></div>';
+ h+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+ COACH_Q.forEach(function(q,i){
+  var done=coachAnswered(q.k);var on=(i===S._coachStep);
+  h+='<button class="btn mini '+(on?'':'ghost')+'" data-action="coachJump" data-i="'+i+'" title="'+esc(coachQText(i))+'" style="min-width:38px;'+(done&&!on?'border-color:#bbf7d0;color:var(--green);background:#f0fdf4':'')+'">'+(done?'✓ ':'')+(i+1)+'</button>';
+ });
+ h+='</div><div class="hint">'+TX('答到一半可以切去别的板块干活，进度自动存在本机，回来接着答。点上面任意数字可以跳回那一题改答案。','Halfway through you can go do other work — progress is saved locally. Click any number to jump back and edit.')+'</div></div>';
  return h;
 }
+function coachAskHTML(){
+ var i=S._coachStep;var q=COACH_Q[i];
+ var h='';
+ if(i===0&&!coachFilledCount()&&!(S.coach||[]).length){
+  h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><h3 style="margin:0 0 8px;font-size:15px">'+TX('这是什么？怎么用？','What is this / how to use')+'</h3><ol class="keypts" style="margin:0;background:none;border:none;padding:0"><li>'+TX('把屏幕给对方看（或你问、他答），6 个问题问完。','Ask the 6 questions — screen-share, or just talk.')+'</li><li>'+TX('系统跑七项检验，直接标出 ✗ 和"先修哪一段"，并给出一份 30 天动作。','It runs 7 checks, marks the ✗ and what to fix first, and hands over a 30-day action list.')+'</li><li>'+TX('报告可存档；同一人隔 30 天再测，点「对比」就能看到哪几项变好了——这就是你的 coaching 交付物。','Archive the report; re-test in 30 days and hit “Compare” — that is your coaching deliverable.')+'</li></ol></div>';
+ }
+ h+=coachStepsHTML();
+ h+='<div class="card"><div class="muted" style="margin-bottom:6px">'+TX('问题 ','Question ')+(i+1)+' / '+COACH_Q.length+'</div><label style="font-weight:700;font-size:15px;display:block;margin-bottom:10px">'+esc(coachQText(i))+'</label>';
+ h+='<textarea id="coach_a" rows="3" placeholder="'+TX('让对方照实答，答不了点「不清楚」','Let them answer honestly; hit “Unclear” if they cannot')+'">'+esc(S._coachAns[q.k]||'')+'</textarea>';
+ h+='<div class="row" style="margin-top:12px;justify-content:flex-end;gap:8px;flex-wrap:wrap">';
+ h+='<button class="btn ghost mini" data-action="coachUseMine">'+TX('带入我的资料','Fill from my profile')+'</button>';
+ h+='<button class="btn ghost mini" data-action="coachSkip">'+TX('不清楚 / 跳过','Unclear / skip')+'</button>';
+ if(i>0)h+='<button class="btn ghost mini" data-action="coachPrev">'+TX('上一题','Back')+'</button>';
+ h+='<button class="btn" data-action="coachNext">'+(i+1<COACH_Q.length?TX('下一题','Next'):TX('答完了，去生成','Done — generate'))+'</button>';
+ h+='</div></div>';
+ return h;
+}
+function coachGenHTML(){
+ var miss=0;COACH_Q.forEach(function(q){if(!coachAnswered(q.k))miss++;});
+ var h='<div class="card" style="text-align:center"><p class="muted">'+TX('6 个问题已收齐，点下方生成诊断。','All 6 answered. Generate the diagnostic below.')+'</p>';
+ if(miss)h+='<p class="muted" style="color:var(--amber)">'+TX('有 '+miss+' 题空着或标了不清楚，报告里会照实标出来——这本身也是诊断材料。',''+miss+' item(s) blank or unclear — the report will say so. That is diagnostic material too.')+'</p>';
+ h+='<button class="btn amber big-cta" data-action="coachGen">'+TX('生成诊断报告','Generate report')+'</button>';
+ h+='<div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost mini" data-action="coachPrev">'+TX('回去改答案','Back to answers')+'</button></div></div>';
+ return h;
+}
+/* ---- 报告 ---- */
+function coachReportHTML(){
+ var d=S._coachDone||{};var chk=d.checks||[];if(!chk.length)chk=coachChecks(d.ans||S._coachAns);
+ var okN=chk.filter(function(c){return c.ok;}).length;var tot=chk.length||7;
+ var pct=Math.round(okN/tot*100);var fx=coachFix(chk);
+ var col=okN>=5?'var(--green)':(okN>=3?'var(--amber)':'var(--red)');
+ var h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;font-size:15px">'+TX('诊断报告','Diagnostic report')+' <span class="muted" style="font-size:12px;font-weight:400">'+esc(d.date||todayStr())+'</span></h3><button class="btn ghost mini" data-action="coachRestart">'+TX('重新诊断','Restart')+'</button></div>';
+ h+='<div style="display:flex;align-items:center;gap:12px;margin:12px 0 4px"><div style="font-size:32px;font-weight:800;color:'+col+';line-height:1">'+okN+'<span style="font-size:14px;color:var(--sub)">/'+tot+'</span></div><div style="flex:1"><div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+col+'"></div></div><div class="muted" style="font-size:12px;margin-top:4px">'+TX('七项检验通过率','Seven checks pass rate')+' '+pct+'%</div></div></div>';
+ h+='<div style="margin-top:12px">';
+ chk.forEach(function(c,i){
+  h+='<div style="display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line)"><div style="flex:0 0 20px;font-weight:800;color:'+(c.ok?'var(--green)':'var(--red)')+'">'+(c.ok?'✓':'✗')+'</div><div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+(i+1)+'. '+c.n+'</div><div class="muted" style="font-size:12.5px;margin-top:2px">'+esc(c.ok?c.yes:c.no)+'</div></div>'+(c.ok?'':'<button class="btn ghost mini" data-action="nav" data-view="'+c.view+'" style="align-self:center;white-space:nowrap">'+c.vlab+' ›</button>')+'</div>';
+ });
+ h+='</div>';
+ h+='<div style="margin-top:14px;padding:12px;border-radius:10px;background:#fffbeb;border-left:3px solid #f59e0b"><div style="font-size:12px;color:var(--sub)">'+TX('先修哪一段','Fix this first')+'</div>';
+ if(fx){
+  h+='<div style="font-size:15px;font-weight:800;margin:2px 0 4px">'+fx.n+'</div><div class="muted" style="font-size:12.5px">'+esc(fx.no)+'</div><button class="btn amber mini" data-action="nav" data-view="'+fx.view+'" style="margin-top:8px">'+fx.vlab+' ›</button>';
+ }else{
+  h+='<div style="font-size:15px;font-weight:800;margin:2px 0 4px">'+TX('七项全过','All 7 passed')+'</div><div class="muted" style="font-size:12.5px">'+TX('可以进入"持续获客系统"阶段：把开发端 SOP 化，自己只留信任与选品。','Move to sustained acquisition: SOP the development side; keep trust & selection yourself.')+'</div>';
+ }
+ h+='</div>';
+ h+='<div style="margin-top:14px"><h3 style="margin:0 0 6px;font-size:14px">'+TX('给对方一份 30 天动作','Hand over a 30-day action list')+'</h3><div class="out" id="coachOut">'+esc(d.text||coachTextFrom(chk,d.ans))+'</div></div>';
+ var savedId=d.savedId;
+ h+='<div class="grid g2" style="gap:10px;margin-top:10px;align-items:end"><div class="field" style="margin:0"><label style="font-size:12.5px;font-weight:700">'+TX('诊断对象（存档用）','Who (for the archive)')+'</label><input id="coach_obj" value="'+esc(d.name||coachA('buyer'))+'" placeholder="'+TX('如 张伟·义乌饰品','e.g. Zhang · Yiwu jewelry')+'"></div><div class="row" style="gap:8px;flex-wrap:wrap">';
+ if(savedId)h+='<span class="tag g">'+TX('已存档 ✓','Archived ✓')+'</span>';
+ else h+='<button class="btn mini" data-action="coachSave">'+TX('存档这份报告','Archive report')+'</button>';
+ h+='<button class="btn ghost mini" data-action="coachToTask">'+TX('把 30 天动作排成待办','Actions to to-dos')+'</button>';
+ h+='<button class="btn ghost mini" data-action="copy" data-copy="coachOut">'+TX('复制报告','Copy report')+'</button>';
+ h+='</div></div>';
+ h+='<div class="hint">'+TX('存档后可在下方「往期诊断存档」随时查看/对比；同一人 30 天后重测，点「对比」看哪几项从 ✗ 变 ✓。','After archiving, view/compare it in “Past diagnostics” below. Re-test in 30 days and hit “Compare”.')+'</div>';
+ h+='<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><div class="muted" style="font-size:12.5px;margin-bottom:6px">'+TX('联动：诊断结论直接落到你自己的工作台','Act on it — jump into the matching module')+'</div><div class="row" style="gap:8px;flex-wrap:wrap">'
+  +'<button class="btn ghost mini" data-action="nav" data-view="pos">'+TX('定位选品','Positioning')+'</button>'
+  +'<button class="btn ghost mini" data-action="nav" data-view="find">'+TX('找客户','Find leads')+'</button>'
+  +'<button class="btn ghost mini" data-action="nav" data-view="reach">'+TX('触达话术','Scripts')+'</button>'
+  +'<button class="btn ghost mini" data-action="nav" data-view="repeat">'+TX('复购转介','Reorder')+'</button>'
+  +'<button class="btn ghost mini" data-action="nav" data-view="deliver">'+TX('交付单证','Delivery')+'</button>'
+  +'<button class="btn ghost mini" data-action="nav" data-view="review">'+TX('复盘增长','Review')+'</button>'
+  +'<button class="btn ghost mini" data-action="nav" data-view="tasks">'+TX('待办','To-dos')+'</button>'
+  +'</div></div>';
+ h+='</div>';
+ return h;
+}
+/* ---- 复诊对比 ---- */
+function coachCompareHTML(){
+ var id=S._coachCmp;if(!id)return '';
+ var rec=(S.coach||[]).filter(function(r){return String(r.id)===String(id);})[0];if(!rec)return '';
+ var base=null,bname='';
+ if(S._coachDone&&S._coachDone.checks&&S._coachDone.checks.length){base=S._coachDone.checks;bname=TX('当前诊断','current');}
+ else{
+  var arr=(S.coach||[]).slice().sort(function(a,b){return String(a.date||'')<String(b.date||'')?-1:1;});
+  var last=arr[arr.length-1];
+  if(last&&String(last.id)!==String(id)&&last.checks&&last.checks.length){base=last.checks;bname=last.date;}
+ }
+ if(!base||!base.length){base=coachChecks(S._coachAns);bname=TX('当前答题','current answers');}
+ var okOld=(rec.checks||[]).filter(function(c){return c.ok;}).length;
+ var okNew=base.filter(function(c){return c.ok;}).length;
+ var diff=okNew-okOld;
+ var dc=diff>0?'var(--green)':(diff<0?'var(--red)':'var(--sub)');
+ var h='<div class="card" style="margin-top:14px;border-left:3px solid #22c55e;background:#f0fdf4"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;font-size:15px">'+TX('复诊对比','Re-check comparison')+' <span class="muted" style="font-size:12px;font-weight:400">'+esc(rec.date)+' · '+esc(rec.name||'')+' → '+esc(bname)+'</span></h3><button class="btn ghost mini" data-action="coachCmpClose">'+TX('关闭','Close')+'</button></div>';
+ h+='<div style="margin:8px 0;font-size:13px">'+TX('通过项','Passed')+'：'+okOld+' → <b style="color:'+dc+'">'+okNew+'</b> '+(diff>0?TX('（进步 +'+diff+'）','(+'+diff+')'):(diff<0?TX('（退步 '+diff+'）','('+diff+')'):TX('（持平）','(flat)')))+'</div>';
+ var oldMap={};(rec.checks||[]).forEach(function(c){oldMap[c.k]=c;});
+ h+='<div>';
+ base.forEach(function(c,i){
+  var o=oldMap[c.k];
+  var oTxt=o?(o.ok?'✓':'✗'):'–';
+  var changed=!!(o&&o.ok!==c.ok);
+  h+='<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;'+(changed?'background:#fff;border-radius:6px;padding-left:6px;padding-right:6px;':'')+'"><div style="flex:0 0 66px;font-weight:700;color:var(--sub)">'+oTxt+' → <span style="color:'+(c.ok?'var(--green)':'var(--red)')+'">'+(c.ok?'✓':'✗')+'</span></div><div style="flex:1">'+(i+1)+'. '+c.n+(changed?' <span class="tag '+(c.ok?'g':'r')+'">'+(c.ok?TX('已改善','improved'):TX('退步','worse'))+'</span>':'')+'</div></div>';
+ });
+ h+='</div>';
+ if(!((rec.checks||[]).length))h+='<div class="muted" style="font-size:12.5px;margin-top:6px">'+TX('这份老存档没有结构化检验数据（早期版本），只能对比通过项数量。','This older archive has no structured checks (earlier version) — only the count is comparable.')+'</div>';
+ h+='</div>';
+ return h;
+}
+/* ---- 往期存档 ---- */
+function coachHistory(){
+ var log=S.coach||[];
+ var h='<div style="margin-top:16px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('往期诊断存档','Past diagnostics')+' <span class="muted" style="font-size:12px;font-weight:400">'+log.length+TX(' 份','')+'</span></h3>';
+ if(!log.length){
+  h+='<div class="muted" style="font-size:13px">'+TX('还没有存档。给同事/学员做完诊断后点「存档这份报告」就会留在这里——同一人隔 30 天再测，点「对比」就能看到进步。','Nothing archived yet. Hit “Archive report” and it lands here — re-test in 30 days and hit “Compare”.')+'</div>';
+ }else{
+  h+='<div style="max-height:340px;overflow:auto">';
+  log.slice().reverse().forEach(function(r){
+   var ck=r.checks||[];var okN=r.score!==undefined?r.score:ck.filter(function(c){return c.ok;}).length;
+   h+='<div class="card" style="padding:10px;margin-bottom:8px;border-left:3px solid #2563eb">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:13px">'+esc(r.date||'')+' · '+esc(r.name||'')+'</b>'
+    +'<span class="muted" style="font-size:12px">'+TX('通过','Passed')+' '+okN+'/'+(ck.length||7)+(r.fix?' · '+TX('先修','Fix')+'：'+esc(r.fix):'')+'</span></div>'
+    +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap">'
+    +'<button class="btn ghost mini" data-action="coachView" data-id="'+esc(r.id)+'">'+(String(S._coachViewId||'')===String(r.id)?TX('收起','Hide'):TX('查看','View'))+'</button>'
+    +'<button class="btn ghost mini" data-action="coachCompare" data-id="'+esc(r.id)+'">'+(String(S._coachCmp||'')===String(r.id)?TX('取消对比','Cancel'):TX('对比','Compare'))+'</button>'
+    +'<button class="btn ghost mini" data-action="coachCopyOne" data-id="'+esc(r.id)+'">'+TX('复制','Copy')+'</button>'
+    +'<button class="btn ghost mini" data-action="coachDel" data-id="'+esc(r.id)+'">'+TX('删','Del')+'</button>'
+    +'</div>';
+   if(String(S._coachViewId||'')===String(r.id))h+='<div class="out" id="coachlog_'+esc(r.id)+'" style="margin-top:6px;font-size:12.5px">'+esc(r.text||'')+'</div>';
+   h+='</div>';
+  });
+  h+='</div>';
+ }
+ h+='</div>';
+ return h;
+}
+function viewCoach(){
+ if(S._coachStep===undefined||S._coachStep===null)S._coachStep=0;
+ if(!S._coachAns)S._coachAns={};
+ var h=shead('coach',TX('给别的销售做业务体检：6 个问题 → 七项检验 → 指出先修哪一段。这就是你能提供的 coaching。','Diagnose other salespeople: 6 questions → 7 checks → tell them what to fix first.')+'');
+ if(S._coachDone){h+=coachReportHTML();h+=coachCompareHTML();h+=coachHistory();return h;}
+ if(S._coachStep>=COACH_Q.length)h+=coachGenHTML();
+ else h+=coachAskHTML();
+ h+=coachCompareHTML();
+ h+=coachHistory();
+ return h;
+}
+/* ---- 交互 ---- */
 function coachNext(){
- var qq=COACH_Q[S._coachStep];
- S._coachAns[qq.k]=$('coach_a').value;
+ var q=COACH_Q[S._coachStep];if(!q)return;
+ var el=$('coach_a');if(el)S._coachAns[q.k]=el.value;
  S._coachStep++;
+ save('_coachAns',S._coachAns);save('_coachStep',S._coachStep);
+ refreshAll();try{var t=$('coach_a');if(t)t.focus();}catch(e){}
+}
+function coachPrev(){
+ var el=$('coach_a');if(el&&COACH_Q[S._coachStep])S._coachAns[COACH_Q[S._coachStep].k]=el.value;
+ S._coachStep=Math.max(0,S._coachStep-1);
+ save('_coachAns',S._coachAns);save('_coachStep',S._coachStep);
  refreshAll();
+}
+function coachJump(i){
+ var el=$('coach_a');if(el&&COACH_Q[S._coachStep])S._coachAns[COACH_Q[S._coachStep].k]=el.value;
+ i=parseInt(i,10);if(isNaN(i))i=0;
+ S._coachStep=Math.max(0,Math.min(COACH_Q.length-1,i));
+ save('_coachAns',S._coachAns);save('_coachStep',S._coachStep);
+ refreshAll();
+}
+function coachSkip(){
+ var q=COACH_Q[S._coachStep];if(!q)return;
+ S._coachAns[q.k]=TX('不清楚','unclear');
+ S._coachStep++;save('_coachAns',S._coachAns);save('_coachStep',S._coachStep);refreshAll();
+}
+function coachUseMine(){
+ var m=S.me||{};var q=COACH_Q[S._coachStep];if(!q)return;
+ var v='';
+ if(q.k==='product')v=m.product||'';
+ else if(q.k==='buyer')v=m.market||'';
+ var el=$('coach_a');
+ if(!v){toast(TX('「我的资料」里没有这一项，请手动填','Not in your profile — please fill manually'));return;}
+ if(el)el.value=(el.value?el.value.replace(/\s+$/,'')+' / ':'')+v;
+ S._coachAns[q.k]=el?el.value:v;save('_coachAns',S._coachAns);
+ toast(TX('已带入我的资料','Filled from your profile'));
 }
 function coachGen(){
- var a=S._coachAns;
- var rep='';
- rep+='【'+TX('外贸业务体检报告','Foreign Trade Diagnostic')+'】\n';
- rep+=TX('产品','Product')+'：'+(a.product||TX('未填','—'))+'\n'+TX('价格','Price')+'：'+(a.price||TX('未填','—'))+'\n'+TX('客户','Buyer')+'：'+(a.buyer||TX('未填','—'))+'\n'+TX('获客','Acquisition')+'：'+(a.channel||TX('未填','—'))+'\n'+TX('交付','Delivery')+'：'+(a.deliver||TX('未填','—'))+'\n'+TX('月销','Monthly sales')+'：'+(a.sales||TX('未填','—'))+'\n\n';
- rep+='—— '+TX('七项检验','Seven Checks')+' ——\n';
- var hasProduct=/[\u4e00-\u9fa5a-zA-Z]/.test(a.product||'');
- rep+='1.'+TX('印钞机','Moneymaker')+'：'+(hasProduct?TX('产品具体存在，机器可转。','Product is concrete; machine runs.'):TX('产品还说不清，先说出"颜色/规格"。','Product unclear; name color/spec first.'))+'\n';
- var bands=(a.price||'').split(/[\/、,，]/).filter(function(x){return /\d/.test(x);}).length;
- rep+='2.'+TX('定价','Pricing')+'：'+(bands>=2?TX('有多价格带，结构合理。','Multiple tiers, structure OK.'):TX('单价格带 → 按引流/利润分层（价差10倍），别只卖便宜那一种。','Single tier → split drain/profit (10x gap); don’t sell only cheap.'))+'\n';
- rep+='3.'+TX('需求','Demand')+'：B2B '+TX('买家采购是为转售/节期供应，真实需求是"确定感+不缺货"。','buyers purchase to resell/for season; real need is certainty + no stock-out.')+'\n';
- rep+='4.'+TX('流量-变现','Flow')+'：'+TX('获客','acquisition')+'('+(a.channel||TX('未填','—'))+')'+TX('与交付要分开，别在同一处成交。',' and delivery must be separate; don’t close in one place.')+'\n';
- rep+='5.'+TX('道德','Ethics')+'：'+TX('实物贸易，真实交易即好模式；红海里别为保毛利降质隐瞒。','Physical trade, real deal = good model; don’t cut quality to protect margin.')+'\n';
- rep+='6.'+TX('规模化','Scale')+'：'+TX('开发端可 SOP 化交助理；信任与选品留给你本人。','Dev can be SOP’d to assistants; trust & selection stay with you.')+'\n';
- var lvl=a.sales&&/\d/.test(a.sales)?TX('第3层(有人买)','L3 (people pay)'):TX('第2层(找可重复获客)','L2 (repeatable acquisition)');
- rep+='7.'+TX('成长层级','Growth level')+'：'+lvl+'，'+TX('先做实第4层"持续获客系统"，别跳层想品牌。','build L4 "sustained acquisition" first; don’t skip to brand.')+'\n\n';
- var fix=TX('先修「找客户」：把线索按 Pipeline 管起来，别每次从零开发。','Fix "Find Leads" first: pipeline your leads, stop starting from zero.');
- if(bands<2)fix=TX('先修「定位选品」：做产品分层，把漏掉的利润捡回来。','Fix "Positioning" first: tier your products, recover leaked margin.');
- rep+='—— '+TX('结论','Conclusion')+' ——\n'+TX('最大短板','Biggest gap')+'：'+fix+'\n'+TX('明天第一件事','Tomorrow’s first move')+'：'+(bands<2?TX('给老客推一款利润款试样。','Push a profit-tier sample to old clients.'):TX('给 3 个老客发节期问候，启动返单。','Send festival greetings to 3 old clients, start reorders.'))+'\n';
- S._coachDone=rep;S._coachStep=COACH_Q.length;
+ var a=S._coachAns||{};
+ var chk=coachChecks(a);
+ S._coachDone={text:coachTextFrom(chk,a),checks:chk,ans:a,date:todayStr(),name:coachA('buyer')};
+ S._coachStep=COACH_Q.length;
+ save('_coachDone',S._coachDone);save('_coachStep',S._coachStep);
  refreshAll();
+ try{var o=$('coachOut');if(o)o.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
 }
 function coachSave(){
- if(!S._coachDone)return;
- S.coach.unshift({id:uid(),name:(S._coachAns.buyer||TX('匿名','anon'))+' '+TX('体检','check'),report:S._coachDone,date:todayStr()});
- save('coach',S.coach);toast(TX('已存档','Saved'));S._coachDone=null;S._coachStep=0;S._coachAns={};refreshAll();
+ var d=S._coachDone;if(!d)return;
+ if(d.savedId){toast(TX('这份已经存档了','Already archived'));return;}
+ if(!S.coach)S.coach=[];
+ var nm=(($('coach_obj')&&$('coach_obj').value.trim())||d.name||coachA('buyer')||TX('匿名','anon'));
+ var chk=d.checks||coachChecks(d.ans||{});
+ var fx=coachFix(chk);
+ var id=uid();
+ S.coach.unshift({id:id,name:nm,date:d.date||todayStr(),text:d.text||coachTextFrom(chk,d.ans),checks:chk,ans:d.ans||{},score:chk.filter(function(c){return c.ok;}).length,fix:fx?fx.n:''});
+ save('coach',S.coach);
+ d.savedId=id;d.name=nm;save('_coachDone',d);
+ refreshAll();toast(TX('已存档，下方可查看/对比','Archived — view or compare below'));
 }
-function coachRestart(){S._coachDone=null;S._coachStep=0;S._coachAns={};refreshAll();}
+function coachDel(id){
+ S.coach=(S.coach||[]).filter(function(r){return String(r.id)!==String(id);});
+ save('coach',S.coach);
+ if(String(S._coachCmp||'')===String(id))S._coachCmp='';
+ if(String(S._coachViewId||'')===String(id))S._coachViewId='';
+ refreshAll();toast(TX('已删除该存档','Archive deleted'));
+}
+function coachView(id){S._coachViewId=(String(S._coachViewId||'')===String(id))?'':id;refreshAll();}
+function coachCmp(id){S._coachCmp=(String(S._coachCmp||'')===String(id))?'':id;refreshAll();}
+function coachCmpClose(){S._coachCmp='';refreshAll();}
+function coachCopyOne(id){
+ var r=(S.coach||[]).filter(function(x){return String(x.id)===String(id);})[0];
+ if(r)copyText(r.text||'');
+}
+function coachToTask(){
+ var d=S._coachDone;if(!d){toast(TX('先生成诊断报告','Generate the report first'));return;}
+ var chk=d.checks||coachChecks(d.ans||{});
+ var list=coachMoves(chk,coachFix(chk));
+ if(!S.tasks)S.tasks=[];
+ list.forEach(function(t){S.tasks.push({id:uid(),title:t,due:iso(new Date(),7),done:false,clientId:''});});
+ save('tasks',S.tasks);refreshAll();
+ toast(TX('已把 '+list.length+' 条动作排进待办','Added '+list.length+' actions to your to-dos'));
+}
+function coachClearAll(){
+ openModal(TX('清空本次诊断？','Clear this diagnostic?'),TX('会清掉 6 个问题的答案和当前报告，已存档的记录不受影响。','Clears the 6 answers and the current report; archived records are untouched.'),function(){
+  S._coachStep=0;S._coachAns={};S._coachDone=null;S._coachCmp='';
+  save('_coachStep',0);save('_coachAns',{});save('_coachDone',null);
+  refreshAll();toast(TX('已清空，可以重新开始','Cleared — start fresh'));
+ });
+}
+function coachRestart(){
+ openModal(TX('重新诊断？','Start a new diagnostic?'),TX('当前报告会清掉（已存档的记录不受影响）。','The current report will be cleared (archives are safe).'),function(){
+  S._coachDone=null;S._coachStep=0;S._coachAns={};S._coachCmp='';
+  save('_coachDone',null);save('_coachStep',0);save('_coachAns',{});
+  refreshAll();toast(TX('已重置，可以开始新的体检','Reset — start a new diagnostic'));
+ });
+}
 /* ============ 我的资料 ============ */
 function viewMe(){
  var m=S.me;
@@ -2915,7 +3176,7 @@ function saveMe(){
 /* ============ 备份 ============ */
 function viewBackup(){
  var h=shead('backup',TX('数据只存本机。点顶部「备份全部」可一键导出全部数据成一个文件，换设备/重装后再「恢复」即可。','Data stays local. Use the top “Backup all” to export everything to one file; restore on a new device.')+'');
- var cnt=S.leads.length+S.tasks.length+S.scripts.length+S.coach.length;
+ var cnt=(S.leads||[]).length+(S.tasks||[]).length+(S.scripts||[]).length+(S.coach||[]).length;
  h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('数据备份','Backup')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('当前共 ','Currently ')+cnt+TX(' 条数据。导出后换设备/重装可导入恢复。',' records. Export to migrate/restore.')+'</p><div class="row"><button class="btn" data-action="exportJson">'+TX('全量备份','Full backup')+'</button><button class="btn ghost" data-action="importJson">'+TX('导入恢复全部','Import all')+'</button><button class="btn danger" data-action="resetAll">'+TX('清空重置','Reset all')+'</button></div><input type="file" id="impFile" accept="application/json" style="display:none"></div>';
  h+='<div class="card" style="margin-top:14px;background:#f8fafc"><h3 style="margin:0 0 6px;font-size:15px">'+TX('给别人用（帮人模式）','For others (help mode)')+'</h3><p class="muted" style="margin:0">'+TX('直接把这个 HTML 文件发给同事/学员即可。点"清空重置"抹掉你的客户数据，对方打开是空白示例，从"教练诊断"开始帮他做体检。数据始终只在各自本机。','Send this HTML to colleagues/students. Reset clears your data; they open a blank example and start from Coach. Data stays on each device.')+'</p></div>';
  return h;
@@ -3067,13 +3328,13 @@ function renderNav(){
  NAV.forEach(function(n){
   if(S.hidden.indexOf(n.k)>=0) return;
   var lock=(n.k==='home');
-  var num=n.k==='lib'?((S.scripts&&S.scripts.length)?S.scripts.length:''):(n.k==='mails'?((S.mails&&S.mails.length)?S.mails.length:''):n.n);
+  var num=n.k==='lib'?((S.scripts&&S.scripts.length)?S.scripts.length:''):(n.k==='mails'?((S.mails&&S.mails.length)?S.mails.length:''):(n.k==='coach'?((S.coach&&S.coach.length)?S.coach.length:'帮人'):n.n));
   var hot=(n.k==='lib'&&S.scripts.length>0)?' hot':'';
   h+='<button class="navitem '+(S.view===n.k?'on':'')+hot+'" data-action="nav" data-view="'+n.k+'">'+(ICON[n.k]||ICON.brand)+'<span>'+TX(n.t,n.te)+'</span>'+(num?'<span class="num">'+num+'</span>':'')+(lock?'':'<span class="x" data-action="navHide" data-view="'+n.k+'" title="'+TX('隐藏此模块','Hide module')+'">×</span>')+'</button>';
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v27 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v27, hard-refresh with Ctrl+F5')+'">v27</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v28 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v28, hard-refresh with Ctrl+F5')+'">v28</div>';
  $('nav').innerHTML=h;
 }
 function renderView(){
@@ -3239,6 +3500,17 @@ document.addEventListener('click',function(e){
  else if(a==='coachGen'){coachGen();}
  else if(a==='coachSave'){coachSave();}
  else if(a==='coachRestart'){coachRestart();}
+ else if(a==='coachJump'){coachJump(el.dataset.i);}
+ else if(a==='coachPrev'){coachPrev();}
+ else if(a==='coachSkip'){coachSkip();}
+ else if(a==='coachUseMine'){coachUseMine();}
+ else if(a==='coachClearAll'){coachClearAll();}
+ else if(a==='coachToTask'){coachToTask();}
+ else if(a==='coachView'){coachView(el.dataset.id);}
+ else if(a==='coachDel'){coachDel(el.dataset.id);}
+ else if(a==='coachCopyOne'){coachCopyOne(el.dataset.id);}
+ else if(a==='coachCompare'){coachCmp(el.dataset.id);}
+ else if(a==='coachCmpClose'){coachCmpClose();}
  else if(a==='saveMe'){saveMe();}
  else if(a==='exportJson'){exportJson();}
  else if(a==='importJson'){importJson();}
@@ -3276,6 +3548,7 @@ document.addEventListener('change',function(e){
 document.addEventListener('input',function(e){
  if(!e.target)return;
  if(e.target.id==='hf_q'){holidayFilterFromDom();return;}
+ if(e.target.id==='coach_a'){S._coachAns=S._coachAns||{};var _cq=COACH_Q[S._coachStep];if(_cq){S._coachAns[_cq.k]=e.target.value;save('_coachAns',S._coachAns);}return;}
  if(e.target.id==='rv_next'||e.target.id==='rv_act'){
   S.rvDraft=S.rvDraft||{next:'',act:''};
   if(e.target.id==='rv_next')S.rvDraft.next=e.target.value;else S.rvDraft.act=e.target.value;
