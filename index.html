@@ -351,7 +351,7 @@ var S={
  docs:load('docs',null),
  deals:load('deals',null),
  _dealId:load('_dealId',''),
- _leadFilter:{q:'',market:'',stage:'',source:''},_trashShow:false,
+ _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false},_trashShow:false,
  _custView:load('_custView','card'),
  _custSheet:load('_custSheet','cust'),
  _recShow:false,_chkShow:false,
@@ -427,7 +427,7 @@ function buildState(){
   docs:load('docs',null),
   deals:load('deals',null),
   _dealId:load('_dealId',''),
-  _leadFilter:{q:'',market:'',stage:'',source:''},_trashShow:false,
+  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false},_trashShow:false,
   _custView:load('_custView','card'),
   _custSheet:load('_custSheet','cust'),
   _recShow:false,_chkShow:false,
@@ -1580,6 +1580,10 @@ function renderLeads(){
  if(f.market)hs=hs.filter(function(l){return l.market===f.market;});
  if(f.stage)hs=hs.filter(function(l){return l.stage===f.stage;});
  if(f.source)hs=hs.filter(function(l){return l.source===f.source;});
+ if(f.since)hs=hs.filter(function(l){return l.last>=f.since;});
+ if(f.stages&&f.stages.length)hs=hs.filter(function(l){return f.stages.indexOf(l.stage)>=0;});
+ if(f.overdue)hs=hs.filter(function(l){var d=Math.round((new Date(todayStr())-new Date(l.last))/864e5);return d>=14&&l.stage!=='成交';});
+ if(f.reorder)hs=hs.filter(function(l){return l.stage==='成交'&&mailCount(l.id)>0;});
  if(!hs.length){box.innerHTML='<div class="card muted" style="text-align:center">'+TX('没有匹配的线索。','No matching leads.')+'</div>';return;}
  var html='';
  hs.forEach(function(l){
@@ -2339,26 +2343,49 @@ function qcToggle(i){
 function sopReset(){save('sopDone',[]);sopPaintAll();toast(TX('已重置 SOP 进度','SOP progress reset'));}
 function qcReset(){save('qcDone',[]);qcPaintAll();toast(TX('已重置验货进度','QC progress reset'));}
 /* ============ 复盘增长 ============ */
+function reviewDrill(kind){
+ var f={q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false};
+ if(kind==='new'){f.since=iso(new Date(),-30);}
+ else if(kind==='talk'){f.stages=['已联系','已回复','试样','报价'];}
+ else if(kind==='deal'){f.stage='成交';}
+ else if(kind==='warn'){f.overdue=true;}
+ else if(kind==='reorder'){f.reorder=true;}
+ else if(kind==='mails'||kind==='mails30'){S._mailFilter='all';save('_mailFilter',S._mailFilter);S.view='mails';save('view',S.view);S._activeClient='';refreshAll();return;}
+ S._leadFilter=f;save('_leadFilter',f);S.view='find';save('view',S.view);S._activeClient='';refreshAll();
+ if($('lf_stage')&&f.stage)$('lf_stage').value=f.stage;
+}
 function viewReview(){
- var h=shead('review',TX('周/月复盘 + AI 洞察。看转化率与复购率，别只看流水。','Weekly/monthly review + AI insights. Watch conversion, not just revenue.')+'');
+ var h=shead('review',TX('周/月复盘 + AI 洞察。看转化率与复购率，别只看流水。','Weekly/monthly review + AI insights. Watch conversion & repurchase rate, not just revenue.')+'');
  var _ls=S.leads||[];
+ var total=_ls.length;
  var dev=_ls.filter(function(l){return l.last>=iso(new Date(),-30);}).length;
+ var contacted=_ls.filter(function(l){return ['已联系','已回复','试样','报价','成交'].indexOf(l.stage)>=0;}).length;
  var talking=_ls.filter(function(l){return ['已联系','已回复','试样','报价'].indexOf(l.stage)>=0;}).length;
  var deal=_ls.filter(function(l){return l.stage==='成交';}).length;
  var warn=_ls.filter(function(l){return l.stage!=='成交' && Math.round((new Date(todayStr())-new Date(l.last))/864e5)>=14;}).length;
  var _mst=mailStats();
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:15px">'+TX('关键指标','Key Metrics')+'</h3><div class="grid g3">';
- h+='<div class="stat"><div class="v">'+dev+'</div><div class="k">'+TX('本月新开发','New this month')+'</div></div>';
- h+='<div class="stat"><div class="v">'+talking+'</div><div class="k">'+TX('在谈中','In talk')+'</div></div>';
- h+='<div class="stat"><div class="v">'+deal+'</div><div class="k">'+TX('成交数','Deals')+'</div></div>';
- h+='<div class="stat"><div class="v" style="color:var(--red)">'+warn+'</div><div class="k">'+TX('预警(≥14天)','Alert (≥14d)')+'</div></div>';
- h+='<div class="stat"><div class="v">'+_mst.w30+'</div><div class="k">'+TX('已发邮件(近30天)','Sent (last 30d)')+'</div></div>';
- h+='<div class="stat"><div class="v">'+_mst.cli+'</div><div class="k">'+TX('已触达客户(有留痕)','Clients reached')+'</div></div></div>';
- h+='<div class="hint">'+TX('本月新开发=近30天新增；在谈=已联系/试样/报价阶段；预警=超14天未跟且未成交，优先处理；已发邮件/已触达客户来自「邮件发送记录」，发送本身会刷新客户的最后跟进日，所以多发信能直接减少预警数。','New=last 30d; In talk=contacted/sample/quote; Alert=14d+ no follow & not closed. Sent/reached come from the Sent Log — sending also refreshes a client’s last-contact date, so more sends = fewer alerts.')+'</div></div>';
+ var dealsWithMail=_ls.filter(function(l){return l.stage==='成交'&&mailCount(l.id)>0;}).length;
+ var reorderRate=deal?Math.round(dealsWithMail/deal*100):0;
+ var conv=total?Math.round(deal/total*100):0;
+ var stat=function(kind,val,label,red){return '<div class="stat" data-action="reviewDrill" data-kind="'+kind+'" style="cursor:pointer" title="'+TX('点开看明细','Click to drill down')+'"><div class="v"'+(red?' style="color:var(--red)"':'')+'>'+val+'</div><div class="k">'+label+' <span style="opacity:.45">›</span></div></div>';};
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:15px">'+TX('关键指标','Key Metrics')+' <span class="muted" style="font-size:12px;font-weight:400">'+TX('（点任意格跳对应模块）','click any cell to drill in')+'</span></h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">';
+ h+=stat('all',conv+'%',TX('转化率','Conv.'),false);
+ h+=stat('new',dev,TX('本月新开发','New 30d'),false);
+ h+=stat('talk',talking,TX('在谈中','In talk'),false);
+ h+=stat('deal',deal,TX('成交数','Deals'),false);
+ h+=stat('warn',warn,TX('预警≥14天','Alert'),true);
+ h+=stat('mails30',_mst.w30,TX('已发邮件·30天','Sent 30d'),false);
+ h+=stat('mails',_mst.cli,TX('已触达客户','Clients'),false);
+ h+=stat('reorder',reorderRate+'%',TX('复购率','Reorder'),false);
+ h+='</div><div class="hint">'+TX('转化率=成交/线索；复购率=已成交客户中，有后续邮件/WA 触达记录的比例——没有触达就谈不上复购。点击每格可跳到「找客户」或「邮件发送记录」看明细。','Conv=deals/leads; Reorder=deals with a follow-up email/WA on record. Click any cell to jump into Leads or the Sent Log.')+'</div></div>';
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">AI '+TX('复盘洞察','Insights')+'</h3><div id="insBox"></div></div>';
- h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('周复盘模板（可复制）','Weekly review template')+'</h3>';
- var t='【'+TX('本周复盘','Weekly review')+' '+todayStr()+'】\n1. '+TX('新增线索：__ 条，回复：__ 条','New leads: __, replies: __')+'\n2. '+TX('推进到试样/报价：__ 条','Advanced to sample/quote: __')+'\n3. '+TX('成交：__ 单，金额 $__','Deals: __, $__')+'\n4. '+TX('卡在哪：___','Stuck at: ___')+'\n5. '+TX('下周重点：___','Next week focus: ___')+'\n6. '+TX('一个可复制的动作：___','One repeatable action: ___');
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('周复盘模板（已按真实数据预填）','Weekly review (auto-filled)')+'</h3>';
+ var adv=_ls.filter(function(l){return ['试样','报价'].indexOf(l.stage)>=0;}).length;
+ var sumDeal=_ls.filter(function(l){return l.stage==='成交';}).reduce(function(s,l){return s+(+l.amount||0);},0);
+ var bot='—',max=0;var cnt={};_ls.forEach(function(l){if(l.stage!=='成交')cnt[l.stage]=(cnt[l.stage]||0)+1;});Object.keys(cnt).forEach(function(k){if(cnt[k]>max){max=cnt[k];bot=k;}});
+ var t='【'+TX('本周复盘','Weekly review')+' '+todayStr()+'】\n1. '+TX('新增线索：','New leads: ')+dev+TX(' 条，已联系：',', contacted: ')+contacted+TX(' 条','')+'\n2. '+TX('推进到试样/报价：','Advanced to sample/quote: ')+adv+TX(' 条','')+'\n3. '+TX('成交：','Deals: ')+deal+TX(' 单，金额 $',', $')+Math.round(sumDeal).toLocaleString()+'\n4. '+TX('卡在哪：','Stuck at: ')+(bot||'—')+'\n5. '+TX('下周重点：___','Next week focus: ___')+'\n6. '+TX('一个可复制的动作：___','One repeatable action: ___');
  h+='<div class="out" id="rvTpl">'+esc(t)+'</div><button class="btn ghost mini" data-action="copy" data-copy="rvTpl" style="margin-top:8px">'+TX('复制周复盘','Copy review')+'</button></div>';
+ h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('联动：把复盘结论落到行动','Act on the review')+'</h3><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="nav" data-view="repeat">'+TX('去复购转介（排返单）','Reorder board')+'</button><button class="btn ghost mini" data-action="nav" data-view="find">'+TX('去找客户（推进 Pipeline）','Leads board')+'</button><button class="btn ghost mini" data-action="nav" data-view="mails">'+TX('去邮件记录','Sent log')+'</button><button class="btn ghost mini" data-action="nav" data-view="coach">'+TX('去做教练诊断','Coach mode')+'</button></div></div>';
  return h;
 }
 function renderIns(){
@@ -2375,6 +2402,10 @@ function renderIns(){
  html+='<div class="insight"><b>'+TX('转化率','Conversion')+'</b> '+conv+'%（'+TX('成交','deals')+' '+deal+' / '+TX('线索','leads')+' '+total+'）。'+(conv<20?TX('偏低：多数线索卡在','Low: most stuck at')+'「'+bot+'」，'+TX('先集中推进该阶段。','push that stage first.')+'':TX('健康，保持节奏。','Healthy, keep rhythm.'))+'</div>';
  if(bot!=='—')html+='<div class="insight"><b>'+TX('最大瓶颈','Top bottleneck')+'</b> '+max+' '+TX('条卡在','stuck at')+'「'+bot+'」。'+TX('建议：用 AI 跟进序列自动排程，别靠记忆跟。','Use the AI cadence to auto-schedule; don’t rely on memory.')+'</div>';
  html+='<div class="insight"><b>'+TX('加权预测金额','Weighted forecast')+'</b> $'+Math.round(w).toLocaleString()+'（'+TX('按阶段概率折算','by stage probability')+'）。'+TX('这是你本月大概率能拿下的盘子。','Your probable take this month.')+'</div>';
+ var _d2=_ls2.filter(function(l){return l.stage==='成交';}).length;
+ var _dwm=_ls2.filter(function(l){return l.stage==='成交'&&mailCount(l.id)>0;}).length;
+ var _rr=_d2?Math.round(_dwm/_d2*100):0;
+ html+='<div class="insight"><b>'+TX('复购率','Repurchase rate')+'</b> '+_rr+'%（'+TX('已成交','deals')+' '+_d2+' '+TX('单中，','of which')+' '+_dwm+' '+TX('单有后续触达','have follow-up contact')+'）。'+TX('复购靠节期日历驱动——去「复购转介」给老客排返单，比开发新客便宜太多。','Reorders run on the festival calendar — go to Reorder to schedule them; far cheaper than new leads.')+'</div>';
  html+='<div class="insight"><b>'+TX('节期窗口','Festival window')+'</b> '+TX('距下次斋月约 ','~')+d8+TX(' 天。现在就该给中东/东南亚老客推试样，错过要等一年。',' days to next Ramadan. Push samples to Mid-East/SEA clients now — miss it, wait a year.')+'</div>';
  box.innerHTML=html;
 }
@@ -2746,7 +2777,7 @@ document.addEventListener('click',function(e){
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
- else if(a==='custKpi'){custKpi(el.dataset.kind);}
+ else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}
  else if(a==='kpiJump'){kpiJump(el.dataset.where, el.dataset.id);}
  else if(a==='kpiTaskDone'){kpiTaskDone(el.dataset.id);}
  else if(a==='kpiEditTask'){kpiEditTask(el.dataset.id);}
@@ -2795,7 +2826,7 @@ $('modal').addEventListener('click',function(e){if(e.target===this)closeModal();
 /* 场景切换时重渲染输入框并清空旧输出 */
 document.addEventListener('change',function(e){
  if(e.target&&e.target.id==='sc_sel'){renderSceneFields();var en=$('sc_en'),zh=$('sc_zh');if(en)en.textContent=TX('选择场景并填变量后生成。','Pick a scene and fill vars.');if(zh)zh.textContent='';}
- if(e.target&&(e.target.id==='lf_q'||e.target.id==='lf_market'||e.target.id==='lf_stage'||e.target.id==='lf_source')){S._leadFilter={q:($('lf_q')?$('lf_q').value.trim().toLowerCase():''),market:($('lf_market')?$('lf_market').value:''),stage:($('lf_stage')?$('lf_stage').value:''),source:($('lf_source')?$('lf_source').value:'')};renderLeads();}
+ if(e.target&&(e.target.id==='lf_q'||e.target.id==='lf_market'||e.target.id==='lf_stage'||e.target.id==='lf_source')){S._leadFilter={q:($('lf_q')?$('lf_q').value.trim().toLowerCase():''),market:($('lf_market')?$('lf_market').value:''),stage:($('lf_stage')?$('lf_stage').value:''),source:($('lf_source')?$('lf_source').value:''),since:'',stages:[],overdue:false,reorder:false};renderLeads();}
  if(e.target&&e.target.id==='dealSel'){dealSel();}
 });
 
