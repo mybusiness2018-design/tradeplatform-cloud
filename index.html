@@ -1871,7 +1871,7 @@ function custCard(x){
 }
 function custCellEdit(id,field){
  var l=S.leads.find(function(x){return x.id===id;});if(!l)return;
- var T={name:TX('客户名','Name'),market:TX('市场','Market'),stage:TX('阶段','Stage'),amount:TX('金额($)','Amount'),last:TX('最后跟进','Last touch'),country:TX('国家','Country'),product:TX('产品','Product'),wa:TX('WhatsApp','WhatsApp'),email:TX('邮箱','Email'),note:TX('备注','Note'),source:TX('来源','Source')};
+ var T={name:TX('客户名','Name'),market:TX('市场','Market'),stage:TX('阶段','Stage'),amount:TX('金额($)','Amount'),last:TX('最后跟进','Last touch'),country:TX('国家','Country'),product:TX('产品','Product'),wa:TX('WhatsApp','WhatsApp'),email:TX('邮箱','Email'),note:TX('备注','Note'),source:TX('来源','Source'),repeatStatus:TX('返单状态','Reorder status'),repeatNote:TX('返单备注','Reorder note'),referrer:TX('推荐人','Referrer'),referralNote:TX('转介绍备注','Referral note'),referralStatus:TX('转介绍状态','Referral status')};
  var cur=(l[field]==null?'':l[field]);var ed='';
  if(field==='market')ed='<select id="ce_val">'+MARKETS.map(function(m){return '<option'+(m===cur?' selected':'')+'>'+m+'</option>';}).join('')+'</select>';
  else if(field==='stage')ed='<select id="ce_val">'+PIPE.map(function(p){return '<option'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('')+'</select>';
@@ -1891,6 +1891,7 @@ function custCellEdit(id,field){
  };
 }
 function leadNew(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',product:'',stage:PIPE[0],source:SOURCES[0],amount:0,last:todayStr(),note:'',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
+function leadNewRef(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',product:'',stage:PIPE[0],source:'转介绍',amount:0,last:todayStr(),note:'',referrer:'',referralNote:'',referralStatus:'待开口',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
 function viewCust(){
  var ins=custInsight();
  var mode=S._custView||'card';
@@ -2261,10 +2262,14 @@ function repeatDealsPanel(){
  h+='<div class="stat"><div class="v" style="color:var(--red)">'+todo+'</div><div class="k">'+TX('待触达','To reach')+'</div></div>';
  h+='<div class="stat"><div class="v">'+d8+'</div><div class="k">'+TX('距下次斋月(天)','Days to Ramadan')+'</div></div></div>';
  if(!deals.length){h+='<div class="hint">'+TX('还没有成交客户。先去「找客户」推进到成交，或在「客户驾驶舱」导入老客户，这里就会列出返单机会。','No closed deals yet. Advance leads to 成交 or import old clients in the Hub; they will appear here.')+'</div>';}
- else{h+='<div class="cust-grid">';deals.slice(0,12).forEach(function(l){var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var mc=mailCount(l.id);var isME=['中东','东南亚'].indexOf(l.market)>=0;
-  h+='<div class="card" style="padding:12px"><div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(l.name)+'</b>'+(l.market?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.market)+'</span>':'')+'</div>';
+ else{h+='<div class="cust-grid">';var lk=' style="cursor:pointer;color:#2563eb;text-decoration:underline dotted #2563eb"';deals.slice(0,12).forEach(function(l){var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var mc=mailCount(l.id);var isME=['中东','东南亚'].indexOf(l.market)>=0;
+  h+='<div class="card" style="padding:12px;cursor:pointer" data-action="custJump" data-where="cust360" data-id="'+l.id+'" title="'+TX('点击打开客户360','Open 360')+'"><div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(l.name)+'</b>'+(l.market?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.market)+'</span>':'')+'</div>';
   h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'+(l.country||l.market||'')+' · '+(mc?TX('已触达','reached')+' '+mc:TX('未触达','not reached'))+' · '+(days>=0?days+TX('天前','d ago'):(-days)+TX('天后','d later'))+'</div>';
   if(isME)h+='<div class="muted" style="font-size:12.5px;color:var(--red)">'+TX('斋月窗口','Ramadan window')+': '+d8+TX(' 天','d')+'</div>';
+  h+='<div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap">'
+    +'<span class="tag '+(l.repeatStatus==='已返单'?'g':(l.repeatStatus==='放弃'?'r':''))+'">'+TX('返单','Reorder')+': <u'+lk+' data-action="custCellEdit" data-field="repeatStatus" data-id="'+l.id+'">'+(l.repeatStatus||TX('待跟进','to follow'))+'</u></span>'
+    +'<span class="muted">'+TX('备注','Note')+': <u'+lk+' data-action="custCellEdit" data-field="repeatNote" data-id="'+l.id+'">'+(l.repeatNote||TX('点击添加','+ add'))+'</u></span>'
+    +'</div>';
   h+='<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn amber mini" data-action="greetLead" data-id="'+l.id+'">'+TX('发节期问候','Festival greet')+'</button><button class="btn ghost mini" data-action="custJump" data-where="cust360" data-id="'+l.id+'">'+TX('客户360','360')+'</button></div></div>';
  });h+='</div>';}
  h+='</div>';return h;
@@ -2272,12 +2277,27 @@ function repeatDealsPanel(){
 function referralPanel(){
  var refs=(S.leads||[]).filter(function(l){return (l.source||'')==='转介绍';});
  var closed=refs.filter(function(l){return l.stage==='成交';}).length;
- var h='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('转介绍（口碑裂变）','Referrals (word-of-mouth)')+'</h3>';
- h+='<div class="grid g4" style="gap:10px;margin-bottom:10px">';
- h+='<div class="stat"><div class="v">'+refs.length+'</div><div class="k">'+TX('转介绍来源客户','Referred clients')+'</div></div>';
- h+='<div class="stat"><div class="v">'+closed+'</div><div class="k">'+TX('其中已成交','Closed')+'</div></div></div>';
- h+='<div class="hint">'+TX('成交后趁信任高，向老客要转介绍最有效。下面选「转介绍话术」生成开口话术；或在「找客户」用来源筛选只看转介绍。','Ask for intros right after closing. Pick “Referral Ask” below, or filter leads by source=转介绍 in Find Leads.')+'</div></div>';
- return h;
+ var lk=' style="cursor:pointer;color:#2563eb;text-decoration:underline dotted #2563eb"';
+ var h='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0;font-size:15px">'+TX('转介绍（口碑裂变）','Referrals (word-of-mouth)')+'</h3><button class="btn amber mini" data-action="leadNewRef">＋ '+TX('新增转介绍客户','Add referral')+'</button></div>';
+ h+='<div class="grid g4" style="gap:10px;margin:10px 0"><div class="stat"><div class="v">'+refs.length+'</div><div class="k">'+TX('转介绍来源客户','Referred clients')+'</div></div><div class="stat"><div class="v">'+closed+'</div><div class="k">'+TX('其中已成交','Closed')+'</div></div></div>';
+ if(!refs.length){h+='<div class="hint">'+TX('还没有转介绍客户。点「＋ 新增转介绍客户」录入，或把现有客户的来源改为「转介绍」。成交后趁信任高，向老客要转介绍最有效。','No referral clients yet. Click “＋ Add referral”, or change an existing client’s source to 转介绍. Ask happy clients for intros right after closing.')+'</div>';}
+ else{
+  h+='<div class="cust-grid">';
+  refs.slice(0,12).forEach(function(l){
+   h+='<div class="card" style="padding:12px;cursor:pointer" data-action="custJump" data-where="cust360" data-id="'+l.id+'" title="'+TX('点击打开客户360','Open 360')+'">';
+   h+='<div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(l.name)+'</b>'+(l.market?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.market)+'</span>':'')+'</div>';
+   h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'+(l.country||l.market||'')+' · '+TX('阶段','Stage')+': '+esc(l.stage)+'</div>';
+   h+='<div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap">'
+     +'<span class="tag"><u'+lk+' data-action="custCellEdit" data-field="referralStatus" data-id="'+l.id+'">'+TX('状态','Status')+': '+(l.referralStatus||TX('待开口','to ask'))+'</u></span>'
+     +'<span class="muted"><u'+lk+' data-action="custCellEdit" data-field="referrer" data-id="'+l.id+'">'+TX('推荐人','From')+': '+(l.referrer||TX('点击填','+ add'))+'</u></span>'
+     +'</div>';
+   h+='<div class="muted" style="font-size:12.5px;margin-top:6px">'+TX('备注','Note')+': <u'+lk+' data-action="custCellEdit" data-field="referralNote" data-id="'+l.id+'">'+(l.referralNote||TX('点击添加','+ add'))+'</u></div>';
+   h+='<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn ghost mini" data-action="custJump" data-where="cust360" data-id="'+l.id+'">'+TX('客户360','360')+'</button></div>';
+   h+='</div>';
+  });
+  h+='</div>';
+ }
+ h+='</div>';return h;
 }
 function viewRepeat(){
  var h=shead('repeat',TX('节期日历 + 全球节假日驱动复购，老客返单比开发新客便宜太多。','Festival + global holidays drive reorders; reorders beat new leads.')+'');
@@ -2959,7 +2979,7 @@ document.addEventListener('click',function(e){
  else if(a==='leadDel'){leadDel(el.dataset.id);}
  else if(a==='leadEdit'){leadEdit(el.dataset.id);}
  else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}
- else if(a==='leadNew'){leadNew();}
+ else if(a==='leadNew'){leadNew();}else if(a==='leadNewRef'){leadNewRef();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
  else if(a==='custFilterReset'){custFilterReset();}
