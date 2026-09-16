@@ -63,7 +63,7 @@ svg{display:block}
 h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){width:18px;height:18px;display:inline-block;vertical-align:-3px}
 #app{display:flex;min-height:100vh}
 #side{width:212px;flex:0 0 212px;background:#fff;border-right:1px solid var(--line);padding:4px 10px;position:sticky;top:0;height:100vh;overflow-y:auto}
-#side .logo{width:160px;height:160px;background:#1e3a8a;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;margin:0 0 12px}
+#side .logo{width:160px;height:160px;background:#1e3a8a;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;margin:0 auto 12px}
 #side .logo .dt{width:78px;height:62px;background:transparent;border-radius:0;display:flex;align-items:center;justify-content:center;color:#fff}
 #side .logo .lt{white-space:nowrap;letter-spacing:1px;text-align:center;color:#fff;font-weight:800;font-size:19px;line-height:1}
 .navitem{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;color:var(--main);font-size:14px;font-weight:600;margin-bottom:2px;width:100%;text-align:left;background:#fff;border:1px solid #eef2f8;box-sizing:border-box;white-space:nowrap}
@@ -3527,7 +3527,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v35 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v35, hard-refresh with Ctrl+F5')+'">v35</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v36 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v36, hard-refresh with Ctrl+F5')+'">v36</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
