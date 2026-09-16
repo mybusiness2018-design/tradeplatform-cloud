@@ -766,6 +766,18 @@ function loopProgress(){
  return {order:order,sig:sig,done:done,pct:pct,next:next};
 }
 
+function loopFirstStep(){
+ var f='<div class="first-step" style="margin-top:12px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,#ecfeff,#eff6ff);border:1px solid #bae6fd">';
+ f+='<span style="display:inline-block;font-size:12px;font-weight:700;color:#0369a1;background:#e0f2fe;padding:3px 10px;border-radius:999px;margin-bottom:8px">'+TX('零基础第一步','First step from zero')+'</span>';
+ f+='<h3 style="margin:0 0 6px;font-size:15.5px;color:#0f172a">'+TX('先别急着找客户 —— 用 10 分钟把"卖什么、卖给谁"定下来','Do not rush to find clients — spend 10 min to fix what to sell and to whom')+'</h3>';
+ f+='<p style="margin:0 0 12px;font-size:13px;color:#334155;line-height:1.65">'+TX('新手最大的坑：还没想清产品就到处发开发信，回复率几乎为零。闭环第 1 步「定位选品」用"定价即产品"的思路，帮你把 <b>引流款 / 利润款</b> 分层，一句话说出你的定位。完成它，下面的第 1 格会自动点亮。','Biggest beginner trap: blasting cold emails before nailing the product leads to near-zero replies. Stage 1 "Positioning" uses "pricing is the product" to split drain / profit tiers and state your one-line positioning. Finish it and stage 1 lights up below.')+'</p>';
+ f+='<div class="row" style="gap:8px;flex-wrap:wrap;margin:0">';
+ f+='<button class="btn green" data-action="nav" data-view="pos">▶ '+TX('开始第 1 步：定位选品','Start Stage 1: Positioning')+'</button>';
+ f+='<button class="btn ghost" data-action="nav" data-view="demo">'+TX('先看一遍完整闭环演示','See the full loop demo first')+'</button>';
+ f+='</div></div>';
+ return f;
+}
+
 function viewHome(){
  var h='<div class="card" style="margin-bottom:16px"><div class="shead" style="margin:0"><div class="ic">'+ICON.home+'</div><div><h2>'+TX('外贸一体化平台','Foreign Trade Loop Workbench')+'</h2><p>'+TX('免费、本地、可分发的外贸 AI 销售系统：帮你<b>找客户</b>、写<b>中英对照话术</b>、AI <b>评分排序</b>、做<b>节期复购</b>，并用教练模式拿去帮别的销售做业务体检。八段跑通，就是从"辛苦找客户"变"老客持续返单"。','Free, local, shareable AI sales system: find leads, write bilingual scripts, AI-score your pipeline, drive festival reorders, and coach others. Run all 8 stages to turn "hunting for clients" into "clients reordering".')+'</p></div></div></div>';
  var LP=loopProgress();
@@ -774,7 +786,9 @@ function viewHome(){
  h+='<p class="muted" style="margin:2px 0 0;font-size:12.5px">'+TX('从入门到成交，八步走完即自成一套外贸体系','Eight stages from entry to closing = your own trade system')+'</p></div>';
  h+='<div style="text-align:right"><div style="font-size:26px;font-weight:700;color:var(--main)">'+LP.pct+'%</div><div class="hint" style="margin:0">'+LP.done+'/8 '+TX('步已启动','stages started')+'</div></div></div>';
  h+='<div class="bar" style="height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:10px 0 8px"><div style="height:100%;width:'+LP.pct+'%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:6px"></div></div>';
- if(LP.next){var nm=STAGE_META[LP.next.k];
+ if(LP.done===0){
+  h+=loopFirstStep();
+ }else if(LP.next){var nm=STAGE_META[LP.next.k];
   h+='<div class="next-step">'+TX('下一步建议','Next step')+' → <b>'+TX(nm.t,nm.te)+'</b>：'+TX(nm.d,nm.de)+' <button class="btn green mini" data-action="nav" data-view="'+LP.next.k+'">'+TX('去这一步','Go')+'</button></div>';
  }else{
   h+='<div class="next-step ok">'+TX('八步全启动了！现在靠「复购转介」和「复盘增长」把老客养起来，让体系自转。','All 8 stages started! Now use Reorder & Review to keep the system turning.')+'</div>';
@@ -3430,7 +3444,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v31 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v31, hard-refresh with Ctrl+F5')+'">v31</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v32 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v32, hard-refresh with Ctrl+F5')+'">v32</div>';
  $('nav').innerHTML=h;
 }
 function renderView(){
