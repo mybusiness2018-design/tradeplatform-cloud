@@ -192,6 +192,10 @@ svg{display:block}
 .lp p{margin:0;font-size:12.5px;color:var(--sub)}
 .lp.coach{background:#fff7ed;border-color:#fed7aa}
 .lp.coach .ic{background:#ffedd5;color:var(--amber)}
+.lp.on{border-color:#bbf7d0;background:#f6fff9}
+.grow-card{border-color:#c7d2fe}
+.next-step{font-size:13px;color:#334155;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px}
+.next-step.ok{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
 .qstart{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
 .qstart .btn{width:100%}
 .list-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:#fff;flex-wrap:wrap}
@@ -700,12 +704,46 @@ var STAGE_META={
  me:{t:'我的资料',te:'My Profile',d:'第一次填一次，话术自动署名',de:'Fill once, scripts auto-sign'},
  backup:{t:'备份',te:'Backup',d:'数据本地，导出/重置/发给别人',de:'Local data, export / reset / share'}
 };
+/* ============ 新手成长进度（入门→成交体系） ============ */
+function loopSig(){
+ var me=S.me||{},leads=(S.leads||[]),mails=(S.mails||[]),deals=(S.deals||[]),docs=(S.docs||[]),rv=(S.rvLog||[]),comp=(S.comp||[]),cpq=(S.cpq||[]);
+ return {
+  pos: !!(me.product||me.market||(comp&&comp.length)||(cpq&&cpq.length)),
+  find: leads.length>0,
+  reach: mails.length>0,
+  trust: leads.some(function(l){return ['已联系','已回复','试样','报价','成交'].indexOf(l.stage)>=0;}),
+  deal: leads.some(function(l){return ['报价','成交'].indexOf(l.stage)>=0;})||(deals&&deals.length>0),
+  deliver: (deals&&deals.length>0)||(docs&&docs.length>0),
+  repeat: leads.some(function(l){return l.stage==='成交';})||(rv&&rv.length>0),
+  review: (rv&&rv.length>0)
+ };
+}
+function loopProgress(){
+ var order=['pos','find','reach','trust','deal','deliver','repeat','review'];
+ var sig=loopSig();var done=0;
+ order.forEach(function(k){if(sig[k])done++;});
+ var pct=Math.round(done/order.length*100);
+ var next=null;for(var i=0;i<order.length;i++){if(!sig[order[i]]){next={k:order[i]};break;}}
+ return {order:order,sig:sig,done:done,pct:pct,next:next};
+}
+
 function viewHome(){
  var h='<div class="card" style="margin-bottom:16px"><div class="shead" style="margin:0"><div class="ic">'+ICON.home+'</div><div><h2>'+TX('外贸一体化平台','Foreign Trade Loop Workbench')+'</h2><p>'+TX('免费、本地、可分发的外贸 AI 销售系统：帮你<b>找客户</b>、写<b>中英对照话术</b>、AI <b>评分排序</b>、做<b>节期复购</b>，并用教练模式拿去帮别的销售做业务体检。八段跑通，就是从"辛苦找客户"变"老客持续返单"。','Free, local, shareable AI sales system: find leads, write bilingual scripts, AI-score your pipeline, drive festival reorders, and coach others. Run all 8 stages to turn "hunting for clients" into "clients reordering".')+'</p></div></div></div>';
+ var LP=loopProgress();
+ h+='<div class="card grow-card" style="margin-bottom:16px;background:linear-gradient(135deg,#eef2ff,#f8fafc)">';
+ h+='<div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><h3 style="margin:0;font-size:16px">'+ICON.home+' '+TX('我的外贸成长进度','My Foreign-Trade Progress')+'</h3>';
+ h+='<p class="muted" style="margin:2px 0 0;font-size:12.5px">'+TX('从入门到成交，八步走完即自成一套外贸体系','Eight stages from entry to closing = your own trade system')+'</p></div>';
+ h+='<div style="text-align:right"><div style="font-size:26px;font-weight:700;color:var(--main)">'+LP.pct+'%</div><div class="hint" style="margin:0">'+LP.done+'/8 '+TX('步已启动','stages started')+'</div></div></div>';
+ h+='<div class="bar" style="height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:10px 0 8px"><div style="height:100%;width:'+LP.pct+'%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:6px"></div></div>';
+ if(LP.next){var nm=STAGE_META[LP.next.k];
+  h+='<div class="next-step">'+TX('下一步建议','Next step')+' → <b>'+TX(nm.t,nm.te)+'</b>：'+TX(nm.d,nm.de)+' <button class="btn green mini" data-action="nav" data-view="'+LP.next.k+'">'+TX('去这一步','Go')+'</button></div>';
+ }else{
+  h+='<div class="next-step ok">'+TX('八步全启动了！现在靠「复购转介」和「复盘增长」把老客养起来，让体系自转。','All 8 stages started! Now use Reorder & Review to keep the system turning.')+'</div>';
+ }
+ h+='</div>';
  h+='<div class="lp-map">';
- var order=['pos','find','reach','trust','deal','deliver','repeat','review'];
- order.forEach(function(k,i){var m=STAGE_META[k];
-  h+='<div class="lp" data-action="nav" data-view="'+k+'"><span class="n">'+(i+1)+'</span><div class="ic">'+(ICON[k]||ICON.brand)+'</div><h4>'+TX(m.t,m.te)+'</h4><p>'+TX(m.d,m.de)+'</p></div>';});
+ LP.order.forEach(function(k,i){var m=STAGE_META[k];var on=LP.sig[k];
+  h+='<div class="lp'+(on?' on':'')+'" data-action="nav" data-view="'+k+'"><span class="n" style="'+(on?'color:#16a34a;font-weight:800':'')+'">'+(i+1)+' '+(on?'✓':'○')+'</span><div class="ic">'+(ICON[k]||ICON.brand)+'</div><h4>'+TX(m.t,m.te)+'</h4><p>'+TX(m.d,m.de)+'</p></div>';});
  h+='<div class="lp coach" data-action="nav" data-view="coach"><div class="ic">'+ICON.coach+'</div><h4>'+TX('教练诊断模式','Coach Mode')+'</h4><p>'+TX('拿去帮别的销售做业务体检，形成你的 coaching 生意','Diagnose other salespeople — your coaching business')+'</p></div>';
  h+='</div>';
  h+='<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;align-items:center"><span class="hint" style="margin:0">'+TX('贯穿全流程的工具','Cross-loop tools')+'：</span>'
@@ -3334,7 +3372,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v28 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v28, hard-refresh with Ctrl+F5')+'">v28</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v29 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v29, hard-refresh with Ctrl+F5')+'">v29</div>';
  $('nav').innerHTML=h;
 }
 function renderView(){
