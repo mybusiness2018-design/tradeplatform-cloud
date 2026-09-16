@@ -2199,7 +2199,89 @@ function viewReach(){
  return h;
 }
 function viewTrust(){var h=shead('trust',TX('电话破冰 + 样品策略 + 看厂透明 + 首单保障：信任不是推销，是给买家"确定感"。','Call opener + sample + transparent factory + first-order guarantee: trust = giving the buyer certainty.'));
- h+=sceneBox(['phone','sample','factory','assure']);return h;}
+ h+=sceneBox(['phone','sample','factory','assure']);
+ h+=phoneRehCard();
+ return h;}
+/* ============ 电话实战演练（逐句跟读 · 角色扮演） ============ */
+var REH={i:0,total:0,turns:[],ctx:{},done:false};
+function phoneRehCard(){
+ var pickOpts='<option value="">'+TX('手动输入客户','Enter manually')+'</option>'+S.leads.map(function(x){return '<option value="'+x.id+'"'+(x.id===S._activeClient?' selected':'')+'>'+esc(x.name)+(x.company?(' · '+x.company):'')+'</option>';}).join('');
+ var lc=S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null;
+ var h='<div class="card" style="margin-top:14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div class="ic" style="width:34px;height:34px">'+ICON.trust+'</div><div><h3 style="margin:0;font-size:16px">'+TX('电话实战演练 · 逐句跟读','Phone Rehearsal · Line-by-line')+'</h3><span class="muted" style="font-size:12px">'+TX('针对痛点"电话建信任"：选真实客户→照读每句→看买家反应→学教练提示','Your #1 pain point — phone trust: pick a real lead, read each line, see reaction, learn the tip')+'</span></div></div>';
+ h+='<div class="grid g2" style="margin-top:8px">';
+ h+='<div class="field"><label>'+TX('选客户演练','Pick a client')+'</label><select id="reh_pick" onchange="rehPickClient(this.value)">'+pickOpts+'</select></div>';
+ h+='<div class="field"><label>'+TX('客户名','Client')+'</label><input id="reh_client" value="'+esc(lc?lc.name:'')+'"></div>';
+ h+='<div class="field"><label>'+TX('客户公司','Company')+'</label><input id="reh_company" value="'+esc(lc?(lc.company||(S.me&&S.me.company)||''):'')+'"></div>';
+ h+='<div class="field"><label>'+TX('产品','Product')+'</label><input id="reh_product" value="'+esc(lc?lc.product:'')+'"></div>';
+ h+='</div>';
+ h+='<div style="margin-top:8px"><button class="btn green" data-action="rehStart">'+TX('开始演练','Start rehearsal')+'</button><span class="hint" style="margin-left:8px">'+TX('客户来自「找客户」；没填「我的资料」时用占位署名。','Clients from Find Leads; placeholder signature if My Profile empty.')+'</span></div>';
+ h+='<div id="rehStage" style="margin-top:12px"></div>';
+ h+='</div>';
+ return h;
+}
+function rehPickClient(id){var lc=S.leads.find(function(x){return x.id===id;});if(!lc)return;[['reh_client',lc.name],['reh_company',lc.company||(S.me&&S.me.company)||''],['reh_product',lc.product]].forEach(function(p){var e=$(p[0]);if(e)e.value=p[1]||'';});}
+function phoneRehTurns(ctx){
+ var me=S.me||{};var meN=me.name||TX('（你的名字）','your name');var coN=me.company||TX('（你的公司）','your company');var yr=me.years||'several';
+ var P=function(s){return String(s).replace(/\{client\}/g,ctx.client).replace(/\{me\}/g,meN).replace(/\{co\}/g,coN).replace(/\{years\}/g,yr).replace(/\{product\}/g,ctx.product).replace(/\{market\}/g,ctx.market);};
+ return [
+  {who:'you',line:P('Hello {client}, this is {me} calling from {co}. Am I catching you at a good time?'),tip:TX('先问"方便吗"——尊重对方时间定基调；若说忙，约回拨，绝不缠打。','Ask if good time first; if busy propose a callback, never cling.')},
+  {who:'buyer',line:P('(Busy) In a meeting now. / (Free) Sure, go ahead.'),react:TX('预判两种反应：忙→问"几点方便我回拨"；空闲→自然继续。','Two reactions: busy → propose callback; free → continue.')},
+  {who:'you',line:P('Great. We have supplied {product} to importers in {market} for {years}. I would love to send you our catalog and a sample so you can check the quality yourself — would that be helpful?'),tip:TX('用"你自己看质量"降低防备；价值主张=稳定供给+可验货，不是硬推。','Check quality yourself lowers guard; value = steady supply + verifiable QC.')},
+  {who:'buyer',line:P('Sample? What is the cost?'),react:TX('买家天然问样品费/价格——这正是建立"确定感"的窗口，别慌。','Buyer asks sample cost/price — the window to build certainty; do not panic.')},
+  {who:'you',line:P('The sample itself is free; you would only cover the courier (DHL, about $30). Our blue pillow runs around $2 FOB, with embroidered and gift-box lines for the season — once you confirm specs I will quote exactly.'),tip:TX('样品费透明 + 单价锚点；先给区间再按量定，避免一上来报死价。','Transparent sample cost + price anchor; range first, exact after specs.')},
+  {who:'buyer',line:P('Your price is a bit high.'),react:TX('价格异议≈必考题；别硬扛，转成可交换变量。','Price objection is a given; do not hold — trade variables.')},
+  {who:'you',line:P('I understand. Our price reflects steady supply and QC. To lower unit cost we can adjust material or raise MOQ — which matters more to you, price or lead time?'),tip:TX('把"贵"翻译成可交换变量（材质/数量/交期），把球踢回买家。','Turn expensive into tradable variables; hand the ball back.')},
+  {who:'buyer',line:P('Okay, send the catalog and sample then.'),react:TX('信号出现——趁热打铁收尾，给明确动作。','Signal appears — close while hot with a concrete action.')},
+  {who:'you',line:P('Perfect. I will prepare the catalog and arrange the sample today, and follow up in 2-3 days. May I have your best email / WhatsApp to send the files?'),tip:TX('收尾给明确动作+时间点（2-3天跟进），并拿联系方式闭环。','Close with action + time (follow up 2-3 days) and get contact info.')}
+ ];
+}
+function rehStart(){
+ var ctx={};ctx.id=($('reh_pick')?$('reh_pick').value:'');
+ ctx.client=(($('reh_client')?$('reh_client').value:'')||'').trim()||'Mr. Client';
+ ctx.company=(($('reh_company')?$('reh_company').value:'')||'').trim();
+ ctx.product=(($('reh_product')?$('reh_product').value:'')||'').trim()||(S.me&&S.me.product)||'prayer pillows';
+ ctx.market=((S.leads.find(function(x){return x.id===ctx.id;})||{}).market)||(S.me&&S.me.market)||'your region';
+ REH={i:0,total:0,turns:phoneRehTurns(ctx),ctx:ctx,done:false};REH.total=REH.turns.length;
+ var b=$('rehStage');if(b)b.innerHTML=rehPlayerHTML();toast(TX('演练开始','Started'));
+}
+function rehPlayerHTML(){
+ if(REH.done)return rehSummaryHTML();
+ var t=REH.turns[REH.i];var isYou=t.who==='you';
+ var spk=isYou?TX('你来说','You say'):TX('买家反应','Buyer says');
+ var note=isYou?('<div style="font-size:12.5px;color:#475569;margin-top:6px;background:#eff6ff;padding:6px 8px;border-radius:8px"><b>'+TX('教练提示','Coach tip')+'：</b>'+t.tip+'</div>'):('<div style="font-size:12.5px;color:#7c2d12;margin-top:6px;background:#fff7ed;padding:6px 8px;border-radius:8px"><b>'+TX('买家心理','Buyer mind')+'：</b>'+t.react+'</div>');
+ var last=REH.i===REH.total-1;
+ var h='<div style="border-left:4px solid '+(isYou?'#2563eb':'#f59e0b')+';background:#f8fafc;border-radius:10px;padding:10px 12px;margin-top:10px"><div style="font-size:12px;font-weight:700;color:var(--main)">'+spk+'</div><div style="font-size:15px;line-height:1.6;margin:4px 0;white-space:pre-wrap">'+esc(t.line)+'</div>'+note+'</div>';
+ h+='<div class="row" style="gap:8px;margin-top:10px">';
+ if(REH.i>0)h+='<button class="btn ghost" data-action="rehPrev">'+TX('上一步','Back')+'</button>';
+ h+='<button class="btn green" data-action="rehNext">'+(last?TX('完成 · 看复盘','Finish · Review'):TX('我读完了，下一句 ▶','Next ▶'))+'</button>';
+ h+='</div><div class="hint" style="margin-top:6px">'+TX('进度','Progress')+' '+(REH.i+1)+' / '+REH.total+'</div>';
+ return h;
+}
+function rehSummaryHTML(){
+ var h='<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-top:10px"><h4 style="margin:0 0 8px;font-size:15px;color:#15803d">'+TX('复盘：电话建信任的 4 个关键动作','Review: 4 key trust moves')+'</h4>';
+ h+='<ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#334155"><li>'+TX('先问方便吗，尊重时间定基调','Ask if good time first')+'</li><li>'+TX('用"你自己看质量"降低防备，不硬推','Offer self-check quality, do not push')+'</li><li>'+TX('价格异议转成可交换变量（材质/数量/交期）','Turn price objection into tradable variables')+'</li><li>'+TX('收尾给明确动作+时间点，并拿联系方式闭环','Close with action + time, get contact')+'</li></ol>';
+ h+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">';
+ h+='<button class="btn green" data-action="rehSave">'+TX('存话术库','Save to library')+'</button>';
+ h+='<button class="btn" data-action="rehTask">'+TX('加为跟进任务','Add as task')+'</button>';
+ h+='<button class="btn ghost" data-action="rehRestart">'+TX('再来一次','Replay')+'</button>';
+ h+='<button class="btn ghost" data-action="nav" data-view="trust">'+TX('回看寄样/保障话术 →','Back to trust scripts →')+'</button>';
+ h+='</div></div>';
+ return h;
+}
+function rehNext(){if(REH.done)return;REH.i++;if(REH.i>=REH.total)REH.done=true;var b=$('rehStage');if(b)b.innerHTML=rehPlayerHTML();}
+function rehPrev(){if(REH.i>0){REH.i--;REH.done=false;var b=$('rehStage');if(b)b.innerHTML=rehPlayerHTML();}}
+function rehRestart(){REH.i=0;REH.done=false;var b=$('rehStage');if(b)b.innerHTML=rehPlayerHTML();}
+function rehSave(){
+ var lines=REH.turns.filter(function(t){return t.who==='you';}).map(function(t){return t.line;});
+ var zh=REH.turns.filter(function(t){return t.who==='you';}).map(function(t){return t.tip;}).join(' ');
+ S.scripts.unshift({id:uid(),title:TX('电话开场演练 · ','Phone rehearsal · ')+REH.ctx.client,en:lines.join('\n\n'),zh:zh,date:todayStr()});
+ save('scripts',S.scripts);renderNav();toast(TX('已存到话术库（'+S.scripts.length+'）','Saved ('+S.scripts.length+')'));
+}
+function rehTask(){
+ var title=TX('电话跟进 ','Call follow-up ')+REH.ctx.client;
+ S.tasks.push({id:uid(),title:title,due:iso(new Date(),7),done:false,clientId:REH.ctx.id||''});
+ save('tasks',S.tasks);renderNav();toast(TX('已加入跟进任务','Added to tasks'));
+}
 function viewDeal(){var h=shead('deal',TX('报价PI + 四大异议处理。先给明确价格，再处理抗拒。','Quote PI + 4 objection handlers. Clear price first, then resistance.'));
  h+=sceneBox(['quote','quote_tier','quote_valid']);
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('常见异议处理（照读）','Common objections (read-aloud)')+'</h3>';
@@ -3444,7 +3526,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v33 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v33, hard-refresh with Ctrl+F5')+'">v33</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v34 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v34, hard-refresh with Ctrl+F5')+'">v34</div>';
  $('nav').innerHTML=h;
 }
 function renderView(){
@@ -3662,6 +3744,12 @@ document.addEventListener('click',function(e){
  else if(a==='kpiEditTask'){kpiEditTask(el.dataset.id);}
  else if(a==='kpiEditClient'){kpiEditClient(el.dataset.id);}
  else if(a==='clearClient'){clearClient();}
+ else if(a==='rehStart'){rehStart();}
+ else if(a==='rehNext'){rehNext();}
+ else if(a==='rehPrev'){rehPrev();}
+ else if(a==='rehRestart'){rehRestart();}
+ else if(a==='rehSave'){rehSave();}
+ else if(a==='rehTask'){rehTask();}
  else if(a==='deliverUse'){S._activeClient=el.dataset.id||'';save('_activeClient',S._activeClient);refreshAll();}
  else if(a==='sopToggle'){sopToggle(parseInt(el.dataset.i,10));}
  else if(a==='sopReset'){sopReset();}
