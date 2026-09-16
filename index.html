@@ -658,7 +658,7 @@ function dU(s){try{return decodeURIComponent(s||'');}catch(e){return s||'';}}
 /* ============ 话术引擎 ============ */
 var SCENES={
  cold_email:{title:'冷开发邮件',te:'Cold Email',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'country',l:'国家/市场'},{k:'edge',l:'你的优势(1句)',ph:'稳定 $2 FOB + 斋月库存'}],
-  gen:function(v,me){var en='Subject: '+v.product+' supplier for '+v.country+' buyers — '+v.edge+'\n\nHi '+v.client+',\n\nThis is '+nm(me)+' from '+co(me)+', '+yr(me)+' focused on Muslim prayer pillows & gifts.\n\nWe help '+v.country+' importers with: '+v.edge+'. Our blue prayer pillow runs at stable $2 FOB, with embroidered / gift-box premium lines for Ramadan & Hajj seasons.\n\nCould I send you our catalog and a sample for a quality check?\n\nBest,\n'+nm(me)+'\n'+co(me);
+  gen:function(v,me){var en='Subject: '+v.product+' supplier for '+enMarket(v.country)||v.country+' buyers — '+v.edge+'\n\nHi '+v.client+',\n\nThis is '+nm(me)+' from '+co(me)+', '+yr(me)+' focused on Muslim prayer pillows & gifts.\n\nWe help '+enMarket(v.country)||v.country+' importers with: '+v.edge+'. Our blue prayer pillow runs at stable $2 FOB, with embroidered / gift-box premium lines for Ramadan & Hajj seasons.\n\nCould I send you our catalog and a sample for a quality check?\n\nBest,\n'+nm(me)+'\n'+co(me);
   var zh='原理：短、具体、给一个行动钩子（要样品）。禁忌：别写长篇公司介绍；别群发同一文案；别编造交期。';return {en:en,zh:zh};}},
  rfq:{title:'阿里RFQ回复',te:'Ali RFQ Reply',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'qty',l:'数量'},{k:'edge',l:'推荐方案(1句)'}],
   gen:function(v,me){var en='Hi '+v.client+', thanks for your RFQ on '+v.product+' ('+v.qty+' pcs).\n\nWe are a '+yr(me)+' supplier of Muslim prayer pillows. MOQ 500 pcs, lead time 15-20 days. For your market we recommend: '+v.edge+'.\n\nCan we confirm the specification so I prepare an exact quotation?';
@@ -691,7 +691,7 @@ var SCENES={
   gen:function(v,me){var en='Hi '+v.client+', glad to work with you. If you know other importers who need prayer pillows or gift items, I would appreciate an intro — I will treat them as well as I treat you.';
   var zh='原理：成交后趁信任高要转介绍。禁忌：没建立信任就开口。';return {en:en,zh:zh};}},
  holiday:{title:'节假日问候',te:'Holiday Greeting',fields:[{k:'client',l:'客户名'},{k:'country',l:'国家/市场'},{k:'holiday',l:'节假日名称'},{k:'date',l:'节日日期',ph:'2027-03-10'}],
-  gen:function(v,me){var _dt=v.date?(' ('+v.date+')'):'';var en='Dear '+(v.client||'friend')+',\n\nWarmest greetings on '+(v.holiday||'the upcoming holiday')+_dt+' in '+(v.country||'your country')+'. We hope this season brings prosperity to your business.\n\nAs '+yr(me)+', we would like to reserve production capacity and share our seasonal best-sellers (gift & premium lines) so you never miss the peak. Shall I prepare a tailored offer for '+(v.country||'your market')+'?\n\nBest,\n'+nm(me)+'\n'+co(me);
+  gen:function(v,me){var _dt=v.date?(' ('+v.date+')'):'';var en='Dear '+(v.client||'friend')+',\n\nWarmest greetings on '+(v.holiday||'the upcoming holiday')+_dt+' in '+(enMarket(v.country)||v.country||'your country')+'. We hope this season brings prosperity to your business.\n\nAs '+yr(me)+', we would like to reserve production capacity and share our seasonal best-sellers (gift & premium lines) so you never miss the peak. Shall I prepare a tailored offer for '+(enMarket(v.country)||v.country||'your market')+'?\n\nBest,\n'+nm(me)+'\n'+co(me);
   var zh='原理：借本地节假日制造有温度的复购触点，比群发广告更被接受；最佳发送时机是节前 3–4 周，而不是节日当天。禁忌：把别人节日内涵说错；催单太硬。';return {en:en,zh:zh};}},
  post_show:{title:'展会后跟进',te:'Post-Show Follow-up',fields:[{k:'client',l:'客户名'},{k:'product',l:'产品'},{k:'edge',l:'你的优势(1句)',ph:'稳定斋月库存 + 可定制'}],
   gen:function(v,me){var en='Hi '+v.client+', great meeting you at the show. As promised, here are our best-sellers for '+v.product+': stable Ramadan/Hajj stock, MOQ 500 pcs, lead time 15-20 days. Shall I send the catalog and a sample so you can check the quality?';var zh='原理：趁展会记忆新鲜 48h 内跟进，把承诺变成动作。禁忌：展后失联、群发无差别跟进。';return {en:en,zh:zh};}},
@@ -709,9 +709,9 @@ var SCENES={
   gen:function(v,me){var eta=v.eta||addDays(todayStr(),30);var en='Hi '+v.client+', your '+v.product+' shipment is on the water, ETA '+eta+'. We are tracking daily and will alert you the moment it arrives. If you need any destination documents (customs / clearance), tell us now so everything is ready.\n\nBest,\n'+nm(me)+'\n'+co(me);var zh='原理：主动报节点减少客户焦虑与追问；提前问清到港所需单据，避免清关卡顿。禁忌：货代没回复就编 ETA；到港了才想起要单据。';return {en:en,zh:zh};}}
 };
 function scTitle(k){var s=SCENES[k];return (S.lang==='en'&&s.te)?s.te:s.title;}
-function nm(me){return me.name||'（你的名字）';}
-function co(me){return me.company||'（你的公司）';}
-function yr(me){return (me.years?me.years+' years':'（年数）')+' supplier';}
+function nm(me){return me.name||'(Your Name)';}
+function co(me){return me.company||'(Your Company)';}
+function yr(me){return (me.years?me.years+' years':'several years')+' supplier';}
 /* ============ AI 线索评分 ============ */
 var STAGE_W={'待开发':5,'已联系':15,'已回复':30,'试样':55,'报价':75,'成交':100};
 function scoreLead(l){
@@ -1641,6 +1641,8 @@ function cpCandAll(){
 /* ============ 找客户 ============ */
 var PIPE=['待开发','已联系','已回复','试样','报价','成交'];
 var MARKETS=['中东','东南亚','欧美','非洲','混合'];
+var MARKET_EN={'中东':'Middle East','东南亚':'Southeast Asia','欧美':'EU & US','非洲':'Africa','混合':'Mixed'};
+function enMarket(v){if(!v)return '';return MARKET_EN[v]||v;}
 var SOURCES=['展会','Google','阿里巴巴','中国制造网','社媒','转介绍','其他'];
 var REPEAT_STATUS=['待跟进','已报价','已返单','放弃'];
 var REFERRAL_STATUS=['待开口','已开口','已加样','已成交','无回应'];
@@ -3527,7 +3529,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v36 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v36, hard-refresh with Ctrl+F5')+'">v36</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v37 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v37, hard-refresh with Ctrl+F5')+'">v37</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4045,7 +4047,7 @@ function mailClear(){
 var _bulk=null;
 function bulkFill(t,l){
  t=(''+(t||''));
- var name=l.name||'',company=l.company||(S.me&&S.me.company)||'',product=l.product||(S.me&&S.me.product)||'',market=l.market||l.country||'',country=l.country||l.market||'';
+ var name=l.name||'',company=l.company||(S.me&&S.me.company)||'',product=l.product||(S.me&&S.me.product)||'',market=enMarket(l.market)||l.country||'',country=enMarket(l.country)||enMarket(l.market)||'';
  return (''+t).replace(/\{name\}/g,name).replace(/\{姓名\}/g,name).replace(/\{company\}/g,company).replace(/\{公司\}/g,company).replace(/\{product\}/g,product).replace(/\{产品\}/g,product).replace(/\{market\}/g,market).replace(/\{市场\}/g,market).replace(/\{country\}/g,country).replace(/\{国家\}/g,country);
 }
 function bulkRecipientsBox(){
@@ -4067,10 +4069,11 @@ function bulkTplBox(){
  h+='<div class="field" style="margin-top:8px"><label>'+TX('邮件正文','Body')+'（可用 {name}{company}{product}{market}{country}）</label><textarea id="bulkBody" rows="6" placeholder="'+TX('Dear {name},\\n\\nWe supply {product}...','Dear {name},\\n\\nWe supply {product}...')+'"></textarea></div>';
  return h;
 }
+function tplEnSubject(t){if(!t)return '';var en=t.en||'';var m=/^Subject:\s*(.+)$/m.exec(en);if(m)return m[1].trim();var ti=t.title||'';var i=ti.indexOf(' / ');return i>=0?ti.slice(i+3).trim():ti;}
 function bulkTplFill(v){
  if(!v)return;var subj='',body='';
  if(v.indexOf('s_')===0){var s=(S.scripts||[]).find(function(x){return x.id===v.slice(2);});if(s){subj=s.title||'';body=s.en||'';}}
- else if(v.indexOf('t_')===0){var t=(EMAIL_TPLS||[])[parseInt(v.slice(2),10)];if(t){subj=t.title||'';body=t.en||'';}}
+ else if(v.indexOf('t_')===0){var t=(EMAIL_TPLS||[])[parseInt(v.slice(2),10)];if(t){subj=tplEnSubject(t);body=t.en||'';}}
  if(subj&&$('bulkSubj'))$('bulkSubj').value=subj;if(body&&$('bulkBody'))$('bulkBody').value=body;
 }
 function bulkOpen(){
@@ -4090,7 +4093,7 @@ function bulkStart(){
  if(!sel.length){toast(TX('请至少选一位收件人','Select at least one recipient'));return;}
  var subj=$('bulkSubj')?$('bulkSubj').value.trim():'',body=$('bulkBody')?$('bulkBody').value.trim():'';
  if(!body){toast(TX('请填写邮件正文','Fill email body'));return;}
- if(!subj)subj=(S.me&&S.me.product||'prayer pillow')+' for '+(S.me&&S.me.market||'global')+' buyers';
+ if(!subj)subj=(S.me&&S.me.product||'prayer pillow')+' for '+(enMarket(S.me&&S.me.market)||'global')+' buyers';
  _bulk={list:sel.map(function(r){return {leadId:r.leadId,name:r.name,email:r.email,subject:bulkFill(subj,r),body:bulkFill(body,r),done:false};}),idx:0};
  bulkRender();
 }
@@ -4155,7 +4158,7 @@ function leadEdit(id){
  };
 }
 function leadWa(id){var l=S.leads.find(function(x){return x.id===id;});if(!l){return;}if(!l.wa){toast(TX('未填 WhatsApp，无法发送','No WhatsApp filled, cannot send'));return;}if(!/^\+?\d[\d\s\-]{5,}$/.test(l.wa)){toast(TX('联系方式不是有效手机号，无法拉起 WhatsApp','Contact is not a valid phone, cannot open WhatsApp'));return;}var num=l.wa.replace(/[^\d+]/g,'');if(num.charAt(0)!=='+')num='+'+num;var prod=l.product||TX('prayer pillow','prayer pillow');var edge=clientEdge(l);var sc=SCENES.whatsapp.gen({client:l.name,product:prod,edge:edge},S.me);var msg=encodeURIComponent(sc.en);var url='https://wa.me/'+num+'?text='+msg;if(typeof window!=='undefined'&&window.open){window.open(url,'_blank');}else{location.href=url;}logSend(l.id,'wa',sc.en);}
-function leadEmail(id){var l=S.leads.find(function(x){return x.id===id;});if(!l||!l.email){toast(TX('未填写邮箱，无法发送邮件','No email filled, cannot send'));return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email)){toast(TX('邮箱格式不正确，无法发送邮件','Invalid email, cannot send'));return;}var prod=l.product||TX('prayer pillow','prayer pillow');var sc=SCENES.cold_email.gen({client:l.name,product:prod,country:l.market||l.country||'',edge:clientEdge(l)},S.me);var subject=prod+' for '+(l.market||l.country||'')+' buyers';openEmailModal(l,subject,sc.en);}
+function leadEmail(id){var l=S.leads.find(function(x){return x.id===id;});if(!l||!l.email){toast(TX('未填写邮箱，无法发送邮件','No email filled, cannot send'));return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email)){toast(TX('邮箱格式不正确，无法发送邮件','Invalid email, cannot send'));return;}var prod=l.product||TX('prayer pillow','prayer pillow');var mkt=enMarket(l.market)||l.country||'';var sc=SCENES.cold_email.gen({client:l.name,product:prod,country:mkt,edge:clientEdge(l)},S.me);var subject=prod+(mkt?(' for '+mkt+' buyers'):' for global importers');openEmailModal(l,subject,sc.en);}
 function openEmailModal(l,subject,body){var to=l.email;var su=encodeURIComponent(subject),bd=encodeURIComponent(body);var mailto='mailto:'+to+'?subject='+su+'&body='+bd;var html='<div style="font-weight:600;margin-bottom:6px">'+TX('发邮件给','Send email to')+' '+esc(l.name)+'</div>'+'<div class="row" style="margin-bottom:8px"><span class="tag">'+TX('收件人','To')+'</span><span>'+esc(to)+'</span></div>'+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('主题','Subject')+'</div>'+'<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;white-space:pre-wrap;font-size:14px">'+esc(subject)+'</div>'+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('正文','Body')+'</div>'+'<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap;max-height:240px;overflow:auto;font-size:14px;line-height:1.55">'+esc(body)+'</div>'+'<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:14px">'+'<button class="btn amber" data-action="emGmail" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('用 Gmail 网页发送','Send via Gmail')+'</button>'+'<button class="btn" data-action="emOutlook" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('用 Outlook 网页发送','Send via Outlook')+'</button>'+'<button class="btn" data-action="emClient" data-mailto="'+esc(mailto)+'" data-id="'+l.id+'">'+TX('用本机邮件客户端','Desktop mail app')+'</button>'+'<button class="btn ghost" data-action="emCopy" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('复制全文','Copy all')+'</button>'+'<button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button>'+'</div>'+'<div class="muted" style="margin-top:8px">'+TX('没有本机邮件客户端？「Gmail 网页」或「Outlook 网页」都能在浏览器直接发；或「复制全文」粘贴到任意邮箱。','No desktop mail app? Use Gmail or Outlook web in browser, or copy all to paste anywhere.')+'</div>';$('modalBody').innerHTML='<h3>'+TX('邮件','Email')+'：'+esc(l.name)+'</h3>'+html;$('modal').classList.add('show');}
 function clientEdge(l){if(!l)return '';var p=[];if(l.product)p.push(l.product);if(l.amount)p.push('$'+l.amount);if(l.note)p.push(l.note);if(!p.length)p.push(TX('稳定斋月库存','stable Ramadan stock'));return p.join(' · ');}
 function sendTo(lead,text,channel){if(!lead){toast(TX('请先选择要发送的客户','Select a client first'));return;}text=(text||'').trim();if(!text){toast(TX('没有可发送的内容','Nothing to send'));return;}var hasWa=lead.wa&&/^\+?\d[\d\s\-]{5,}$/.test(lead.wa);var hasEmail=lead.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email);if(channel!=='email'&&hasWa){var num=lead.wa.replace(/[^\d+]/g,'');if(num.charAt(0)!=='+')num='+'+num;var wu='https://wa.me/'+num+'?text='+encodeURIComponent(text);var w=((typeof window!=='undefined')&&window.open)?window.open(wu,'_blank'):null;if(!w){copyText(wu);toast(TX('已复制 WhatsApp 链接，粘贴到浏览器或微信打开','WhatsApp link copied, paste into browser'));}else{toast(TX('已拉起 WhatsApp，按发送即可','WhatsApp opened, tap send'));}logSend(lead.id,'wa',text);}else if(hasEmail){var _subj='',_body=text;var _sm=/^\s*Subject:\s*(.*?)\n/i.exec(text);if(_sm){_subj=_sm[1].trim();_body=text.slice(_sm[0].length).replace(/^\s+/,'');}else{_subj=TX('关于','Re:')+' '+(lead.product||S.me.product||'');}openEmailModal(lead,_subj,_body);}else{toast(TX('该客户既无有效 WhatsApp 也无邮箱，无法发送','This client has no valid WhatsApp or email'));}}
