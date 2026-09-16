@@ -60,6 +60,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--main)}
 .tag.a{background:#fffbeb;color:var(--amber);border-color:#fde68a}
 .tag.score{background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
 svg{display:block}
+h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){width:18px;height:18px;display:inline-block;vertical-align:-3px}
 #app{display:flex;min-height:100vh}
 #side{width:212px;flex:0 0 212px;background:#fff;border-right:1px solid var(--line);padding:4px 10px;position:sticky;top:0;height:100vh;overflow-y:auto}
 #side .logo{width:160px;height:160px;background:#1e3a8a;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;margin:0 0 12px}
@@ -735,6 +736,7 @@ var STAGE_META={
  deliver:{t:'交付履约',te:'Delivery',d:'订单SOP + 验货要点',de:'Order SOP + QC checklist'},
  docs:{t:'外贸单据',te:'Trade Documents',d:'一笔出口全套单证，一个都不能少',de:'The complete export document set — nothing missing'},
  repeat:{t:'复购转介',te:'Reorder',d:'节期日历 + 返单/转介绍',de:'Festival calendar + reorder / referral'},
+ lib:{t:'话术邮件模版',te:'Email Templates',d:'中英对照话术库 + 邮件模版库',de:'Bilingual scripts & email templates'},
  review:{t:'复盘增长',te:'Review',d:'周/月复盘 + AI 洞察',de:'Weekly/monthly review + AI insights'},
  mails:{t:'邮件发送记录',te:'Sent Mails',d:'所有发出去的邮件/WhatsApp 留痕，可一键重发',de:'A log of every email/WhatsApp sent — re-send in one tap'},
  coach:{t:'教练诊断',te:'Coach',d:'给别的销售做业务体检',de:'Run a diagnostic for other salespeople'},
@@ -3428,7 +3430,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v30 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v30, hard-refresh with Ctrl+F5')+'">v30</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v31 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v31, hard-refresh with Ctrl+F5')+'">v31</div>';
  $('nav').innerHTML=h;
 }
 function renderView(){
@@ -4148,7 +4150,7 @@ function viewDocs(){
   h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+catLabel[cat]+(reqCnt?' <span class="muted" style="font-size:12px;font-weight:normal">（必出 '+reqCnt+'）</span>':'')+'</h3>';
   list.forEach(function(x){
    var st=docStatus(x.id);
-   h+='<div class="list-item" style="padding:8px 0;border-top:1px dashed var(--line)"><div class="main"><div class="t">'+esc(x.zh)+' <span class="muted" style="font-size:12px">'+esc(x.en)+'</span> <span class="tag '+(st==='done'?'a':'b')+'">'+TX(st==='done'?'已出':'待办',st==='done'?'done':'todo')+'</span>'+(rec[x.id]==='req'?' <span class="tag a">'+TX('必出','Req')+'</span>':'')+(rec[x.id]==='cond'?' <span class="tag b">'+TX('建议','Sug')+'</span>':'')+'</div><div class="s">'+TX('出具方','Issuer')+'：'+esc(x.issuer)+' · '+TX('时点','When')+'：'+esc(x.when)+'</div></div>';
+   h+='<div class="list-item" style="padding:8px 0;border-top:1px dashed var(--line)"><div class="main"><div class="t">'+esc(x.zh)+' <span class="muted" style="font-size:12px">'+esc(x.en)+'</span> <span class="tag '+(st==='done'?'a':'b')+'">'+TX(st==='done'?'已出':'待办',st==='done'?'Issued':'Pending')+'</span>'+(rec[x.id]==='req'?' <span class="tag a">'+TX('必出','Req')+'</span>':'')+(rec[x.id]==='cond'?' <span class="tag b">'+TX('建议','Sug')+'</span>':'')+'</div><div class="s">'+TX('出具方','Issuer')+'：'+esc(x.issuer)+' · '+TX('时点','When')+'：'+esc(x.when)+'</div></div>';
    h+='<div class="ops"><button class="btn '+(st==='done'?'ghost':'green')+' mini" data-action="docToggle" data-id="'+x.id+'">'+(st==='done'?TX('撤销','Undo'):TX('标记已出','Mark done'))+'</button><button class="btn ghost mini" data-action="docOpen" data-id="'+x.id+'">'+TX('填模板','Fill')+'</button></div></div>';
   });
   h+='</div>';
