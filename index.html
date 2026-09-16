@@ -361,12 +361,12 @@ var S={
  lang:load('lang','zh'),
  me:load('me',{name:'',company:'',years:'',product:'',market:'',whatsapp:''}),
  mails:load('mails',[]),
- leads:load('leads',null),trash:load('trash',[]),
- tasks:load('tasks',null),
+ leads:load('leads',[]),trash:load('trash',[]),
+ tasks:load('tasks',[]),
  scripts:load('scripts',[]),
  coach:load('coach',[]),
- docs:load('docs',null),
- deals:load('deals',null),
+ docs:load('docs',[]),
+ deals:load('deals',[]),
  _dealId:load('_dealId',''),
  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
  _custView:load('_custView','card'),
@@ -437,12 +437,12 @@ function buildState(){
   lang:load('lang','zh'),
   me:load('me',{name:'',company:'',years:'',product:'',market:'',whatsapp:''}),
   mails:load('mails',[]),
-  leads:load('leads',null),trash:load('trash',[]),
-  tasks:load('tasks',null),
+  leads:load('leads',[]),trash:load('trash',[]),
+  tasks:load('tasks',[]),
   scripts:load('scripts',[]),
   coach:load('coach',[]),
-  docs:load('docs',null),
-  deals:load('deals',null),
+  docs:load('docs',[]),
+  deals:load('deals',[]),
   _dealId:load('_dealId',''),
   _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
   _custView:load('_custView','card'),
@@ -741,7 +741,8 @@ var STAGE_META={
  mails:{t:'邮件发送记录',te:'Sent Mails',d:'所有发出去的邮件/WhatsApp 留痕，可一键重发',de:'A log of every email/WhatsApp sent — re-send in one tap'},
  coach:{t:'教练诊断',te:'Coach',d:'给别的销售做业务体检',de:'Run a diagnostic for other salespeople'},
  me:{t:'我的资料',te:'My Profile',d:'第一次填一次，话术自动署名',de:'Fill once, scripts auto-sign'},
- backup:{t:'备份',te:'Backup',d:'数据本地，导出/重置/发给别人',de:'Local data, export / reset / share'}
+ backup:{t:'备份',te:'Backup',d:'数据本地，导出/重置/发给别人',de:'Local data, export / reset / share'},
+ tasks:{t:'待办清单',te:'To-Do List',d:'所有待办与逾期预警，一处清空',de:'All tasks & overdue alerts — clear in one place'}
 };
 /* ============ 新手成长进度（入门→成交体系） ============ */
 function loopSig(){
@@ -3526,8 +3527,15 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v34 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v34, hard-refresh with Ctrl+F5')+'">v34</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v35 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v35, hard-refresh with Ctrl+F5')+'">v35</div>';
  $('nav').innerHTML=h;
+}
+function viewTasks(){
+ var h=shead('tasks',TX('所有待办与逾期预警，点「完成」即清掉，按「去办」跳到对应客户。','All tasks & overdue alerts — tick Done to clear, jump to the client.'));
+ h+='<div class="card" style="margin-top:14px">';h+=custSheetTasks();h+='</div>';
+ var ov=(S.leads||[]).filter(function(l){return l.stage!=='成交';}).map(function(l){var d=Math.round((new Date(todayStr())-new Date(l.last))/864e5);return {l:l,d:d};}).filter(function(o){return o.d>=14;});
+ if(ov.length){h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('逾期未跟进客户','Overdue leads')+'</h3>';ov.slice(0,20).forEach(function(o){h+='<div class="ti"><span class="tag r">'+o.d+TX(' 天','d')+'</span><span class="lbl">'+esc(o.l.name)+'</span><button class="btn ghost mini" data-action="custJump" data-where="cust360" data-id="'+esc(o.l.id)+'">'+TX('去办','Handle')+'</button></div>';});h+='</div>';}
+ return h;
 }
 function renderView(){
  var v=S.view;var h='';
@@ -3548,6 +3556,7 @@ function renderView(){
  else if(v==='coach')h=viewCoach();
  else if(v==='me')h=viewMe();
  else if(v==='backup')h=viewBackup();
+ else if(v==='tasks')h=viewTasks();
  $('view').innerHTML=h;
 }
 /* ============ 术语悬浮卡（新手友好） ============ */
@@ -4615,7 +4624,7 @@ function authGate(){
   wbRenderAuth();
 }
 
-authGate();
+boot();
 </script>
 
 </body>
