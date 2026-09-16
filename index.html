@@ -192,6 +192,11 @@ svg{display:block}
 .lp p{margin:0;font-size:12.5px;color:var(--sub)}
 .lp.coach{background:#fff7ed;border-color:#fed7aa}
 .lp.coach .ic{background:#ffedd5;color:var(--amber)}
+
+.g{border-bottom:1px dotted var(--sub);cursor:help}
+.g:hover{background:#fff7ed}
+#wbTip{position:fixed;z-index:9999;max-width:300px;background:#1f2937;color:#fff;padding:9px 11px;border-radius:8px;font-size:12.5px;line-height:1.55;box-shadow:0 6px 22px rgba(0,0,0,.28);pointer-events:none;display:none}
+
 .lp.on{border-color:#bbf7d0;background:#f6fff9}
 .grow-card{border-color:#c7d2fe}
 .next-step{font-size:13px;color:#334155;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px}
@@ -362,7 +367,7 @@ var S={
  docs:load('docs',null),
  deals:load('deals',null),
  _dealId:load('_dealId',''),
- _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),
+ _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
  _custView:load('_custView','card'),
  _custSheet:load('_custSheet','cust'),
  _recShow:false,_chkShow:false,
@@ -438,7 +443,7 @@ function buildState(){
   docs:load('docs',null),
   deals:load('deals',null),
   _dealId:load('_dealId',''),
-  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),
+  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
   _custView:load('_custView','card'),
   _custSheet:load('_custSheet','cust'),
   _recShow:false,_chkShow:false,
@@ -455,26 +460,10 @@ function buildState(){
   _hotInd:load('_hotInd','3c'),_hotShift:0,hotFav:load('hotFav',[]),_cpqOpen:load('_cpqOpen',false),_hotQ:'',_hotUser:load('_hotUser',[]),_hotAuto:load('_hotAuto',true),_hotLastDate:load('_hotLastDate',''),
   _wsQ:'',_wsPlat:'all',_wsRes:[],_wsBusy:false,_wsErr:'',_wsHist:load('_wsHist',[]),_wsMore:false,_fcQ:'',_fcMarket:'全球',_fcRes:[],_fcBusy:false,_fcErr:'',_fcHist:load('_fcHist',[]),_fcMore:false
  };
- if(S.leads===null){
-  S.leads=[
-   {id:'L1',name:'Ahmed',country:'UAE',market:'中东',wa:'+97150123456',email:'',product:'prayer pillow',stage:'试样',amount:1200,last:daysAgo(20),note:'斋月礼盒意向'},
-   {id:'L2',name:'Siti',country:'Malaysia',market:'东南亚',wa:'+60123456789',email:'',product:'prayer pillow',stage:'已联系',amount:0,last:daysAgo(9),note:''},
-   {id:'L3',name:'Omar',country:'Egypt',market:'中东',wa:'+20101234567',email:'',product:'prayer pillow blue',stage:'报价',amount:2400,last:daysAgo(4),note:'等PI'},
-   {id:'L4',name:'John',country:'USA',market:'欧美',wa:'+12015550123',email:'john@importer.com',product:'gift box',stage:'待开发',amount:0,last:daysAgo(35),note:'展会名片'}
-  ];
-  save('leads',S.leads);
- }
+ if(S.leads===null){ S.leads=seedDemo('gift').leads; save('leads',S.leads); }
  S.leads=S.leads.map(function(l){if(l.wa===undefined&&l.email===undefined){var c=(l.contact||'').trim();if(/^\+?\d[\d\s\-]{5,}$/.test(c)){l.wa=c;l.email='';}else{l.wa='';l.email=c;}}if(l.wa===undefined)l.wa='';if(l.email===undefined)l.email='';return l;});
  save('leads',S.leads);
- if(S.tasks===null){
-  var today=new Date();
-  S.tasks=[
-   {id:'T1',title:'给 Ahmed 寄绣金样品质检跟进',due:iso(today,2),done:false,clientId:'L1'},
-   {id:'T2',title:'Omar 报价 PI 待发',due:iso(today,-3),done:false,clientId:'L3'},
-   {id:'T3',title:'Siti 二次触达推礼盒款',due:iso(today,5),done:false,clientId:'L2'}
-  ];
-  save('tasks',S.tasks);
- }
+ if(S.tasks===null){ S.tasks=seedDemo('gift').tasks; save('tasks',S.tasks); }
  if(S.docs===null){
   S.docs=DOC_DEF.map(function(d){return {id:d.id,status:'todo',note:''};});
   save('docs',S.docs);
@@ -486,6 +475,54 @@ function buildState(){
  }
 }
 /* ---- 启动密码锁 / 本地加密存储 ---- */
+/* ============ 示例数据（按品类，可切换） ============ */
+function seedDemo(cat){
+ var today=new Date();
+ if(cat==='3c'){ return {leads:[
+   {id:'DL1',name:'Tom',country:'USA',market:'欧美',wa:'+12015550123',email:'tom@usatech.com',product:'power bank 20000mAh',stage:'报价',amount:3000,last:daysAgo(4),note:'要 PI'},
+   {id:'DL2',name:'Mei',country:'Singapore',market:'东南亚',wa:'+6591234567',email:'',product:'wireless earbuds',stage:'已联系',amount:0,last:daysAgo(9),note:''},
+   {id:'DL3',name:'Karim',country:'UAE',market:'中东',wa:'+97150123456',email:'',product:'USB charger',stage:'试样',amount:800,last:daysAgo(18),note:'斋月备货'},
+   {id:'DL4',name:'Bose',country:'Nigeria',market:'非洲',wa:'+2348012345678',email:'',product:'bluetooth speaker',stage:'待开发',amount:0,last:daysAgo(30),note:'展会名片'}
+  ],tasks:[
+   {id:'DT1',title:'Tom 报价 PI 待发',due:iso(today,-2),done:false,clientId:'DL1'},
+   {id:'DT2',title:'Karim 寄样品质检跟进',due:iso(today,3),done:false,clientId:'DL3'},
+   {id:'DT3',title:'Mei 二次触达推耳机款',due:iso(today,6),done:false,clientId:'DL2'}
+  ]}; }
+ if(cat==='general'){ return {leads:[
+   {id:'DG1',name:'Anna',country:'Germany',market:'欧美',wa:'+49151234567',email:'anna@deco.de',product:'home decor',stage:'报价',amount:2000,last:daysAgo(3),note:'要 PI'},
+   {id:'DG2',name:'Pedro',country:'Brazil',market:'混合',wa:'+5511987654321',email:'',product:'kitchenware',stage:'已联系',amount:0,last:daysAgo(11),note:''},
+   {id:'DG3',name:'Chen',country:'Malaysia',market:'东南亚',wa:'+60123456789',email:'',product:'tableware',stage:'试样',amount:900,last:daysAgo(16),note:''},
+   {id:'DG4',name:'Ali',country:'Turkey',market:'中东',wa:'+902121234567',email:'',product:'textiles',stage:'待开发',amount:0,last:daysAgo(28),note:''}
+  ],tasks:[
+   {id:'DGt1',title:'Anna 报价 PI 待发',due:iso(today,-1),done:false,clientId:'DG1'},
+   {id:'DGt2',title:'Chen 寄样品质检跟进',due:iso(today,4),done:false,clientId:'DG3'},
+   {id:'DGt3',title:'Pedro 二次触达推厨具款',due:iso(today,7),done:false,clientId:'DG2'}
+  ]}; }
+ return {leads:[
+   {id:'L1',name:'Ahmed',country:'UAE',market:'中东',wa:'+97150123456',email:'',product:'prayer pillow',stage:'试样',amount:1200,last:daysAgo(20),note:'斋月礼盒意向'},
+   {id:'L2',name:'Siti',country:'Malaysia',market:'东南亚',wa:'+60123456789',email:'',product:'prayer pillow',stage:'已联系',amount:0,last:daysAgo(9),note:''},
+   {id:'L3',name:'Omar',country:'Egypt',market:'中东',wa:'+20101234567',email:'',product:'prayer pillow blue',stage:'报价',amount:2400,last:daysAgo(4),note:'等PI'},
+   {id:'L4',name:'John',country:'USA',market:'欧美',wa:'+12015550123',email:'john@importer.com',product:'gift box',stage:'待开发',amount:0,last:daysAgo(35),note:'展会名片'}
+  ],tasks:[
+   {id:'T1',title:'给 Ahmed 寄绣金样品质检跟进',due:iso(today,2),done:false,clientId:'L1'},
+   {id:'T2',title:'Omar 报价 PI 待发',due:iso(today,-3),done:false,clientId:'L3'},
+   {id:'T3',title:'Siti 二次触达推礼盒款',due:iso(today,5),done:false,clientId:'L2'}
+  ]};
+}
+function loadDemoConfirm(){ var sel=document.getElementById('demoCat'); var cat=sel?sel.value:'gift'; loadDemoData(cat); }
+function loadDemoData(cat){
+ var d=seedDemo(cat);
+ var has=((S.leads&&S.leads.length)||(S.tasks&&S.tasks.length));
+ if(has){
+  openModal(TX('覆盖当前客户库？','Overwrite current clients?'),TX('载入示例会替换你现在的客户与待办。建议先到「备份」导出当前数据。确定继续？','Loading samples replaces your current leads & tasks. Export first via Backup. Continue?'),function(){
+   S.leads=d.leads;S.tasks=d.tasks;snapLeads();save('leads',S.leads);save('tasks',S.tasks);S.view='cust';save('view',S.view);refreshAll();toast(TX('已载入示例：'+cat,'Loaded demo: '+cat));
+  });
+ } else {
+  S.leads=d.leads;S.tasks=d.tasks;snapLeads();save('leads',S.leads);save('tasks',S.tasks);refreshAll();toast(TX('已载入示例：'+cat,'Loaded demo: '+cat));
+ }
+}
+
+
 function boot(){
  try{localStorage.removeItem(KEY+'enc');}catch(e){}
  ENC_ON=false;buildState();unlocked();
@@ -1594,6 +1631,23 @@ function viewFind(){
  var h=shead('find',TX('把线索按 Pipeline 管起来，AI 自动评分排优先级。别每次从零开发。','Manage the pipeline; AI scores and prioritizes. Stop starting from zero.'));
  h+=fcSection();
  h+='<div class="keypts"><b>'+TX('最小必要知识','Minimal knowledge')+'</b><ul><li>'+TX('渠道：阿里国际站 / 展会 / 冷邮件 / 社媒 / 老客转介，先盯 1-2 条主渠道跑通。','Channels: AliExpress/EXPO/cold email/social/referral — master 1-2 first.')+'</li><li>'+TX('每条线索有阶段，推进靠"下一步动作"而非感觉。','Each lead has a stage; advance by next action, not feeling.')+'</li><li>'+TX('昨天没跟的会自动滚到今天，不凭空消失。','Unfollowed leads roll to today automatically.')+'</li></ul></div>';
+
+h+='<div class="card" style="margin-bottom:14px;background:#fffbeb;border:1px solid #fde68a"><div class="row" style="align-items:center;cursor:pointer" data-action="findHelp"><b style="font-size:14px;color:#92400e">'+TX('新手怎么挖客户？（28 法则速成）','How to find clients? (Pareto crash course)')+'</b><span style="flex:1"></span><span class="muted">'+TX(S._findHelp?'收起':'展开','Collapse')+' ▾</span></div>';
+if(S._findHelp){
+ h+='<div style="margin-top:10px;font-size:13px;line-height:1.85">';
+ h+='<p style="margin:0 0 6px"><b>'+TX('① 先选 1-2 条主渠道跑通，别贪多','Master 1-2 channels first')+'：</b></p><ul style="margin:0 0 8px;padding-left:18px">';
+ h+='<li><b>'+TX('阿里国际站 / 中国制造网','AliExpress / Made-in-China')+'</b>：'+TX('开店铺或发 RFQ，适合有产品图的新手。','Open a store or post RFQs — good for beginners with photos.')+'</li>';
+ h+='<li><b>'+TX('谷歌搜索','Google search')+'</b>：'+TX('搜 "产品 + importer/distributor/wholesaler + 国家"，例：','Search "product + importer + country", e.g.')+' <code>prayer mat importer UAE</code>。</li>';
+ h+='<li><b>'+TX('海关进口数据','Import data')+'</b>：'+TX('查目标国真实采购商（ImportGenius / 腾道等），看谁在买、买多少。','Paid libraries show real buyers & volumes.')+'</li>';
+ h+='<li><b>'+TX('展会 / LinkedIn','Expo / LinkedIn')+'</b>：'+TX('展会上拿名片，LinkedIn 按行业+国家筛采购。','Cards at expos; filter buyers on LinkedIn by industry + country.')+'</li>';
+ h+='<li><b>'+TX('老客转介','Referrals')+'</b>：'+TX('成交后请客户介绍同行，转化最高。','Ask closed clients for intros — highest conversion.')+'</li>';
+ h+='</ul>';
+ h+='<p style="margin:0 0 6px"><b>'+TX('② 一条可用的开发搜索式','A ready search formula')+'：</b></p>';
+ h+='<div class="out" style="white-space:pre-wrap;font-size:12.5px">"product" + importer + 国家\n"Ramadan gift" wholesaler + 国家\nproduct "purchase manager" email\nproduct site:linkedin.com</div>';
+ h+='<p class="muted" style="margin:8px 0 0">'+TX('③ 找到后立刻进「找客户」建线索（国家/产品/阶段），让 AI 排优先级，别用 Excel 记。','Once found, add a lead in Find Leads and let AI prioritize — skip Excel.')+'</p>';
+ h+='</div>';
+}
+
  var counts={};PIPE.forEach(function(p){counts[p]=0;});S.leads.forEach(function(l){counts[l.stage]=(counts[l.stage]||0)+1;});
  h+='<div class="card" style="margin-bottom:14px"><div class="pipe">';
  PIPE.forEach(function(p){h+='<span class="pchip">'+p+' <b>'+counts[p]+'</b></span>';});
@@ -1962,6 +2016,8 @@ function viewCust(){
   h+='</div>';
  }
  h+='<div class="card" style="margin-top:14px"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><button class="btn mini" data-action="leadNew" style="background:var(--accent,#2563eb);color:#fff">+ '+TX('新建客户','New client')+'</button><b style="font-size:14px">'+TX('客户信息互通','Import / Export')+'</b><span class="muted" style="font-size:12px">'+TX('导出 CSV 用 Excel 批量编辑，再导入回来；按「客户名+国家」匹配更新。','Export CSV to edit in Excel, then re-import; matched by name + country.')+'</span><span style="flex:1"></span><button class="btn mini" data-action="exportLeadsCsv">'+TX('导出 CSV','Export CSV')+'</button><button class="btn mini ghost" data-action="exportLeadsJson">'+TX('导出 JSON','Export JSON')+'</button><button class="btn mini ghost" data-action="importLeads">'+TX('导入文件','Import')+'</button></div><input type="file" id="leadImpFile" accept=".csv,.json,text/csv,application/json" style="display:none"></div>';
+h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid #bae6fd"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><b style="font-size:14px;color:#075985">'+TX('载入示例客户（按品类练习）','Load sample clients by category')+'</b><span class="muted" style="font-size:12px">'+TX('选品类一键填充练习客户，先看效果再换成你自己的。','Pick a category to fill practice leads; swap in your own later.')+'</span><span style="flex:1"></span><select id="demoCat">'+[['gift',TX('穆斯林礼品','Muslim gifts')],['3c',TX('3C 电子','3C electronics')],['general',TX('综合进口商','General importers')]].map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('')+'</select><button class="btn mini" data-action="loadDemo">'+TX('载入','Load')+'</button></div></div>';
+
  h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button></div>';
  if(mode==='table'){
   var cf=S._custFilter||{q:'',market:'',stage:''};
@@ -3372,7 +3428,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v29 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v29, hard-refresh with Ctrl+F5')+'">v29</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v30 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v30, hard-refresh with Ctrl+F5')+'">v30</div>';
  $('nav').innerHTML=h;
 }
 function renderView(){
@@ -3396,6 +3452,72 @@ function renderView(){
  else if(v==='backup')h=viewBackup();
  $('view').innerHTML=h;
 }
+/* ============ 术语悬浮卡（新手友好） ============ */
+var _tipReady=false,_GLOSS=null,_GLOSS_RE=null;
+function glossDefs(){ if(_GLOSS)return _GLOSS;
+ var D=[
+  ['FOB','FOB','船上交货（指定装运港）：卖方把货装上船即完成交货，之后运费与风险由买方承担。最常用来报价。'],
+  ['CIF','CIF','成本+保险+运费（指定目的港）：卖方付到目的港的运费和保费，但风险仍在装运港过船舷时转给买方。'],
+  ['CFR','CFR','成本+运费（指定目的港）：与 CIF 类似但卖方不买保险，买方自理。'],
+  ['EXW','EXW','工厂交货：卖方只把货备在自家工厂，买方自提并承担之后一切，卖方责任最小。'],
+  ['FCA','FCA','货交承运人：卖方把货交给买方指定的承运人或地点即完成交货，适合空运/铁路/拼箱。'],
+  ['MOQ','MOQ','最小起订量（Minimum Order Quantity）：工厂要求的一次最少下单数量，决定你的起订门槛与现金流。'],
+  ['PI','PI','形式发票（Proforma Invoice）：报价/打样前给客户的预发票，用于申请进口许可或付汇，非正式结算单据。'],
+  ['RFQ','RFQ','采购询盘（Request for Quotation）：买家发给供应商的询价需求，是开发信的高意向回复。'],
+  ['ETA','ETA','预计到达时间（Estimated Time of Arrival）。'],
+  ['ETD','ETD','预计开船/出发时间（Estimated Time of Departure）。'],
+  ['LC','L/C','信用证（Letter of Credit）：银行担保付款，单证相符才放款，是外贸最安全的收款方式之一。'],
+  ['BL','B/L','提单（Bill of Lading）：海运物权凭证，提货必备，谁持正本谁提货。'],
+  ['INCOTERMS','Incoterms','国际贸易术语解释通则，规定买卖双方在交货、风险、费用上的责任划分（如 FOB/CIF）。'],
+  ['HSCODE','HS\\s*编码','HS 编码（商品编码）：海关用来分类和征税的统一商品编号，报关必填。'],
+  ['DESTPORT','目的港','货物最终到达的港口。'],
+  ['POLPORT','装货港','货物装船起运的港口。'],
+  ['PIFORM','形式发票','即 PI（Proforma Invoice）。'],
+  ['CI','商业发票','Commercial Invoice：清关与结算用的正式发票，金额须与提单等单单一致。'],
+  ['BLADING','提单','即 B/L，海运物权凭证。'],
+  ['LCREDIT','信用证','即 L/C，银行担保付款。'],
+  ['DOCS','单证','外贸全套单据（发票/箱单/提单/产地证等），须做到单单一致、单证一致。'],
+  ['SEALSAMPLE','封样','打样后双方确认的样品，作为大货验收标准，避免货不对板。'],
+  ['BULK','大货','正式批量生产的订单货物（区别于样品）。'],
+  ['MOREORLESS','溢短装','交货数量允许的合理上下浮动（如 ±3%），以装运量为准。'],
+  ['TT','T/T|电汇','电汇（Telegraphic Transfer）：买家直接汇款，常见于定金+尾款。']
+ ];
+ _GLOSS=D; return D;
+}
+function glossRegex(){ if(_GLOSS_RE)return _GLOSS_RE;
+ var D=glossDefs(); var alt=D.map(function(d,i){return '(?<g'+i+'>'+d[1]+')';}).join('|');
+ _GLOSS_RE=new RegExp('(?<![A-Za-z0-9])('+alt+')(?![A-Za-z0-9])','g'); return _GLOSS_RE;
+}
+function glossText(key){ var D=glossDefs(); for(var i=0;i<D.length;i++) if(D[i][0]===key) return D[i][2]; return ''; }
+function ensureTip(){ if(_tipReady)return;_tipReady=true;
+ var tip=document.createElement('div'); tip.id='wbTip'; tip.style.cssText='position:fixed;z-index:9999;max-width:300px;background:#1f2937;color:#fff;padding:9px 11px;border-radius:8px;font-size:12.5px;line-height:1.55;box-shadow:0 6px 22px rgba(0,0,0,.28);pointer-events:none;display:none';
+ (document.body||document.documentElement).appendChild(tip);
+ document.addEventListener('mouseover',function(e){ var t=e.target.closest?e.target.closest('.g'):null; if(!t){return;} var txt=glossText(t.getAttribute('data-g')); if(!txt){tip.style.display='none';return;} tip.textContent=txt; tip.style.display='block'; var r=t.getBoundingClientRect(); var x=r.left,y=r.bottom+8; if(x+300>window.innerWidth)x=window.innerWidth-308; if(y+tip.offsetHeight>window.innerHeight)y=r.top-tip.offsetHeight-8; tip.style.left=Math.max(6,x)+'px'; tip.style.top=Math.max(6,y)+'px'; });
+ document.addEventListener('mouseout',function(e){ var t=e.target.closest?e.target.closest('.g'):null; if(t)tip.style.display='none'; });
+}
+function applyGlossary(){
+ try{
+  ensureTip();
+  var root=document.getElementById('view'); if(!root)return;
+  var skip={INPUT:1,TEXTAREA:1,SELECT:1,SCRIPT:1,STYLE:1,OPTION:1};
+  var re=glossRegex(); re.lastIndex=0; var D=glossDefs();
+  var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false);
+  var list=[],node; while((node=walker.nextNode())){ if(skip[node.parentNode.tagName])continue; if(node.parentNode.classList&&node.parentNode.classList.contains('g'))continue; re.lastIndex=0; if(!re.test(node.nodeValue))continue; list.push(node); }
+  list.forEach(function(n){
+   var str=n.nodeValue, frag=document.createDocumentFragment(), last=0, m; re.lastIndex=0;
+   while((m=re.exec(str))){
+    if(m.index>last)frag.appendChild(document.createTextNode(str.slice(last,m.index)));
+    var key=''; for(var i=0;i<D.length;i++){ if(m.groups['g'+i]!==undefined){key=D[i][0];break;} }
+    var sp=document.createElement('span'); sp.className='g'; sp.setAttribute('data-g',key); sp.textContent=m[0];
+    frag.appendChild(sp); last=re.lastIndex;
+   }
+   if(last<str.length)frag.appendChild(document.createTextNode(str.slice(last)));
+   n.parentNode.replaceChild(frag,n);
+  });
+ }catch(e){}
+}
+
+
 function refreshAll(){
  var _rf=[renderNav,renderView,renderToday];
  for(var _i=0;_i<_rf.length;_i++){try{_rf[_i]();}catch(e){try{console.error('[render]',e);}catch(_e){}}}
@@ -3403,6 +3525,7 @@ function refreshAll(){
  try{if(S.view==='repeat'){renderFest();renderHolidays();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='review'){renderIns();renderRvDraft();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat')renderSceneFields();}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ applyGlossary();
 }
 /* ============ 弹窗 ============ */
 function openModal(title,body,onOk){
@@ -3422,6 +3545,8 @@ document.addEventListener('click',function(e){
  else if(a==='toggleNav'){toggleNav();}
  else if(a==='langToggle'){langToggle();}
  else if(a==='genPos'){genPos();}
+ else if(a==='findHelp'){S._findHelp=!S._findHelp;refreshAll();}
+ else if(a==='loadDemo'){loadDemoConfirm();}
  else if(a==='cpGen'){cpGen();}
  else if(a==='cpGo'){cpGo(el.dataset.p,el.dataset.q);}
  else if(a==='cpAdd'){cpAdd();}
