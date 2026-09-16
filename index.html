@@ -306,6 +306,7 @@ select.chip-sel{padding:3px 8px;border:1px solid var(--main);border-radius:999px
 <div class="modal-mask" id="modal" data-page-node-id="FhgiASboKpgjGXV6QSOf6l"><div class="modal" id="modalBody" data-page-node-id="vodrtF0MO1amwQj7GTt6ts"></div></div>
 <div class="toast" id="toast" data-page-node-id="i29vnpcPXdvnnDTiAKkzpT"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__sbErr=true"></script>
 <script>
 /* ============ 图标 ============ */
 var ICON={
@@ -396,6 +397,7 @@ var _pt=null;
 function save(k,v){
  if(ENC_ON){MEM[k]=v;if(_pt)clearTimeout(_pt);_pt=setTimeout(persistAll,300);return;}
  localStorage.setItem(KEY+k,JSON.stringify(v));
+ try{SYNC_DIRTY=true;}catch(e){}
 }
 /* ---- 加密：优先 Web Crypto AES-GCM；file:// 无 subtle 时降级为混淆锁（仅防随手翻看） ---- */
 function b64enc(buf){return btoa(String.fromCharCode.apply(null,new Uint8Array(buf)));}
@@ -432,6 +434,30 @@ async function persistAll(){
  var obj={};PERSIST_KEYS.forEach(function(k){if(k in MEM)obj[k]=MEM[k];});
  try{localStorage.setItem(KEY+'store',await encBlob(obj));}catch(e){}
 }
+/* ============ 云同步：共享密钥 + 客户端加密（无登录） ============ */
+var SYNC_CFG_KEY='wb_sync_cfg_v1';
+var SYNC_SALT_B64='ZnRsb29wLXN5bmMtc2FsdC12MQ=='; /* base64('ftloop-sync-salt-v1')，非保密，仅用于密钥派生 */
+var SYNC_DIRTY=false,SYNC_TIMER=null,SYNC_LAST_SEEN=0,SYNC_AUTO=false,SYNC_BUSY=false,SYNC_STATUS='idle';
+function syncLoadCfg(){try{return JSON.parse(localStorage.getItem(SYNC_CFG_KEY)||'{}');}catch(e){return {};}}
+function syncSaveCfgLocal(o){localStorage.setItem(SYNC_CFG_KEY,JSON.stringify(o));}
+function syncHashId(pw){var s='room:'+pw,h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}var out='',x=h;for(var k=0;k<6;k++){out+=(x&0xffffff).toString(16).padStart(6,'0');x=Math.imul(x^0x9e3779b9,16777619)>>>0;}return 'r'+out;}
+async function syncDerive(pw){return await deriveKey(pw,b64dec(SYNC_SALT_B64));}
+async function syncEnc(obj,ck){var j=JSON.stringify(obj);if(HAS_SUBTLE){var iv=crypto.getRandomValues(new Uint8Array(12));var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},ck,new TextEncoder().encode(j));return 'a:'+b64enc(iv)+':'+b64enc(ct);}return 'x:'+b64enc(xorBytes(new TextEncoder().encode(j),ck.pw));}
+async function syncDec(str,ck){var p=str.split(':');if(p[0]==='a'){var iv=b64dec(p[1]),ct=b64dec(p[2]);var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:iv},ck,ct);return JSON.parse(new TextDecoder().decode(pt));}return JSON.parse(new TextDecoder().decode(xorBytes(b64dec(p[1]),ck.pw)));}
+function sbClient(){var c=syncLoadCfg();if(!c.url||!c.key)return null;if(window.__sbErr||!window.supabase)return null;try{return supabase.createClient(c.url,c.key);}catch(e){return null;}}
+function syncDataObj(){var KEYS=['me','mails','leads','trash','tasks','scripts','coach','docs','deals','_dealId','docDefaults','hidden','comp','cpq','hotFav','_hotUser','_wsHist','_fcHist','rvDraft','rvLog'];var o={};KEYS.forEach(function(k){if(S&&S[k]!==undefined)o[k]=S[k];});return o;}
+function syncStatusText(){var c=syncLoadCfg();if(!c.url||!c.key||!c.syncKey)return TX('未配置（填 URL/Key/同步密钥后保存）','Not configured');if(SYNC_STATUS==='push')return TX('推送中…','Pushing…');if(SYNC_STATUS==='pull')return TX('拉取中…','Pulling…');if(SYNC_STATUS==='err')return TX('上次失败，检查网络/Supabase','Last failed');return (SYNC_AUTO?TX('自动同步开 · 上次 ','Auto on · last '):TX('就绪 · 上次 ','Ready · last '))+syncStampText();}
+function syncStampText(){return SYNC_LAST_SEEN?new Date(SYNC_LAST_SEEN).toLocaleString():TX('—','—');}
+function syncStatus(s){SYNC_STATUS=s;var e=document.getElementById('syncStat');if(e)e.textContent=syncStatusText();}
+function syncAdopt(state){if(!state)return;Object.keys(state).forEach(function(k){S[k]=state[k];save(k,S[k]);});SYNC_DIRTY=false;syncStatus('idle');refreshAll();toast(TX('已与云端同步','Synced with cloud'));}
+async function syncFetchRemote(){var c=syncLoadCfg();if(!c.url||!c.key||!c.syncKey)return null;if(!HAS_SUBTLE){toast(TX('当前 file:// 无加密，请用 HTTPS 链接启用真加密同步','Use HTTPS link for real encrypted sync'));return null;}var sb=sbClient();if(!sb){toast(TX('Supabase 未就绪（检查 URL/Key，或需联网/HTTPS）','Supabase not ready'));return null;}SYNC_BUSY=true;SYNC_STATUS='pull';var st=document.getElementById('syncStat');if(st)st.textContent=syncStatusText();try{var ck=await syncDerive(c.syncKey);var room=syncHashId(c.syncKey);var r=await sb.from('app_sync').select('data,updated_at').eq('id',room).single();if(r.error){if(r.error.code==='PGRST116'){SYNC_BUSY=false;syncStatus('idle');return null;}throw r.error;}if(!r.data||!r.data.data){SYNC_BUSY=false;syncStatus('idle');return null;}var payload=await syncDec(r.data.data,ck);SYNC_BUSY=false;syncStatus('idle');return payload;}catch(e){SYNC_BUSY=false;SYNC_STATUS='err';if(st)st.textContent=syncStatusText();toast(TX('拉取失败：'+(e&&e.message?e.message:e),'Pull failed'));return null;}}
+async function syncPush(){var c=syncLoadCfg();if(!c.url||!c.key||!c.syncKey){toast(TX('请先在「备份」面板配置同步密钥与 Supabase','Configure sync key & Supabase first'));return;}if(!HAS_SUBTLE){toast(TX('当前 file:// 无加密，请用 HTTPS 链接启用真加密同步','Use HTTPS link'));return;}var sb=sbClient();if(!sb){toast(TX('Supabase 未就绪','Supabase not ready'));return;}SYNC_BUSY=true;SYNC_STATUS='push';var st=document.getElementById('syncStat');if(st)st.textContent=syncStatusText();try{var ck=await syncDerive(c.syncKey);var payload={ts:Date.now(),state:syncDataObj()};var ct=await syncEnc(payload,ck);var room=syncHashId(c.syncKey);var r=await sb.from('app_sync').upsert({id:room,data:ct,updated_at:new Date().toISOString()});if(r.error)throw r.error;SYNC_LAST_SEEN=payload.ts;SYNC_DIRTY=false;SYNC_BUSY=false;syncStatus('idle');if(st)st.textContent=syncStatusText();toast(TX('已推送到云端','Pushed to cloud'));}catch(e){SYNC_BUSY=false;SYNC_STATUS='err';if(st)st.textContent=syncStatusText();toast(TX('推送失败：'+(e&&e.message?e.message:e),'Push failed'));}}
+async function syncAutoTick(){if(!SYNC_AUTO)return;var c=syncLoadCfg();if(!c.url||!c.key||!c.syncKey)return;var rem=await syncFetchRemote();if(rem&&rem.ts){if(rem.ts>SYNC_LAST_SEEN){if(!SYNC_DIRTY){syncAdopt(rem.state);}SYNC_LAST_SEEN=rem.ts;}}if(SYNC_DIRTY)await syncPush();}
+function syncSaveCfg(){var url=($('syncUrl')?$('syncUrl').value:'').trim();var key=($('syncKey')?$('syncKey').value:'').trim();var pass=($('syncPass')?$('syncPass').value:'');if(!url||!key||!pass){toast(TX('三项都要填','Fill all three'));return;}var c={url:url,key:key,syncKey:pass,auto:SYNC_AUTO};syncSaveCfgLocal(c);toast(TX('已保存，可点「连接测试」','Saved — try Test'));refreshAll();}
+async function syncTest(){var c=syncLoadCfg();if(!c.url||!c.key){toast(TX('先保存配置','Save config first'));return;}var sb=sbClient();if(!sb){toast(TX('Supabase 未就绪（检查 URL/Key，需联网/HTTPS）','Supabase not ready'));return;}try{var r=await sb.from('app_sync').select('id').limit(1);if(r.error)throw r.error;toast(TX('连接成功 ✅','Connected ✅'));}catch(e){toast(TX('连接失败：'+(e&&e.message?e.message:e),'Connect failed'));}}
+function syncToggleAuto(){var cb=$('syncAuto');var on=cb?cb.checked:false;SYNC_AUTO=on;var c=syncLoadCfg();c.auto=on;syncSaveCfgLocal(c);if(on){if(SYNC_TIMER)clearInterval(SYNC_TIMER);SYNC_TIMER=setInterval(syncAutoTick,30000);toast(TX('自动同步已开启（每30秒）','Auto sync on (30s)'));syncAutoTick();}else{if(SYNC_TIMER){clearInterval(SYNC_TIMER);SYNC_TIMER=null;}toast(TX('自动同步已关闭','Auto sync off'));}}
+async function syncPullManual(){var rem=await syncFetchRemote();if(rem&&rem.state)syncAdopt(rem.state);else if(rem)toast(TX('云端暂无数据，可先「立即推送」','No cloud data yet — push first'));}
+function syncInitAuto(){var c=syncLoadCfg();if(c.auto){SYNC_AUTO=true;if(SYNC_TIMER)clearInterval(SYNC_TIMER);SYNC_TIMER=setInterval(syncAutoTick,30000);}}
 function buildState(){
  S={
   view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
@@ -527,7 +553,7 @@ function loadDemoData(cat){
 
 function boot(){
  try{localStorage.removeItem(KEY+'enc');}catch(e){}
- ENC_ON=false;buildState();unlocked();
+ ENC_ON=false;buildState();unlocked();syncInitAuto();
 }
 function unlocked(){if(ENC_ON)persistAll();init();}
 async function doUnlock(){
@@ -3395,6 +3421,14 @@ function viewBackup(){
  var h=shead('backup',TX('数据只存本机。点顶部「备份全部」可一键导出全部数据成一个文件，换设备/重装后再「恢复」即可。','Data stays local. Use the top “Backup all” to export everything to one file; restore on a new device.')+'');
  var cnt=(S.leads||[]).length+(S.tasks||[]).length+(S.scripts||[]).length+(S.coach||[]).length;
  h+='<div class="card"><h3 style="margin:0 0 8px;font-size:15px">'+TX('数据备份','Backup')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('当前共 ','Currently ')+cnt+TX(' 条数据。导出后换设备/重装可导入恢复。',' records. Export to migrate/restore.')+'</p><div class="row"><button class="btn" data-action="exportJson">'+TX('全量备份','Full backup')+'</button><button class="btn ghost" data-action="importJson">'+TX('导入恢复全部','Import all')+'</button><button class="btn danger" data-action="resetAll">'+TX('清空重置','Reset all')+'</button></div><input type="file" id="impFile" accept="application/json" style="display:none"></div>';
+ h+='<div class="card" style="margin-top:14px;border:1px solid #e2e8f0"><h3 style="margin:0 0 8px;font-size:15px">'+TX('云同步（手机↔电脑，端到端加密）','Cloud sync (phone↔PC, end-to-end encrypted)')+'</h3>'
+  +'<p class="muted" style="margin:0 0 10px">'+TX('两台设备填同一个「同步密钥」即可自动同步；数据上传前已在本地用密钥加密，服务器只存密文，无需登录。','Fill the same Sync Key on both devices to auto-sync. Data is encrypted locally before upload; server stores only ciphertext, no login.')+'</p>'
+  +'<div id="syncStat" style="font-size:12px;color:#64748b;margin-bottom:8px">'+syncStatusText()+'</div>'
+  +'<label style="font-size:13px;font-weight:600">Supabase URL</label><input id="syncUrl" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 8px" placeholder="https://xxxx.supabase.co" value="'+esc(syncLoadCfg().url||'')+'">'
+  +'<label style="font-size:13px;font-weight:600">Anon Key</label><input id="syncKey" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 8px" placeholder="eyJ... (public anon key)" value="'+esc(syncLoadCfg().key||'')+'">'
+  +'<label style="font-size:13px;font-weight:600">'+TX('同步密钥（两端一致，勿泄露）','Sync Key (same on both, keep secret)')+'</label><input id="syncPass" type="password" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 10px" placeholder="长随机串，如 8f3k..." value="'+esc(syncLoadCfg().syncKey||'')+'">'
+  +'<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-action="syncSaveCfg">'+TX('保存配置','Save config')+'</button><button class="btn ghost" data-action="syncTest">'+TX('连接测试','Test')+'</button><button class="btn ghost" data-action="syncPush">'+TX('立即推送','Push now')+'</button><button class="btn ghost" data-action="syncPull">'+TX('拉取云端','Pull')+'</button><label style="font-size:13px;display:flex;align-items:center;gap:6px;margin-left:auto"><input type="checkbox" id="syncAuto" data-action="syncToggleAuto"'+(syncLoadCfg().auto?' checked':'')+'>'+TX('自动同步(30s)','Auto (30s)')+'</label></div>'
+  +'<div class="muted" style="font-size:12px;margin-top:10px">'+TX('⚠️ 桌面请用本链接 https 打开（双击 file:// 无加密，降级为明文）；密钥强度决定安全，建议长随机串。云端表名 app_sync(id,data,updated_at)。','⚠️ Open via HTTPS link on desktop (file:// has no encryption). Key strength matters. Cloud table: app_sync(id,data,updated_at).')+'</div></div>';
  h+='<div class="card" style="margin-top:14px;background:#f8fafc"><h3 style="margin:0 0 6px;font-size:15px">'+TX('给别人用（帮人模式）','For others (help mode)')+'</h3><p class="muted" style="margin:0">'+TX('直接把这个 HTML 文件发给同事/学员即可。点"清空重置"抹掉你的客户数据，对方打开是空白示例，从"教练诊断"开始帮他做体检。数据始终只在各自本机。','Send this HTML to colleagues/students. Reset clears your data; they open a blank example and start from Coach. Data stays on each device.')+'</p></div>';
  return h;
 }
@@ -3551,7 +3585,7 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v38 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v38, hard-refresh with Ctrl+F5')+'">v38</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v39 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v39, hard-refresh with Ctrl+F5')+'">v39</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -3833,6 +3867,11 @@ document.addEventListener('click',function(e){
  else if(a==='askReferral'){askReferral(el.dataset.id);}
  else if(a==='closeModal'){closeModal();}
  else if(a==='scOpen'){scOpen(parseInt(el.dataset.i,10));}
+ else if(a==='syncSaveCfg'){syncSaveCfg();}
+ else if(a==='syncTest'){syncTest();}
+ else if(a==='syncPush'){syncPush();}
+ else if(a==='syncPull'){syncPullManual();}
+ else if(a==='syncToggleAuto'){syncToggleAuto();}
 });
 function toggleNav(forceClose){var s=$('side'),m=$('mask');if(forceClose){s.classList.remove('open');m.classList.remove('show');return;}s.classList.toggle('open');m.classList.toggle('show');}
 $('mask').addEventListener('click',function(){toggleNav(true);});
