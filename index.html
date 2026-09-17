@@ -2309,6 +2309,25 @@ function extClear(){
    save('ext',S.ext);refreshAll();toast(TX('已清空','Cleared'));
   });
 }
+function extEdit(id){
+ var it=null;for(var q=0;q<(S.ext||[]).length;q++){if(S.ext[q].id===id){it=S.ext[q];break;}}
+ if(!it)return;
+ var type=it.type,d=extDef(type),k,j;
+ var h='<h3>'+TX('编辑','Edit')+' · '+TX(d.n[0],d.n[1])+'</h3><div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">';
+ for(j=0;j<d.cols.length;j++){
+  var c=d.cols[j],val=it[c.k];
+  var safe=(val===''||val===undefined||val===null)?'':String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  h+='<label style="display:block;font-size:13px;color:var(--sub)">'+TX(c.zh,c.en)+(c.req?' <span style="color:#e23">*</span>':'')+'<input class="ext-edit-inp" data-extk="'+c.k+'" value="'+safe+'" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-top:3px"></label>';
+ }
+ h+='</div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="modalOk">'+TX('保存','Save')+'</button></div>';
+ $('modalBody').innerHTML=h;
+ $('modal').classList.add('show');
+ $('modalOk').onclick=function(){
+  for(var m=0;m<d.cols.length;m++){var cc=d.cols[m],inp=$('modalBody').querySelector('[data-extk="'+cc.k+'"]');if(inp)it[cc.k]=inp.value.trim();}
+  it.updated=todayStr();
+  save('ext',S.ext);closeModal();refreshAll();toast(TX('已保存','Saved'));
+ };
+}
 function extPanel(){
  var type=extType(),d=extDef(type),i,j;
  var rows=(type==='customer')?[]:(S.ext||[]).filter(function(x){return x.type===type;});
@@ -2345,7 +2364,7 @@ function extPanel(){
     h+='<tr><td class="rownum">'+(i+1)+'</td>';
     for(j=0;j<d.cols.length;j++){var v=r[d.cols[j].k];h+='<td>'+esc((v===''||v===undefined||v===null)?'—':v)+'</td>';}
     h+='<td style="color:var(--sub);font-size:12px">'+esc(r.updated||'')+'</td>';
-    h+='<td><button class="btn mini ghost" data-action="extDel" data-id="'+r.id+'">'+TX('删除','Del')+'</button></td></tr>';
+    h+='<td><button class="btn mini ghost" data-action="extEdit" data-id="'+r.id+'">'+TX('编辑','Edit')+'</button> <button class="btn mini ghost" data-action="extDel" data-id="'+r.id+'">'+TX('删除','Del')+'</button></td></tr>';
    }
   }
   h+='</tbody></table></div>';
@@ -3825,7 +3844,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v43 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v43</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v43 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v44</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4043,6 +4062,7 @@ document.addEventListener('click',function(e){
  else if(a==='extImport'){extImport();}
  else if(a==='extExport'){extExport();}
  else if(a==='extDel'){extDel(el.dataset.id);}
+ else if(a==='extEdit'){extEdit(el.dataset.id);}
  else if(a==='extClear'){extClear();}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
  else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}else if(a==='holidayGreet'){holidayGreet(el.dataset.cc,el.dataset.h,el.dataset.he,el.dataset.d);}else if(a==='holYear'){holYear(el.dataset.y);}else if(a==='holClear'){holClear();}else if(a==='greetLead'){greetLead(el.dataset.id);}
