@@ -3585,7 +3585,9 @@ function renderNav(){
  });
  h+='<div style="margin-top:10px"><button class="btn ghost mini" style="width:100%" data-action="langToggle">'+(S.lang==='en'?'切换中文':'Switch EN')+'</button></div>';
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v39 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v39, hard-refresh with Ctrl+F5')+'">v39</div>';
+ var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
+ h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v40 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v40, hard-refresh with Ctrl+F5')+'">v40</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -3868,6 +3870,7 @@ document.addEventListener('click',function(e){
  else if(a==='closeModal'){closeModal();}
  else if(a==='scOpen'){scOpen(parseInt(el.dataset.i,10));}
  else if(a==='syncSaveCfg'){syncSaveCfg();}
+ else if(a==='syncOpen'){S.view='backup';save('view',S.view);refreshAll();var _sp=document.getElementById('syncPass');if(_sp)setTimeout(function(){try{_sp.scrollIntoView({block:'center'});}catch(e){}},60);}
  else if(a==='syncTest'){syncTest();}
  else if(a==='syncPush'){syncPush();}
  else if(a==='syncPull'){syncPullManual();}
