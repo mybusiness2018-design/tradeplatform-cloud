@@ -2091,7 +2091,6 @@ function viewCust(){
   h+=top.map(function(x){var w=custNextWhere(x);return '<span class="ai-focus" data-action="custJump" data-where="'+w+'" data-id="'+x.id+'">▸ '+esc(x.name)+'：'+esc(x.action)+'</span>';}).join('');
   h+='</div>';
  }
- h+='<div class="card" style="margin-top:14px"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><button class="btn mini" data-action="leadNew" style="background:var(--accent,#2563eb);color:#fff">+ '+TX('新建客户','New client')+'</button><b style="font-size:14px">'+TX('客户信息互通','Import / Export')+'</b><span class="muted" style="font-size:12px">'+TX('导出 CSV 用 Excel 批量编辑，再导入回来；按「客户名+国家」匹配更新。','Export CSV to edit in Excel, then re-import; matched by name + country.')+'</span><span style="flex:1"></span><button class="btn mini" data-action="exportLeadsCsv">'+TX('导出 CSV','Export CSV')+'</button><button class="btn mini ghost" data-action="exportLeadsJson">'+TX('导出 JSON','Export JSON')+'</button><button class="btn mini ghost" data-action="importLeads">'+TX('导入文件','Import')+'</button></div><input type="file" id="leadImpFile" accept=".csv,.json,text/csv,application/json" style="display:none"></div>';
 h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid #bae6fd"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><b style="font-size:14px;color:#075985">'+TX('载入示例客户（按品类练习）','Load sample clients by category')+'</b><span class="muted" style="font-size:12px">'+TX('选品类一键填充练习客户，先看效果再换成你自己的。','Pick a category to fill practice leads; swap in your own later.')+'</span><span style="flex:1"></span><select id="demoCat">'+[['gift',TX('穆斯林礼品','Muslim gifts')],['3c',TX('3C 电子','3C electronics')],['general',TX('综合进口商','General importers')]].map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('')+'</select><button class="btn mini" data-action="loadDemo">'+TX('载入','Load')+'</button></div></div>';
 
  h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button><button class="btn mini '+(mode==='io'?'on':'ghost')+'" data-action="custViewToggle" data-mode="io">'+TX('外部资料导入','Import data')+'</button></div>';
@@ -2345,7 +2344,7 @@ function extPanel(){
  h+='<button class="btn mini ghost" data-action="extImport">'+TX('导入文件','Import file')+'</button>';
  h+='<button class="btn mini ghost" data-action="extExport">'+TX('导出该类','Export')+'</button>';
  if(rows.length)h+='<button class="btn mini ghost" data-action="extClear">'+TX('清空该类','Clear')+'</button>';
- h+='<span style="flex:1"></span><span class="muted" style="font-size:12px">'+TX('共 ','Total ')+total+TX(' 条 · ',' rows · ')+d.cols.length+TX(' 列',' columns')+'</span>';
+ if(type==='customer'){h+='<button class="btn mini" data-action="leadNew" style="background:var(--main);color:#fff;border-color:var(--main)">+ '+TX('新建客户','New client')+'</button>';h+='<button class="btn mini ghost" data-action="extExportJson">'+TX('导出 JSON','Export JSON')+'</button>';} h+='<span style="flex:1"></span><span class="muted" style="font-size:12px">'+TX('共 ','Total ')+total+TX(' 条 · ',' rows · ')+d.cols.length+TX(' 列',' columns')+'</span>';
  h+='</div>';
  h+='<div class="ext-note">'+TX('表格第一行必须保留（表头）；中英文表头都能识别，标 * 为必填：','Keep row 1 as the header; CN/EN headers both work, * = required: ')+d.cols.map(function(c){return TX(c.zh,c.en)+(c.req?' *':'');}).join(' · ')+'</div>';
  h+='<div class="ext-note">'+TX('示例一行：','Sample row: ')+'<span class="ext-eg">'+(d.eg||[]).join('  |  ')+'</span></div>';
@@ -2437,7 +2436,7 @@ function exportLeadsJson(){
  dlFile(JSON.stringify(dump,null,2),'客户备份_'+todayStr()+'.json','application/json');
  toast(TX('已导出 JSON 客户备份','JSON client backup exported'));
 }
-function importLeads(){var f=$('leadImpFile');if(!f)return;f.value='';f.onchange=onLeadFile;f.click();}
+function importLeads(){var f=$('leadImpFile')||$('extImpFile');if(!f)return;f.value='';f.onchange=onLeadFile;f.click();}
 function onLeadFile(e){
  var file=(e.target.files||[])[0];if(!file)return;
  var r=new FileReader();
@@ -3844,7 +3843,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v43 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v44</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v43 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v45</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4063,7 +4062,7 @@ document.addEventListener('click',function(e){
  else if(a==='extExport'){extExport();}
  else if(a==='extDel'){extDel(el.dataset.id);}
  else if(a==='extEdit'){extEdit(el.dataset.id);}
- else if(a==='extClear'){extClear();}
+ else if(a==='extClear'){extClear();}else if(a==='extExportJson'){exportLeadsJson();}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
  else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}else if(a==='holidayGreet'){holidayGreet(el.dataset.cc,el.dataset.h,el.dataset.he,el.dataset.d);}else if(a==='holYear'){holYear(el.dataset.y);}else if(a==='holClear'){holClear();}else if(a==='greetLead'){greetLead(el.dataset.id);}
  else if(a==='rvSave'){rvSave();}
