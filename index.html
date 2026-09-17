@@ -141,8 +141,11 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .cc-ai .ai{font-size:12.5px;color:var(--main);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ai-focus{display:inline-block;background:#eef4ff;color:var(--main);border-radius:8px;padding:4px 11px;margin:0 6px 6px 0;cursor:pointer;font-size:13px;font-weight:600}
 .ai-focus:hover{background:#dbe7ff}
-.view-toggle{display:flex;gap:8px}
+.view-toggle{display:flex;gap:8px;flex-wrap:wrap}
 .btn.mini.on{background:var(--main);color:#fff;border-color:var(--main)}
+.ext-tools{padding:10px 12px;border-bottom:1px solid #d0d7de;background:#fbfcfd}
+.ext-note{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:6px}
+.ext-eg{background:#eef2f7;border-radius:5px;padding:1px 6px;color:var(--ink);font-size:12px}
 .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;margin:8px 0}
 .hub-cell{border:1px solid var(--line);border-radius:10px;padding:9px 6px;text-align:center;cursor:pointer;font-size:12px;color:var(--sub);background:#fafbfc;transition:border-color .12s,color .12s}
 .hub-cell:hover{border-color:var(--main);color:var(--main)}
@@ -357,7 +360,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -369,6 +372,7 @@ var S={
  coach:load('coach',[]),
  docs:load('docs',[]),
  deals:load('deals',[]),
+ ext:load('ext',[]),_extType:load('_extType','customer'),
  _dealId:load('_dealId',''),
  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
  _custView:load('_custView','card'),
@@ -474,6 +478,7 @@ function buildState(){
   coach:load('coach',[]),
   docs:load('docs',[]),
   deals:load('deals',[]),
+  ext:load('ext',[]),_extType:load('_extType','customer'),
   _dealId:load('_dealId',''),
   _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
   _custView:load('_custView','card'),
@@ -2089,7 +2094,7 @@ function viewCust(){
  h+='<div class="card" style="margin-top:14px"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><button class="btn mini" data-action="leadNew" style="background:var(--accent,#2563eb);color:#fff">+ '+TX('新建客户','New client')+'</button><b style="font-size:14px">'+TX('客户信息互通','Import / Export')+'</b><span class="muted" style="font-size:12px">'+TX('导出 CSV 用 Excel 批量编辑，再导入回来；按「客户名+国家」匹配更新。','Export CSV to edit in Excel, then re-import; matched by name + country.')+'</span><span style="flex:1"></span><button class="btn mini" data-action="exportLeadsCsv">'+TX('导出 CSV','Export CSV')+'</button><button class="btn mini ghost" data-action="exportLeadsJson">'+TX('导出 JSON','Export JSON')+'</button><button class="btn mini ghost" data-action="importLeads">'+TX('导入文件','Import')+'</button></div><input type="file" id="leadImpFile" accept=".csv,.json,text/csv,application/json" style="display:none"></div>';
 h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid #bae6fd"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><b style="font-size:14px;color:#075985">'+TX('载入示例客户（按品类练习）','Load sample clients by category')+'</b><span class="muted" style="font-size:12px">'+TX('选品类一键填充练习客户，先看效果再换成你自己的。','Pick a category to fill practice leads; swap in your own later.')+'</span><span style="flex:1"></span><select id="demoCat">'+[['gift',TX('穆斯林礼品','Muslim gifts')],['3c',TX('3C 电子','3C electronics')],['general',TX('综合进口商','General importers')]].map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('')+'</select><button class="btn mini" data-action="loadDemo">'+TX('载入','Load')+'</button></div></div>';
 
- h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button></div>';
+ h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button><button class="btn mini '+(mode==='io'?'on':'ghost')+'" data-action="custViewToggle" data-mode="io">'+TX('外部资料导入','Import data')+'</button></div>';
  if(mode==='table'){
   var cf=S._custFilter||{q:'',market:'',stage:''};
   var mopt='<option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(m){return '<option value="'+m+'"'+(cf.market===m?' selected':'')+'>'+m+'</option>';}).join('');
@@ -2106,7 +2111,7 @@ h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid
   if(!ins.lines.length)h+='<div class="muted" style="padding:20px;text-align:center;grid-column:1/-1">'+TX('暂无线索，去「找客户」加一条。','No leads yet; add one in Find Leads.')+'</div>';
   ins.lines.forEach(function(x){h+=custCard(x);});
   h+='</div>';
- } else {
+ } else if(mode==='table'){
   var sheet=S._custSheet||'cust';
   var tabs=[['cust',TX('客户总览','Customers')],['deal',TX('交易单证','Deals & Docs')],['task',TX('任务待办','Tasks')]];
   h+='<div class="xls-wrap"><div class="xls-tabs">';
@@ -2117,7 +2122,232 @@ h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid
   else h+=custSheetTasks();
   h+='</div></div>';
   h+='<div class="hint" style="margin-top:8px">'+TX('国家 / 市场 / 阶段 / 产品 / WhatsApp / 金额 / 最后跟进 这几列可直接点开编辑；点客户名或「360」看完整详情，「编辑」改全部字段，「删」移入回收站可恢复。顶部 5 个统计数字也可点开看构成明细。','Click Country / Market / Stage / Product / WhatsApp / Amount / Last-touch cells to edit inline; click name or 360 for full detail, Edit for all fields, Del moves to recoverable Trash. The 5 KPI tiles on top are clickable too.')+'</div>';
+ } else {
+  h+=extPanel();
  }
+ return h;
+}
+
+/* ============ 外部资料导入（客户驾驶舱） ============ */
+var EXT_DEFS=[
+ {k:'customer',n:['客户名单','Customer list'],
+  cols:[{k:'name',a:'客户名|客户|名称|姓名|name|client|customer',zh:'客户名',en:'Name',req:1},
+   {k:'country',a:'国家|country|nation',zh:'国家',en:'Country'},
+   {k:'market',a:'市场|market|region|area',zh:'市场',en:'Market'},
+   {k:'source',a:'来源|渠道|source|channel',zh:'来源',en:'Source'},
+   {k:'wa',a:'whatsapp|wa|手机号|手机|电话|phone|tel|mobile',zh:'WhatsApp',en:'WhatsApp'},
+   {k:'email',a:'邮箱|邮件|email|mail',zh:'邮箱',en:'Email'},
+   {k:'product',a:'产品|product|item|goods',zh:'产品',en:'Product'},
+   {k:'stage',a:'阶段|stage|status',zh:'阶段',en:'Stage'},
+   {k:'amount',a:'金额|amount|value',zh:'金额',en:'Amount'},
+   {k:'last',a:'最近跟进|最后跟进|跟进日期|日期|last|date',zh:'最近跟进',en:'Last touch'},
+   {k:'note',a:'备注|note|notes|remark|memo',zh:'备注',en:'Note'}],
+  eg:['Al Noor Trading','UAE','中东','展会','+971501234567','buyer@example.com','Muslim prayer pillow','已联系','5000','2026-09-18','Ramadan trial order']},
+ {k:'supplier',n:['供应商','Supplier'],
+  cols:[{k:'name',a:'供应商名|供应商|厂商|工厂|名称|supplier|vendor|factory',zh:'供应商名',en:'Supplier',req:1},
+   {k:'country',a:'国家|地区|country|region|nation',zh:'国家/地区',en:'Country'},
+   {k:'category',a:'主营品类|品类|主营|分类|category|line',zh:'主营品类',en:'Category'},
+   {k:'contact',a:'联系人|对接人|contact|person',zh:'联系人',en:'Contact'},
+   {k:'wa',a:'whatsapp|wa|手机|电话|phone|tel|mobile',zh:'WhatsApp',en:'WhatsApp'},
+   {k:'email',a:'邮箱|邮件|email|mail',zh:'邮箱',en:'Email'},
+   {k:'platform',a:'平台|店铺|网址|链接|platform|shop|url|link',zh:'平台/店铺',en:'Platform'},
+   {k:'moq',a:'moq|起订|最小起订',zh:'MOQ',en:'MOQ'},
+   {k:'price',a:'参考单价|单价|价格|price|cost|quote',zh:'参考单价',en:'Ref. price'},
+   {k:'cert',a:'认证|资质|cert|certificate|audit',zh:'认证',en:'Certificates'},
+   {k:'lead',a:'交期|货期|生产周期|lead|leadtime',zh:'交期(天)',en:'Lead time'},
+   {k:'note',a:'备注|note|notes|remark|memo',zh:'备注',en:'Note'}],
+  eg:['Shenzhen Gift Craft Co.','China','穆斯林礼品/祈祷垫','Mr. Chen','+8613800000000','sales@factory.com','1688 店铺','500','2.10','BSCI','18','斋月产能稳定']},
+ {k:'product',n:['产品资料','Product data'],
+  cols:[{k:'name',a:'产品名|产品|品名|名称|型号|product|item|model|sku',zh:'产品名',en:'Product',req:1},
+   {k:'category',a:'品类|分类|类目|category|line',zh:'品类',en:'Category'},
+   {k:'spec',a:'规格|型号|参数|spec|specification|size',zh:'规格/型号',en:'Spec'},
+   {k:'unit',a:'单位|unit|uom',zh:'单位',en:'Unit'},
+   {k:'cost',a:'成本价|成本|进价|cost',zh:'成本价($)',en:'Cost'},
+   {k:'price',a:'建议报价|报价|单价|售价|price|quote|fob',zh:'建议报价($)',en:'Price'},
+   {k:'moq',a:'moq|起订|最小起订',zh:'MOQ',en:'MOQ'},
+   {k:'ctn',a:'装箱量|装箱|外箱|ctn|carton',zh:'装箱量',en:'Pcs/ctn'},
+   {k:'link',a:'图片|链接|网址|link|url|image',zh:'图片/链接',en:'Link'},
+   {k:'usp',a:'卖点|亮点|优势|usp|feature',zh:'卖点',en:'Selling point'},
+   {k:'note',a:'备注|note|notes|remark|memo',zh:'备注',en:'Note'}],
+  eg:['蓝色祈祷垫','穆斯林礼品','30x40cm 绒面','pc','1.85','2.60','500','100','https://example.com/pillow','刺绣可定制，斋月爆款','']},
+ {k:'other',n:['其他资料','Other'],
+  cols:[{k:'name',a:'名称|标题|name|title|item',zh:'名称',en:'Name',req:1},
+   {k:'category',a:'分类|类型|category|type|group',zh:'分类',en:'Category'},
+   {k:'content',a:'内容|详情|描述|说明|content|detail|desc',zh:'内容',en:'Content'},
+   {k:'source',a:'来源|出处|source|from',zh:'来源',en:'Source'},
+   {k:'date',a:'日期|时间|date|time',zh:'日期',en:'Date'},
+   {k:'note',a:'备注|note|notes|remark|memo',zh:'备注',en:'Note'}],
+  eg:['UAE 2026 进口关税表','市场资料','税率与清关要求…','海关官网','2026-09-10','']}
+];
+function extDef(k){for(var i=0;i<EXT_DEFS.length;i++){if(EXT_DEFS[i].k===k)return EXT_DEFS[i];}return EXT_DEFS[0];}
+function extType(){return S._extType||'customer';}
+function extCount(type){return (type==='customer')?(S.leads||[]).length:(S.ext||[]).filter(function(x){return x.type===type;}).length;}
+function extNorm(s){return String(s||'').trim().toLowerCase().replace(/[\s_\-\.\/（）()]/g,'');}
+function extMap(type,head){
+ var d=extDef(type),m={},i,j,t,k,al,a;
+ for(i=0;i<(head||[]).length;i++){
+  k=extNorm(head[i]);if(!k)continue;
+  for(j=0;j<d.cols.length;j++){
+   if(m[d.cols[j].k]!==undefined)continue;
+   al=d.cols[j].a.split('|');
+   for(t=0;t<al.length;t++){if(k===extNorm(al[t])){m[d.cols[j].k]=i;break;}}
+  }
+ }
+ for(i=0;i<(head||[]).length;i++){
+  k=extNorm(head[i]);if(!k)continue;
+  for(j=0;j<d.cols.length;j++){
+   if(m[d.cols[j].k]!==undefined)continue;
+   al=d.cols[j].a.split('|');
+   for(t=0;t<al.length;t++){a=extNorm(al[t]);if(a.length>1&&k.indexOf(a)>=0){m[d.cols[j].k]=i;break;}}
+  }
+ }
+ return m;
+}
+function extTemplate(){
+ var d=extDef(extType());
+ var head=d.cols.map(function(c){return TX(c.zh,c.en);});
+ dlFile('\ufeff'+head.map(csvCell).join(',')+'\r\n',TX(d.n[0],d.n[1])+TX('_模板_','_template_')+todayStr()+'.csv','text/csv;charset=utf-8');
+ toast(TX('标准表格已生成，用 Excel 打开填好再导入','Template downloaded — open in Excel, fill in, then import'));
+}
+function extExport(){
+ var type=extType();
+ if(type==='customer'){exportLeadsCsv();return;}
+ var d=extDef(type),rows=(S.ext||[]).filter(function(x){return x.type===type;});
+ if(!rows.length){toast(TX('该类暂无资料','No records of this type'));return;}
+ var lines=[d.cols.map(function(c){return TX(c.zh,c.en);}).map(csvCell).join(',')];
+ rows.forEach(function(r){lines.push(d.cols.map(function(c){return r[c.k];}).map(csvCell).join(','));});
+ dlFile('\ufeff'+lines.join('\r\n'),TX(d.n[0],d.n[1])+'_'+todayStr()+'.csv','text/csv;charset=utf-8');
+ toast(TX('已导出该类型资料','Exported'));
+}
+function extImport(){
+ if(extType()==='customer'){importLeads();return;}
+ var f=$('extImpFile');if(!f)return;var t=extType();
+ f.value='';f.onchange=function(e){extFile(e,t);};f.click();
+}
+function extFile(e,type){
+ var file=(e.target.files||[])[0];if(!file)return;
+ var d=extDef(type),i,j,q;
+ var r=new FileReader();
+ r.onload=function(){
+  var text=String(r.result||''),list=null,rows=null;
+  var t0=text.replace(/^\s+/,'');
+  if(/\.json$/i.test(file.name)||t0.charAt(0)==='{'||t0.charAt(0)==='['){
+   try{var dj=JSON.parse(text);list=(dj&&dj.items)?dj.items:(Object.prototype.toString.call(dj)==='[object Array]'?dj:null);}catch(err){list=null;}
+  }
+  if(!list){
+   rows=parseCsv(text);
+   if(!rows||rows.length<2){toast(TX('文件为空或只有表头','File is empty or header-only'));return;}
+   var map=extMap(type,rows[0]);
+   if(map.name===undefined){toast(TX('未识别到「名称」列，请保留表头第一行','No name column found; keep the header row'));return;}
+   list=[];
+   for(i=1;i<rows.length;i++){
+    var rr=rows[i],o={};
+    for(j=0;j<d.cols.length;j++){var c=d.cols[j],ix=map[c.k];var v=(ix===undefined?'':(rr[ix]===undefined?'':rr[ix]));o[c.k]=String(v===null?'':v).trim();}
+    if(!o.name)continue;
+    list.push(o);
+   }
+  } else {
+   var out=[];
+   for(i=0;i<list.length;i++){
+    var src=list[i];if(!src||typeof src!=='object')continue;
+    var oo={};
+    for(j=0;j<d.cols.length;j++){var cc=d.cols[j];oo[cc.k]=src[cc.k]===undefined?'':String(src[cc.k]);}
+    if(!String(oo.name||'').trim())continue;
+    out.push(oo);
+   }
+   list=out;
+  }
+  if(!list.length){toast(TX('没有可导入的记录','No records found'));return;}
+  var add=0,upd=0;
+  list.forEach(function(x){
+   var hit=null;
+   for(q=0;q<(S.ext||[]).length;q++){var it=S.ext[q];if(it.type===type&&String(it.name||'').trim()===String(x.name||'').trim()){hit=it;break;}}
+   if(hit)upd++;else add++;
+  });
+  S._extImp={type:type,list:list};
+  openModal(TX('确认导入','Confirm import')+' · '+TX(d.n[0],d.n[1]),
+   TX('共 ','Parsed ')+list.length+TX(' 条：新增 ',' records — new ')+add+TX(' 条，更新 ',' , update ')+upd+TX(' 条。同类型下按「名称」匹配；更新时只覆盖非空字段，不会清空已有内容。',' . Matched by name within the same type; only non-empty fields overwrite.'),
+   function(){extDoImport();});
+ };
+ r.readAsText(file);
+}
+function extDoImport(){
+ var imp=S._extImp||{type:'',list:[]},type=imp.type||extType();
+ var d=extDef(type),list=imp.list||[],add=0,upd=0,i,j;
+ for(i=0;i<list.length;i++){
+  var x=list[i],hit=null;
+  for(j=0;j<(S.ext||[]).length;j++){var it=S.ext[j];if(it.type===type&&String(it.name||'').trim()===String(x.name||'').trim()){hit=it;break;}}
+  if(hit){
+   for(j=0;j<d.cols.length;j++){var c=d.cols[j];if(c.k!=='name'&&String(x[c.k]||'').trim()!=='')hit[c.k]=x[c.k];}
+   hit.updated=todayStr();upd++;
+  } else {
+   var o={id:uid(),type:type,updated:todayStr()};
+   for(j=0;j<d.cols.length;j++){o[d.cols[j].k]=x[d.cols[j].k]||'';}
+   S.ext.unshift(o);add++;
+  }
+ }
+ save('ext',S.ext);S._extImp=null;
+ toast(TX('已导入：新增 ','Imported — new ')+add+TX(' 条，更新 ',' , updated ')+upd+TX(' 条',''));
+ refreshAll();
+}
+function extDel(id){
+ S.ext=(S.ext||[]).filter(function(x){return x.id!==id;});
+ save('ext',S.ext);refreshAll();toast(TX('已删除','Deleted'));
+}
+function extClear(){
+ var type=extType(),d=extDef(type);
+ var n=(S.ext||[]).filter(function(x){return x.type===type;}).length;
+ if(!n){toast(TX('该类暂无资料','Nothing to clear'));return;}
+ openModal(TX('清空该类资料','Clear this type')+' · '+TX(d.n[0],d.n[1]),
+  TX('将删除 ','This will delete ')+n+TX(' 条资料，不可恢复（建议先点「导出该类」备份）。',' records and cannot be undone — export a backup first.'),
+  function(){
+   S.ext=(S.ext||[]).filter(function(x){return x.type!==type;});
+   save('ext',S.ext);refreshAll();toast(TX('已清空','Cleared'));
+  });
+}
+function extPanel(){
+ var type=extType(),d=extDef(type),i,j;
+ var rows=(type==='customer')?[]:(S.ext||[]).filter(function(x){return x.type===type;});
+ var total=extCount(type);
+ var h='<div class="xls-wrap" style="margin-top:14px">';
+ h+='<div class="xls-tabs">';
+ for(i=0;i<EXT_DEFS.length;i++){
+  var x=EXT_DEFS[i],c=extCount(x.k);
+  h+='<div class="xls-tab '+(x.k===type?'on':'')+'" data-action="extType" data-type="'+x.k+'">'+TX(x.n[0],x.n[1])+(c?(' · '+c):'')+'</div>';
+ }
+ h+='</div>';
+ h+='<div class="ext-tools">';
+ h+='<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">';
+ h+='<button class="btn mini" data-action="extTemplate" style="background:var(--main);color:#fff;border-color:var(--main)">'+TX('一键生成标准表格','Download template')+'</button>';
+ h+='<button class="btn mini ghost" data-action="extImport">'+TX('导入文件','Import file')+'</button>';
+ h+='<button class="btn mini ghost" data-action="extExport">'+TX('导出该类','Export')+'</button>';
+ if(rows.length)h+='<button class="btn mini ghost" data-action="extClear">'+TX('清空该类','Clear')+'</button>';
+ h+='<span style="flex:1"></span><span class="muted" style="font-size:12px">'+TX('共 ','Total ')+total+TX(' 条 · ',' rows · ')+d.cols.length+TX(' 列',' columns')+'</span>';
+ h+='</div>';
+ h+='<div class="ext-note">'+TX('表格第一行必须保留（表头）；中英文表头都能识别，标 * 为必填：','Keep row 1 as the header; CN/EN headers both work, * = required: ')+d.cols.map(function(c){return TX(c.zh,c.en)+(c.req?' *':'');}).join(' · ')+'</div>';
+ h+='<div class="ext-note">'+TX('示例一行：','Sample row: ')+'<span class="ext-eg">'+(d.eg||[]).join('  |  ')+'</span></div>';
+ if(type==='customer')h+='<div class="ext-note">'+TX('客户名单导入后进入「客户驾驶舱」，按「客户名 + 国家」匹配更新；想直接看或改客户，切到上面的「表格」视图。','Customer lists import into the Customer Hub, matched by name + country. To view or edit clients directly, switch to the Table view above.')+'</div>';
+ else h+='<div class="ext-note">'+TX('这类资料只存在你本机浏览器（随「备份」一起导出），不会上传任何服务器。','This data stays in your browser (included in Backup exports); nothing is uploaded.')+'</div>';
+ h+='</div>';
+ if(type!=='customer'){
+  h+='<div class="xls-scroll"><table class="xls"><thead><tr><th class="rownum">#</th>';
+  for(j=0;j<d.cols.length;j++)h+='<th>'+TX(d.cols[j].zh,d.cols[j].en)+'</th>';
+  h+='<th>'+TX('导入时间','Imported')+'</th><th>'+TX('操作','Ops')+'</th></tr></thead><tbody>';
+  if(!rows.length){
+   h+='<tr><td colspan="'+(d.cols.length+3)+'" class="muted" style="padding:14px;text-align:center">'+TX('还没有该类资料 —— 点「一键生成标准表格」，把外部资料填进去，再导入。','No records yet — download the template, fill in your data, then import.')+'</td></tr>';
+  } else {
+   for(i=0;i<rows.length;i++){
+    var r=rows[i];
+    h+='<tr><td class="rownum">'+(i+1)+'</td>';
+    for(j=0;j<d.cols.length;j++){var v=r[d.cols[j].k];h+='<td>'+esc((v===''||v===undefined||v===null)?'—':v)+'</td>';}
+    h+='<td style="color:var(--sub);font-size:12px">'+esc(r.updated||'')+'</td>';
+    h+='<td><button class="btn mini ghost" data-action="extDel" data-id="'+r.id+'">'+TX('删除','Del')+'</button></td></tr>';
+   }
+  }
+  h+='</tbody></table></div>';
+ }
+ h+='<input type="file" id="extImpFile" accept=".csv,.json,text/csv,application/json" style="display:none">';
+ h+='</div>';
  return h;
 }
 
@@ -3591,7 +3821,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v40 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v41, hard-refresh with Ctrl+F5')+'">v41</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v42 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v42</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -3804,6 +4034,12 @@ document.addEventListener('click',function(e){
  else if(a==='lead360'){lead360(el.dataset.id);}
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
+ else if(a==='extType'){S._extType=el.dataset.type;save('_extType',S._extType);refreshAll();}
+ else if(a==='extTemplate'){extTemplate();}
+ else if(a==='extImport'){extImport();}
+ else if(a==='extExport'){extExport();}
+ else if(a==='extDel'){extDel(el.dataset.id);}
+ else if(a==='extClear'){extClear();}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
  else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}else if(a==='holidayGreet'){holidayGreet(el.dataset.cc,el.dataset.h,el.dataset.he,el.dataset.d);}else if(a==='holYear'){holYear(el.dataset.y);}else if(a==='holClear'){holClear();}else if(a==='greetLead'){greetLead(el.dataset.id);}
  else if(a==='rvSave'){rvSave();}
