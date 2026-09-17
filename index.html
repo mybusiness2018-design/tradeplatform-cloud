@@ -2264,9 +2264,10 @@ function extFile(e,type){
    for(q=0;q<(S.ext||[]).length;q++){var it=S.ext[q];if(it.type===type&&String(it.name||'').trim()===String(x.name||'').trim()){hit=it;break;}}
    if(hit)upd++;else add++;
   });
+  var unm=(rows&&rows[0]&&map)?(rows[0].length-Object.keys(map).length):0;
   S._extImp={type:type,list:list};
   openModal(TX('确认导入','Confirm import')+' · '+TX(d.n[0],d.n[1]),
-   TX('共 ','Parsed ')+list.length+TX(' 条：新增 ',' records — new ')+add+TX(' 条，更新 ',' , update ')+upd+TX(' 条。同类型下按「名称」匹配；更新时只覆盖非空字段，不会清空已有内容。',' . Matched by name within the same type; only non-empty fields overwrite.'),
+   TX('共 ','Parsed ')+list.length+TX(' 条：新增 ',' records — new ')+add+TX(' 条，更新 ',' , update ')+upd+TX(' 条。同类型下按「名称」匹配；更新时只覆盖非空字段，不会清空已有内容。',' . Matched by name within the same type; only non-empty fields overwrite.')+(unm?(' '+TX('（注意：',' (Note: ')+unm+TX('列未识别，已忽略）',' columns unrecognized, skipped)')):''),
    function(){extDoImport();});
  };
  r.readAsText(file);
@@ -2291,8 +2292,11 @@ function extDoImport(){
  refreshAll();
 }
 function extDel(id){
- S.ext=(S.ext||[]).filter(function(x){return x.id!==id;});
- save('ext',S.ext);refreshAll();toast(TX('已删除','Deleted'));
+ var it=null;for(var q=0;q<(S.ext||[]).length;q++){if(S.ext[q].id===id){it=S.ext[q];break;}}
+ if(!it)return;
+ openModal(TX('删除这条记录？','Delete this record?'),
+  TX('将删除「','This will delete "')+String(it.name||'')+TX('」，不可恢复。','" and cannot be undone.'),
+  function(){S.ext=(S.ext||[]).filter(function(x){return x.id!==id;});save('ext',S.ext);refreshAll();toast(TX('已删除','Deleted'));});
 }
 function extClear(){
  var type=extType(),d=extDef(type);
@@ -3821,7 +3825,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v42 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v42</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v43 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v43</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
