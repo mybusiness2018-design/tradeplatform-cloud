@@ -1819,7 +1819,7 @@ function custSheetDeals(){
   h+='<td>'+esc(d.no||'—')+'</td>';
   h+='<td class="cell" data-action="custJump" data-where="cust360" data-id="'+esc(d.leadId||'')+'">'+esc(leadName(d.leadId))+'</td>';
   h+='<td>'+esc(d.destCountry||'—')+'</td>';
-  h+='<td>'+esc(d.transport||'—')+'</td>';
+  h+='<td>'+esc(d.transport?transportLabel(d.transport):'—')+'</td>';
   h+='<td>'+(d.amt?('$'+esc(d.amt)):'—')+'</td>';
   h+='<td><span class="tagmini '+(need>0?'r':'')+'">'+reqCnt+'</span></td>';
   h+='<td>'+done+' / '+total+'</td>';
@@ -3756,7 +3756,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v52 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v52</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v53 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v53</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4494,7 +4494,7 @@ function viewDocs(){
  if(S._docIO)h+=docIOPanel(d);
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，27 单继承）','Deal shared info (fill once, inherited by all 27)')+'</h3><div class="grid g3">';
  [['cnee',TX('买方/Consignee','Buyer')],['no',TX('发票号/No.','Invoice No.')],['date',TX('日期','Date')],['amt',TX('金额 USD','Amount')],['qty',TX('数量 pcs','Qty')],['pkg',TX('件数 CTNS','Packages')],['gross',TX('毛重 KGS','G.W.')],['net',TX('净重 KGS','N.W.')],['vessel',TX('船名航次','Vessel')],['port',TX('目的港','Port')],['eta',TX('到港 ETA','ETA')],['incoterms',TX('贸易术语','Incoterms')]].forEach(function(p){h+='<label style="font-size:12px">'+p[1]+(p[0]==='incoterms'?'<select id="deal_incoterms">'+incotermOpts(d.incoterms)+'</select>':'<input id="deal_'+p[0]+'" value="'+esc(d[p[0]]||'')+'">')+'</label>';});
- h+='</div><div class="grid g2" style="margin-top:8px"><label style="font-size:12px">'+TX('目的国','Dest country')+'<input id="deal_destCountry" value="'+esc(d.destCountry||'')+'" placeholder="如 UAE / Egypt / 加纳"></label><label style="font-size:12px">'+TX('运输方式','Transport')+'<select id="deal_transport"><option value="sea"'+(d.transport!=='air'?' selected':'')+'>'+TX('海运','Sea')+'</option><option value="air"'+(d.transport==='air'?' selected':'')+'>'+TX('空运','Air')+'</option></select></label></div>';
+ h+='</div><div class="grid g2" style="margin-top:8px"><label style="font-size:12px">'+TX('目的国','Dest country')+'<input id="deal_destCountry" value="'+esc(d.destCountry||'')+'" placeholder="如 UAE / Egypt / 加纳"></label><label style="font-size:12px">'+TX('运输方式','Transport')+'<select id="deal_transport">'+transportOpts(d.transport)+'</select></label></div>';
  h+='<div class="row" style="margin-top:8px"><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_woodPkg"'+(d.woodPkg?' checked':'')+'>'+TX('木包装（需熏蒸证）','Wood packing (fumigation)')+'</label><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_lc"'+(d.lc?' checked':'')+'>'+TX('信用证 L/C（需受益人/船公司证明）','L/C (beneficiary cert)')+'</label></div>';
  h+='<button class="btn mini" data-action="dealSave" style="margin-top:8px">'+TX('保存交易信息','Save deal')+'</button></div>';
  var rec=docRecMap(d);
@@ -4803,7 +4803,7 @@ function dealIOExport(){
   var dn=DOC_DEF.filter(function(x){return d.docs&&d.docs[x.id]==='done';}).length;
   var lk=dealLinked(d),ld=(S.leads||[]).filter(function(x){return x.id===d.leadId;})[0];
   lines.push([d.cnee,d.no,d.date,d.amt,d.qty,d.pkg,d.gross,d.net,d.vessel,d.port,d.eta,d.incoterms,
-   (d.transport==='air')?TX('空运','Air'):TX('海运','Sea'),
+   transportLabel(d.transport),
    d.destCountry,(d.woodPkg?TX('是','Yes'):TX('否','No')),(d.lc?TX('是','Yes'):TX('否','No')),
    (lk.supplier?(lk.supplier.name||''):''),(lk.product?(lk.product.name||''):''),(ld?(ld.name||''):''),
    dn+'/'+DOC_DEF.length].map(csvCell).join(','));
@@ -4889,7 +4889,7 @@ function dealIOFile(e){
    var o={};
    ['cnee','no','date','incoterms','vessel','port','eta','destCountry'].forEach(function(key){var v=cell(rr,key);if(v)o[key]=v;});
    ['amt','qty','pkg','gross','net'].forEach(function(key){var v=dealIONum(cell(rr,key));if(v!==null)o[key]=v;});
-   var tr=cell(rr,'transport');if(tr)o.transport=/空运|air/i.test(tr)?'air':'sea';
+   var tr=cell(rr,'transport');if(tr)o.transport=transportCode(tr);
    ['woodPkg','lc'].forEach(function(key){var v=cell(rr,key);if(v)o[key]=dealIOBool(v);});
    o._supplier=cell(rr,'_supplier');o._product=cell(rr,'_product');o._client=cell(rr,'_client');
    if(hit)upd++;else add++;
@@ -5030,6 +5030,11 @@ function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!
 /* Incoterms 2020 十一种贸易术语（下拉补全；保留历史自定义值，不丢数据） */
 var INCOTERMS=['EXW','FCA','FAS','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP'];
 var INCOTERMS_ZH={EXW:'工厂交货（买方提货）',FCA:'货交承运人',FAS:'装运港船边交货',FOB:'装运港船上交货（买方付海运费）',CFR:'成本加运费',CIF:'成本保险费加运费',CPT:'运费付至目的地',CIP:'运费保险费付至目的地',DAP:'目的地交货（不缴税）',DPU:'目的地卸货交货',DDP:'完税后交货'};
+/* 运输方式：常用国际运输方式（下拉补全；保留历史自定义值，不丢数据） */
+var TRANSPORTS=[['sea','海运','Sea'],['air','空运','Air'],['express','国际快递','Express'],['rail','铁路','Rail'],['road','陆运','Road'],['multimodal','多式联运','Multimodal']];
+function transportLabel(v){var c=String(v==null?'':v).trim();for(var i=0;i<TRANSPORTS.length;i++){if(TRANSPORTS[i][0]===c)return TX(TRANSPORTS[i][1],TRANSPORTS[i][2]);}return c||TX('海运','Sea');}
+function transportCode(s){s=String(s==null?'':s).trim();if(!s)return 'sea';if(/快递|快件|express|courier|dhl|fedex|ems|ups|tnt/i.test(s))return 'express';if(/铁路|班列|rail|train/i.test(s))return 'rail';if(/陆运|公路|卡车|卡航|汽运|road|truck/i.test(s))return 'road';if(/多式联运|联运|multimodal|intermodal/i.test(s))return 'multimodal';if(/空运|航空|air/i.test(s))return 'air';if(/海运|船运|水运|sea|ocean|vessel/i.test(s))return 'sea';return s;}
+function transportOpts(cur){var c=String(cur==null?'':cur).trim();if(!c)c='sea';var rows=TRANSPORTS.map(function(r){return [r[0],TX(r[1],r[2])];});var has=false;rows.forEach(function(r){if(r[0]===c)has=true;});if(!has)rows.push([c,c]);return rows.map(function(r){return '<option value="'+esc(r[0])+'"'+(r[0]===c?' selected':'')+'>'+esc(r[1])+'</option>';}).join('');}
 function incotermOpts(cur){var c=String(cur==null?'':cur).trim();if(!c)c='FOB';var list=INCOTERMS.slice();if(list.indexOf(c)<0)list.push(c);return list.map(function(t){return '<option value="'+esc(t)+'"'+(t===c?' selected':'')+'>'+esc(t)+(INCOTERMS_ZH[t]?' '+INCOTERMS_ZH[t]:'')+'</option>';}).join('');}
 
 function dealNew(){
@@ -5053,11 +5058,12 @@ function dealEdit(){
   +'<label>'+TX('目的港','Port')+'<input id="de_port" value="'+esc(d.port||'')+'"></label>'
   +'<label>'+TX('到港 ETA','ETA')+'<input id="de_eta" value="'+esc(d.eta||'')+'"></label>'
   +'<label>'+TX('贸易术语','Incoterms')+'<select id="de_incoterms">'+incotermOpts(d.incoterms)+'</select></label>'
+  +'<label>'+TX('运输方式','Transport')+'<select id="de_transport">'+transportOpts(d.transport)+'</select></label>'
   +'</div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="deSave">'+TX('保存','Save')+'</button></div>';
  $('modalBody').innerHTML='<h3>'+TX('编辑交易','Edit deal')+'</h3>'+body;
  $('modal').classList.add('show');
  $('deSave').onclick=function(){
-  d.leadId=$('de_leadId').value;d.supplierId=$('de_supplierId').value;d.productId=$('de_productId').value;d.cnee=$('de_cnee').value.trim();d.no=$('de_no').value.trim();d.date=$('de_date').value;d.amt=parseFloat($('de_amt').value)||0;d.qty=parseFloat($('de_qty').value)||0;d.pkg=parseFloat($('de_pkg').value)||0;d.gross=parseFloat($('de_gross').value)||0;d.net=parseFloat($('de_net').value)||0;d.vessel=$('de_vessel').value.trim();d.port=$('de_port').value.trim();d.eta=$('de_eta').value.trim();if($('de_incoterms'))d.incoterms=$('de_incoterms').value;
+  d.leadId=$('de_leadId').value;d.supplierId=$('de_supplierId').value;d.productId=$('de_productId').value;d.cnee=$('de_cnee').value.trim();d.no=$('de_no').value.trim();d.date=$('de_date').value;d.amt=parseFloat($('de_amt').value)||0;d.qty=parseFloat($('de_qty').value)||0;d.pkg=parseFloat($('de_pkg').value)||0;d.gross=parseFloat($('de_gross').value)||0;d.net=parseFloat($('de_net').value)||0;d.vessel=$('de_vessel').value.trim();d.port=$('de_port').value.trim();d.eta=$('de_eta').value.trim();if($('de_incoterms'))d.incoterms=$('de_incoterms').value;if($('de_transport'))d.transport=$('de_transport').value;
   save('deals',S.deals);refreshAll();closeModal();toast(TX('已更新','Updated'));
  };
 }
@@ -5106,7 +5112,7 @@ function docChkPanel(d){
  if(!d.date)is.push(TX('缺日期','Missing date'));
  if(!d.amt||d.amt<=0)is.push(TX('金额未填或≤0','Amount empty or ≤0'));
  if(!d.qty||d.qty<=0)is.push(TX('数量未填或≤0','Qty empty or ≤0'));
- if(d.transport==='sea'&&!d.vessel)is.push(TX('海运但缺船名航次','Sea but missing vessel'));
+ if((d.transport==='sea'||d.transport==='rail')&&!d.vessel)is.push(TX('海运/铁路但缺船名航次（铁路填班列车次）','Sea/Rail but missing vessel/train no.'));
  if(d.date&&d.eta&&d.eta<d.date)is.push(TX('到港日早于发货日（ETA<ETD）','ETA earlier than ETD'));
  if(d.lc&&!d.lcno)is.push(TX('信用证交易但缺信用证号 L/C No.','L/C deal missing L/C no.'));
  // 单单一致：跨单比对共享字段
