@@ -360,7 +360,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -380,6 +380,7 @@ var S={
  _recShow:false,_chkShow:false,
  _activeClient:load('_activeClient',''),
  _cadText:load('_cadText',''),
+ _reconLead:load('_reconLead',''),
  docDefaults:load('docDefaults',{}),
  _defShow:false,
  hidden:load('hidden',[]),
@@ -486,6 +487,7 @@ function buildState(){
   _recShow:false,_chkShow:false,
   _activeClient:load('_activeClient',''),
   _cadText:load('_cadText',''),
+  _reconLead:load('_reconLead',''),
   docDefaults:load('docDefaults',{}),
   _defShow:false,
   hidden:load('hidden',[]),
@@ -1653,6 +1655,7 @@ h+='<input id="ld_wa" placeholder="WhatsApp / '+TX('手机号','Phone')+'" style
  h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品','Search name/country/product')+'"><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
  h+='<div class="row" style="margin-bottom:10px;justify-content:flex-end"><button class="btn ghost mini" data-action="trashToggle">'+TX('回收站','Trash')+' ('+(S.trash||[]).length+')</button></div>';
 h+='<div id="leadList"></div>';
+ h+=reconSection();
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('AI 跟进序列（自动排程）','AI Follow-up Cadence')+'</h3><div class="grid g2"><select id="cad_lead">'+S.leads.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+' · '+esc(l.stage)+'</option>';}).join('')+'</select><button class="btn" data-action="genCadence">'+TX('生成5触点序列','Generate 5-touch')+'</button></div><div class="out" id="cadOut" style="margin-top:10px">'+TX('选择线索后生成：首触→寄样→报价→节期→返单。','Pick a lead to generate: first touch → sample → quote → festival → reorder.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="cadOut" style="margin-top:8px">'+TX('复制序列','Copy cadence')+'</button></div>';
  return h;
 }
@@ -3756,7 +3759,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v53 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v53</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v54 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v54</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -3921,6 +3924,12 @@ document.addEventListener('click',function(e){
  else if(a==='fcGrab'){fcGrab();}
  else if(a==='fcExport'){fcExport();}
  else if(a==='fcClear'){fcClear();}else if(a==='fcCopyAll'){fcCopyAll();}
+ else if(a==='reconGo'){reconGo(el.dataset.k);}
+ else if(a==='reconRun'){reconRun();}
+ else if(a==='reconSave'){reconSave();}
+ else if(a==='reconPrompt'){reconPrompt();}
+ else if(a==='reconFollow'){reconFollow();}
+ else if(a==='reconReset'){reconReset();}
  else if(a==='hotGo'){hotGo(el.dataset.p,el.dataset.k);}
  else if(a==='hotFav'){hotFavToggle(el.dataset.k);}
  else if(a==='hotExport'){hotExport();}
@@ -4188,6 +4197,332 @@ function fcSection(){
    }
   }
  }
+ h+='</div>';
+ return h;
+}
+
+/* ============ 找客户：AI 客户背调（开发前调查 → 转跟进） ============ */
+var RECON_DIMS=[
+ ['web','官网 / 公司简介','Website',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" '+c+' official site');}],
+ ['li','LinkedIn / 决策人','LinkedIn',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('site:linkedin.com '+n+' '+c);}],
+ ['news','新闻 / 近期动态','News',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" '+c)+'&tbm=nws';}],
+ ['trade','进出口 / 采购记录','Import records',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" importer OR buyer '+p+' '+c);}],
+ ['job','招聘 / 团队规模','Hiring',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" '+c+' hiring purchasing OR sourcing');}],
+ ['map','地址 / 实体核查','Location',function(n,c,p){return 'https://www.google.com/maps/search/'+encodeURIComponent(n+' '+c);}],
+ ['rev','口碑 / 投诉记录','Reviews',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" '+c+' review OR complaint');}],
+ ['soc','社媒主页','Social',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" '+c+' facebook OR instagram');}]
+];
+function reconDimUrl(k,n,c,p){
+ for(var i=0;i<RECON_DIMS.length;i++){ if(RECON_DIMS[i][0]===k) return RECON_DIMS[i][3](n||'',c||'',p||''); }
+ return '';
+}
+var RECON_QS=[
+ {k:'size',zh:'公司规模',en:'Size',opts:['未知','1-10人','11-50人','51-200人','200人以上']},
+ {k:'role',zh:'对接人角色',en:'Contact role',opts:['未知','老板/决策人','采购经理','业务/中间商']},
+ {k:'fit',zh:'品类匹配度',en:'Category fit',opts:['未知','高度匹配','部分匹配','不匹配']},
+ {k:'sup',zh:'现有供应商',en:'Current supplier',opts:['未知','新买家 / 首次采购','正在换供应商','已有稳定供应商']},
+ {k:'sell',zh:'他的下游市场',en:'Downstream',opts:['未知','本地零售','周边国家分销','线上电商']},
+ {k:'cert',zh:'认证要求',en:'Certificates',opts:['未知','需要（Halal / CE / FDA）','不需要']},
+ {k:'band',zh:'价格带',en:'Price band',opts:['未知','低价比价','中端品质','高端定制']},
+ {k:'pay',zh:'付款方式',en:'Payment',opts:['未知','T/T 30% 定金','L/C 信用证','要求赊账']},
+ {k:'season',zh:'采购季节',en:'Season',opts:['未知','斋月 / 开斋节前','Q4 圣诞前','全年均摊']},
+ {k:'reply',zh:'响应速度',en:'Response',opts:['未联系','当天回','2-3 天回','已读不回']},
+ {k:'risk',zh:'风险信号',en:'Risk',opts:['未见异常','有（无官网 / 免费邮箱 / 只问价 / 要赊账）']}
+];
+var RECON_MKT={
+ '中东':['uae','阿联酋','沙特','saudi','迪拜','dubai','卡塔尔','qatar','科威特','kuwait','阿曼','oman','巴林','bahrain','约旦','jordan','埃及','egypt','土耳其','turkey','伊拉克','iraq','黎巴嫩','lebanon','也门','yemen','阿尔及利亚','摩洛哥','morocco','突尼斯','tunisia','利比亚','libya'],
+ '东南亚':['越南','vietnam','泰国','thailand','印尼','indonesia','马来','malaysia','菲律宾','philippines','新加坡','singapore','缅甸','myanmar','柬埔寨','cambodia'],
+ '欧美':['美国','usa','united states','英国','uk','germany','德国','france','法国','italy','意大利','spain','西班牙','netherlands','荷兰','poland','波兰','canada','加拿大','australia','澳大利亚'],
+ '非洲':['尼日利亚','nigeria','肯尼亚','kenya','加纳','ghana','南非','south africa','坦桑尼亚','tanzania','埃塞俄比亚','ethiopia','乌干达','uganda','塞内加尔','senegal']
+};
+function reconMarket(l){
+ l=l||{}; var m=String(l.market||'');
+ if(RECON_MKT[m]) return m;
+ var s=(String(l.country||'')+' '+String(l.market||'')).toLowerCase();
+ for(var k in RECON_MKT){ if(!Object.prototype.hasOwnProperty.call(RECON_MKT,k))continue;
+  var arr=RECON_MKT[k];
+  for(var i=0;i<arr.length;i++){ if(s.indexOf(arr[i])>=0) return k; }
+ }
+ return '混合';
+}
+function reconAnswers(l){ return (l&&l.recon&&l.recon.answers)||{}; }
+function reconBuild(l){
+ l=l||{};
+ var a=reconAnswers(l);
+ var mkt=reconMarket(l);
+ var fit=40, why=[];
+ function add(n,r){ fit+=n; why.push([n,r]); }
+ if(a.fit==='高度匹配')add(12,TX('品类高度匹配','category fits well'));
+ else if(a.fit==='部分匹配')add(6,TX('品类部分匹配','partial fit'));
+ else if(a.fit==='不匹配')add(-12,TX('品类不匹配','category mismatch'));
+ if(a.role==='老板/决策人')add(12,TX('直接对接决策人','direct to decision maker'));
+ else if(a.role==='采购经理')add(7,TX('对接采购经理','talking to purchasing manager'));
+ else if(a.role==='业务/中间商')add(-5,TX('对接中间商，链条长一层','middleman adds a layer'));
+ if(a.sup==='新买家 / 首次采购')add(10,TX('新买家，机会窗口大','new buyer'));
+ else if(a.sup==='正在换供应商')add(8,TX('正在换供应商，切入窗口期','switching supplier'));
+ else if(a.sup==='已有稳定供应商')add(-6,TX('已有稳定供应商，需要差异化','incumbent supplier'));
+ if(a.reply==='当天回')add(8,TX('响应快，意向温度高','fast response'));
+ else if(a.reply==='2-3 天回')add(3,TX('响应一般','so-so response'));
+ else if(a.reply==='已读不回')add(-10,TX('已读不回，要换渠道再触达','unresponsive'));
+ if(a.size==='51-200人'||a.size==='200人以上')add(6,TX('公司有规模，不是个人倒货','sizable company'));
+ if(a.cert==='需要（Halal / CE / FDA）')add(5,TX('要认证，说明是正规买家','certification required = serious buyer'));
+ if(a.pay==='T/T 30% 定金')add(6,TX('付款方式健康','healthy payment terms'));
+ else if(a.pay==='要求赊账')add(-10,TX('要求赊账，风险高','asks for credit'));
+ if(a.season&&a.season!=='未知')add(4,TX('有明确采购季节','clear seasonality'));
+ if(a.band==='中端品质'||a.band==='高端定制')add(4,TX('不纯比价，有品质诉求','not pure price shopping'));
+ if(l.source==='转介绍')add(12,TX('转介绍来源，信任起点最高','referral'));
+ else if(l.source==='展会')add(8,TX('展会见过面，有线下记忆','met at expo'));
+ else if(l.source==='阿里巴巴'||l.source==='中国制造网')add(-3,TX('平台询盘，比价成分重','platform inquiry'));
+ fit=Math.max(0,Math.min(100,fit));
+ var risks=[];
+ var em=String(l.email||'').toLowerCase();
+ if(em&&/@(gmail|yahoo|hotmail|outlook|163|qq|126|foxmail|sina|mail)\./.test(em))
+  risks.push(TX('用的是个人邮箱域名（非企业域名）——不等于不可靠，但必须交叉验证公司实体与官网。','Personal email domain — verify the company entity.'));
+ if(!em&&!l.wa) risks.push(TX('还没有任何联系方式——先补齐邮箱 / WhatsApp，否则背调无从下手。','No contact yet — add email/WhatsApp first.'));
+ else if(!em) risks.push(TX('只有手机号 / WhatsApp，没有邮箱——正规公司通常有企业邮箱。','Phone only, no corporate mailbox.'));
+ if(a.risk&&a.risk!=='未见异常') risks.push(TX('你标记了风险信号（只问价 / 无官网 / 要赊账等）：首单务必收定金 + 第三方验货 + 不垫资。','Risk flagged: deposit + third-party inspection on first order.'));
+ if(a.pay==='要求赊账') risks.push(TX('对方要求赊账：除非上了信用保险，否则坚决先款后货（≥30% 定金）。','Credit request: insist on deposit.'));
+ if(a.cert==='需要（Halal / CE / FDA）') risks.push(TX('对方要认证：先确认我方 / 工厂能否提供，别先答应再找证书。','Confirm certificates before promising.'));
+ if(!l.country) risks.push(TX('没填国家——补上后才能判断市场规则、节期与合规要求。','Fill the country to judge market rules.'));
+ var angles=[];
+ if(mkt==='中东'){
+  angles.push(TX('斋月 / 开斋节备货节奏：提前 2-3 个月锁产能，用节期做正当跟进理由。',''));
+  angles.push(TX('文化尊重：问候用 As-salamu alaykum，避开周五礼拜时段联系。',''));
+  angles.push(TX('强调稳定供货 + 定制绣字 / 礼盒（中东偏好礼盒装与礼品属性）。',''));
+ }else if(mkt==='东南亚'){
+  angles.push(TX('Halal 认证是敲门砖：先给证书再谈价格。',''));
+  angles.push(TX('价格敏感：用阶梯报价把单做厚，而不是一味降价。',''));
+ }else if(mkt==='欧美'){
+  angles.push(TX('合规与可追溯：CE / FDA / REACH、验厂报告、交期可靠性。',''));
+  angles.push(TX('沟通直白给数据：报价单写清 MOQ / 交期 / 付款条件。',''));
+ }else if(mkt==='非洲'){
+  angles.push(TX('价格 + 定金 + 物流时效三件套，先讲清怎么按时到货。',''));
+  angles.push(TX('首单小批量试单，降低对方的决策门槛。',''));
+ }else{
+  angles.push(TX('先问清他的下游市场与采购季节，再决定推哪一档产品。',''));
+ }
+ angles.push(TX('寄样 + 视频看厂：新客户最大的顾虑是"你是不是真实工厂"。',''));
+ if(l.stage==='待开发'||!l.stage) angles.push(TX('先做 2-3 次轻触达（WhatsApp / 邮件），别第一封就报报价单。',''));
+ else if(l.stage==='报价') angles.push(TX('报价后 48 小时内必须跟进一次，带截止日 + 理由。',''));
+ else if(l.stage==='试样') angles.push(TX('样品签收当天就追问测试结果，别等。',''));
+ var taboos=[];
+ if(mkt==='中东'){
+  taboos.push(TX('别在周五 / 礼拜时间打电话或催单。',''));
+  taboos.push(TX('产品与文案避开猪、酒等禁忌元素。',''));
+ }
+ if(mkt==='欧美') taboos.push(TX('别含糊报价、别回避认证问题——会被直接判为不专业。',''));
+ if(mkt==='东南亚') taboos.push(TX('别忽视 Halal 认证，也别用高压逼单。',''));
+ if(mkt==='非洲') taboos.push(TX('别承诺做不到的交期——一次失信就没下一次。',''));
+ taboos.push(TX('别群发同一套文案、别编造公司规模与交期。',''));
+ var verdict = fit>=75?TX('优先跟进：值得投入打样、电话与视频看厂。','High priority: invest in sample, call and factory video.')
+  : (fit>=50?TX('正常跟进：先补齐问诊表空项，再决定投入多少。','Normal: fill the gaps, then decide investment.')
+  : TX('低优先级：放养，用轻触达保持存在感，先别投打样成本。','Low priority: keep light-touch, no sample cost yet.'));
+ var nxt='';
+ if(!l.email&&!l.wa) nxt=TX('第一步不是发话术，是补齐联系方式（邮箱优先）。','First: get contact info.');
+ else if(l.stage==='待开发'||!l.stage) nxt=TX('先用 8 个信息源查 20 分钟 → 填问诊表 → 发一条"背调式"首触（点出你查到的具体事实）。','Run the 8 sources for 20 min, fill the form, then send a research-based opener.');
+ else if(l.stage==='已联系'||l.stage==='已回复') nxt=TX('趁热度给具体价值：目录 + 样品 + 明确 MOQ / 交期，把对方推到试样。','Send catalog + sample with clear MOQ/lead time.');
+ else if(l.stage==='试样') nxt=TX('盯样品质检与反馈，主动给第三方验货或视频看厂，把信任推到报价。','Chase the sample feedback, offer QC video, move to quote.');
+ else if(l.stage==='报价') nxt=TX('48 小时内跟进报价，给截止日 + 原料 / 节期理由，逼出决策。','Follow up within 48h with a deadline and a reason.');
+ else if(l.stage==='成交') nxt=TX('转交付履约：确认单证与船期，同时埋下返单 / 转介绍钩子。','Move to delivery, plant the reorder/referral hook.');
+ else nxt=TX('先补齐客户资料，再决定下一步。','Fill the profile first.');
+ return {fit:fit,why:why,risks:risks,angles:angles,taboos:taboos,verdict:verdict,next:nxt,market:mkt,answers:a};
+}
+function reconOpener(l,mkt){
+ l=l||{};
+ var me=S.me||{};
+ var c=l.name||'(there)';
+ var p=l.product||'your category';
+ var geo=l.country||mkt||'your market';
+ var en='Hi '+c+', this is '+nm(me)+' from '+co(me)+'.\n\n'
+  +'I did a bit of homework before writing — I can see '+c+' works on '+p+' in '+geo+'. '
+  +'We are a '+yr(me)+' of '+p+' with stable Ramadan / Hajj-season stock, MOQ 500 pcs, 15-20 days lead time.\n\n'
+  +'Would it help if I send our best-sellers list and a sample, so you can check the quality yourself? '
+  +'If '+p+' is not your line, just tell me what you do buy and I will only send relevant info.';
+ var zh='原理：这条首触做了三件"背调过"的事——①点出你查过他做什么（一眼看出不是群发）；②给具体价值（MOQ / 交期 / 节期供货）；③给零压力动作（要样品）。\n'
+  +'禁忌：别第一封就报价单；别写长篇公司介绍；对方不回时，隔 3 天换渠道（邮件 → WhatsApp）再触达一次。\n'
+  +'本地化提醒：'+geo+' 的沟通习惯见下方「沟通禁忌」，先看再发。';
+ return {en:en,zh:zh};
+}
+function reconReport(l){
+ var r=reconBuild(l||{});
+ var a=r.answers;
+ var op=reconOpener(l||{},r.market);
+ var d0=todayStr();
+ var o='';
+ o+='【AI 客户背调报告 · '+(l.name||'')+'】\n';
+ o+='日期 '+d0+' · 市场判定 '+r.market+' · 当前阶段 '+(l.stage||'—')+' · 机会匹配度 '+r.fit+'/100\n';
+ o+='\n一、公司画像（你已知的）\n';
+ o+='  客户：'+l.name+'｜国家：'+(l.country||'未填')+'｜市场：'+r.market+'\n';
+ o+='  来源：'+(l.source||'未填')+'｜产品线索：'+(l.product||'未填')+'\n';
+ o+='  联系方式：'+(l.email||'无邮箱')+' / '+(l.wa||'无 WhatsApp')+'\n';
+ o+='  角色：'+(a.role||'未知')+'｜规模：'+(a.size||'未知')+'｜下游：'+(a.sell||'未知')+'\n';
+ o+='\n二、匹配度 '+r.fit+'/100 的评分依据\n';
+ if(!r.why.length) o+='  （问诊表还没填，评分只用了客户基础字段）\n';
+ for(var i=0;i<r.why.length;i++){ var w=r.why[i]; o+='  '+(w[0]>=0?'▲ +':'▼ ')+w[0]+'  '+w[1]+'\n'; }
+ o+='  → '+r.verdict+'\n';
+ o+='\n三、风险信号（本机规则自动提示，是提醒不是判定）\n';
+ if(!r.risks.length) o+='  暂未发现明显风险信号 —— 仍建议首单收定金 + 第三方验货。\n';
+ for(var j=0;j<r.risks.length;j++){ o+='  ! '+r.risks[j]+'\n'; }
+ o+='\n四、切入角度（按市场与阶段）\n';
+ for(var k=0;k<r.angles.length;k++){ o+='  · '+r.angles[k]+'\n'; }
+ o+='\n五、沟通禁忌\n';
+ for(var m=0;m<r.taboos.length;m++){ o+='  × '+r.taboos[m]+'\n'; }
+ o+='\n六、首触话术（英文可直接照读）\n';
+ o+=op.en+'\n';
+ o+='\n  [中文原理与禁忌] '+op.zh+'\n';
+ o+='\n七、跟进节奏建议\n';
+ o+='  触点 1（'+d0+'）：用上面的话术，提到你查到的具体事实（不是"我们公司成立于…"）。\n';
+ o+='  触点 2（'+addDays(d0,3)+'）：发目录 / 样品信息，问他的目标市场与首单量。\n';
+ o+='  触点 3（'+addDays(d0,7)+'）：给报价或节期备货理由，带明确截止日。\n';
+ o+='\n八、下一步动作\n  '+r.next+'\n';
+ o+='\n（本报告由工作台本地规则生成，不含联网查询。要更深的背调：点「复制 AI 背调提示词」，粘给任意 AI 跑完，再把结果填回问诊表。）';
+ return o;
+}
+function reconAiPrompt(l){
+ l=l||{}; var me=S.me||{}; var mkt=reconMarket(l);
+ var s='';
+ s+='You are a senior export-sales analyst. Do a background check on this prospect before I contact them.\n\n';
+ s+='PROSPECT\n- Company: '+l.name+'\n- Country / market: '+(l.country||'(unknown)')+' / '+mkt+'\n';
+ s+='- Product line we want to sell: '+(l.product||'(unknown)')+'\n- Lead source: '+(l.source||'(unknown)')+'\n';
+ s+='- Our side: '+co(me)+', a '+yr(me)+' of this category.\n\n';
+ s+='TASK\nResearch this company from public sources (official website, LinkedIn, local news, import/export records, review sites, job posts, company registry). Then output:\n';
+ s+='1) Company profile: what they really do, size, main categories, markets served, years in business.\n';
+ s+='2) Buying signals: do they import this category? any volume / supplier info visible?\n';
+ s+='3) Decision maker: name and title if public; the best entry point.\n';
+ s+='4) Red flags: no website, free email domain, unverifiable address, complaints, mismatch with their claims.\n';
+ s+='5) Culture & compliance notes for '+mkt+': certifications, seasonality, communication style, taboos.\n';
+ s+='6) Fit score 0-100 against our product, with reasons.\n';
+ s+='7) A 3-touch follow-up plan, with the exact first-message sentence in English.\n\n';
+ s+='RULES\n- Cite a source URL for each factual claim. If you cannot find something, write "NOT FOUND".\n';
+ s+='- Do NOT invent facts, phone numbers, revenue, employee counts or certifications.\n';
+ s+='- Separate verified facts from your inference.\n- Plain text, under 600 words.';
+ return s;
+}
+function reconCur(){
+ var cur=$('recon_cur'); var id=cur?String(cur.value||''):'';
+ var list=S.leads||[]; var l=null;
+ for(var i=0;i<list.length;i++){ if(list[i].id===id) l=list[i]; }
+ if(!l&&S._reconLead){ for(var j=0;j<list.length;j++){ if(list[j].id===S._reconLead) l=list[j]; } }
+ if(!l) l=list[0]||null;
+ return l;
+}
+function reconCollect(l){
+ if(!l) return;
+ l.recon=l.recon||{}; l.recon.answers=l.recon.answers||{};
+ RECON_QS.forEach(function(q){
+  var e=document.getElementById('rc_'+q.k);
+  if(e){ var v=String(e.value||'').trim(); if(v) l.recon.answers[q.k]=v; }
+ });
+ l.recon.at=todayStr();
+}
+function reconGo(k){
+ var l=reconCur();
+ if(!l){ toast(TX('先加一个客户','Add a client first')); return; }
+ var mkt=reconMarket(l);
+ var u=reconDimUrl(k,l.name,l.country||mkt,l.product||'');
+ if(!u){ toast(TX('没有该信息源','No source')); return; }
+ if(typeof window!=='undefined'&&window.open){ window.open(u,'_blank'); toast(TX('已打开，可在搜索框里把公司名改精确','Opened')); }
+ else { copyText(u); }
+}
+function reconRun(){
+ var sel=$('recon_lead'); var id=sel?String(sel.value||''):'';
+ var l=null; var list=S.leads||[];
+ for(var i=0;i<list.length;i++){ if(list[i].id===id) l=list[i]; }
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ var cur=$('recon_cur');
+ if(cur&&String(cur.value)===id) reconCollect(l);
+ l.recon=l.recon||{};
+ l.recon.report=reconReport(l);
+ l.recon.at=todayStr();
+ S._reconLead=id; save('_reconLead',id);
+ snapLeads(); save('leads',S.leads);
+ refreshAll();
+ var box=$('reconOut'); if(box&&box.scrollIntoView) box.scrollIntoView({behavior:'smooth',block:'center'});
+ toast(TX('背调报告已生成','Report generated'));
+}
+function reconSave(){
+ var l=reconCur();
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ reconCollect(l);
+ l.recon=l.recon||{};
+ l.recon.report=reconReport(l);
+ snapLeads(); save('leads',S.leads);
+ var box=$('reconOut'); if(box) box.textContent=l.recon.report;
+ toast(TX('背调结果已保存，报告已更新','Saved & report updated'));
+}
+function reconPrompt(){
+ var l=reconCur();
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ copyText(reconAiPrompt(l));
+ toast(TX('AI 背调提示词已复制，粘给任意 AI 即可','Prompt copied — paste into any AI'));
+}
+function reconFollow(){
+ var l=reconCur();
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ reconCollect(l);
+ l.recon=l.recon||{};
+ var r=reconBuild(l);
+ var mkt=r.market;
+ var d0=todayStr(), d3=addDays(d0,3), d7=addDays(d0,7);
+ l.logs=l.logs||[];
+ l.logs.unshift({date:d0,text:TX('AI 背调切入（','AI-check angle (')+mkt+'，'+TX('匹配度','fit')+' '+r.fit+'/100）：'+r.next});
+ l.last=d0;
+ l.recon.follow={at:d0,fit:r.fit,mkt:mkt,
+  plan:[[d0,TX('触点1 · 背调式首触（WhatsApp / 邮件）','Touch 1 · research-based opener')],
+        [d3,TX('触点2 · 目录 / 样品跟进','Touch 2 · catalog / sample')],
+        [d7,TX('触点3 · 报价或节期备货理由','Touch 3 · quote or season reason')]]};
+ l.recon.report=reconReport(l);
+ snapLeads(); save('leads',S.leads);
+ refreshAll();
+ toast(TX('已写入跟进时间线，并生成 3 触点节奏','Logged & 3-touch plan created'));
+}
+function reconReset(){
+ var l=reconCur();
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ openModal(TX('清空背调','Clear background check'),
+  TX('确定清空该客户的背调问诊表与报告吗？客户的其他信息不受影响。','Clear this client questionnaire and report? Other data is untouched.'),
+  function(){ delete l.recon; snapLeads(); save('leads',S.leads); refreshAll(); toast(TX('已清空','Cleared')); });
+}
+function reconSection(){
+ var leads=S.leads||[];
+ var h='';
+ if(!leads.length){
+  h+='<div class="card" style="margin-top:14px;background:#f8fafc"><h3 style="margin:0 0 6px;font-size:15px">'+TX('AI 客户背调 · 开发前先查清对方再开口','AI Background Check')+'</h3>';
+  h+='<div class="muted" style="font-size:13px">'+TX('先在「新增线索」加一个客户，这里就能自动生成背调信息源、问诊表、背调报告和专属跟进话术。','Add a lead first, then generate the background-check kit here.')+'</div></div>';
+  return h;
+ }
+ var cur=String(S._reconLead||'');
+ var l=null, i;
+ for(i=0;i<leads.length;i++){ if(leads[i].id===cur) l=leads[i]; }
+ if(!l) l=leads[0];
+ var mkt=reconMarket(l);
+ var a=reconAnswers(l);
+ h+='<div class="card" style="margin-top:14px;border:1px solid #185FA5">';
+ h+='<h3 style="margin:0 0 4px;font-size:15px">'+TX('AI 客户背调 · 开发前先查清对方再开口','AI Background Check — know them before you speak')+'</h3>';
+ h+='<div class="hint" style="margin:0 0 8px">'+TX('三步：① 点下面 8 个信息源查 20 分钟 → ② 把结果填进问诊表 → ③ 生成背调报告 + 专属跟进话术。报告自动存到该客户，客户 360 里随时能回看。','3 steps: check the 8 sources → fill the form → get report + tailored follow-up. Saved to the client automatically.')+'</div>';
+ h+='<div class="grid g2"><select id="recon_lead" style="min-width:150px">'+leads.map(function(x){return '<option value="'+x.id+'"'+(x.id===l.id?' selected':'')+'>'+esc(x.name)+' · '+esc(x.country||x.market||'—')+' · '+esc(x.stage||'')+'</option>';}).join('')+'</select>';
+ h+='<button class="btn" data-action="reconRun">'+TX('生成 / 刷新背调报告','Generate report')+'</button></div>';
+ h+='<input type="hidden" id="recon_cur" value="'+l.id+'">';
+ h+='<div style="margin-top:10px;font-size:13px;font-weight:600">'+TX('① 背调信息源（点开就是预填好的真实搜索）','1) Sources (pre-filled searches)')+'</div>';
+ h+='<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">';
+ RECON_DIMS.forEach(function(d){ h+='<button class="btn ghost mini" data-action="reconGo" data-k="'+d[0]+'">'+esc(TX(d[1],d[2]))+'</button>'; });
+ h+='</div>';
+ h+='<div class="hint" style="margin-top:6px">'+TX('查什么：他卖什么、卖到哪、规模多大、谁是决策人、有没有实体地址、有没有投诉。查不到也是结论——查不到本身就是风险信号。','Look for: what they sell, where, size, decision maker, physical address, complaints. NOT FOUND is itself a signal.')+'</div>';
+ h+='<div style="margin-top:12px;font-size:13px;font-weight:600">'+TX('② 背调问诊表（查完 / 沟通过后填，不填也能出报告）','2) Questionnaire (optional, report works without it)')+'</div>';
+ h+='<div class="modal-form" style="grid-template-columns:1fr 1fr;margin-top:6px">';
+ RECON_QS.forEach(function(q){
+  var v=a[q.k]||q.opts[0];
+  h+='<label style="font-size:12px">'+esc(TX(q.zh,q.en))+'<select id="rc_'+q.k+'">'+q.opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select></label>';
+ });
+ h+='</div>';
+ h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn" data-action="reconSave">'+TX('保存背调结果','Save findings')+'</button>';
+ h+='<button class="btn ghost mini" data-action="reconFollow">'+TX('转成跟进（写入时间线）','Turn into follow-up')+'</button>';
+ h+='<button class="btn ghost mini" data-action="reconPrompt">'+TX('复制 AI 背调提示词','Copy AI prompt')+'</button>';
+ h+='<button class="btn ghost mini" data-action="reconReset">'+TX('清空此客户背调','Clear')+'</button></div>';
+ h+='<div style="margin-top:12px;font-size:13px;font-weight:600">'+TX('③ 背调报告与跟进策略','3) Report & follow-up plan')+'</div>';
+ h+='<div class="out" id="reconOut" style="margin-top:8px;white-space:pre-wrap;font-size:12.5px">'+esc(reconReport(l))+'</div>';
+ h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="reconOut">'+TX('复制报告','Copy report')+'</button>';
+ h+='<button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('打开客户 360 ›','Open Client 360 ›')+'</button></div>';
  h+='</div>';
  return h;
 }
