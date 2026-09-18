@@ -3845,7 +3845,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v49 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v49, hard-refresh with Ctrl+F5')+'">v49</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v50 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v50, hard-refresh with Ctrl+F5')+'">v50</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4623,47 +4623,102 @@ function viewDocs(){
 function docStatus(id){var d=activeDeal();return (d&&d.docs&&d.docs[id])?d.docs[id]:'todo';}
 function docToggle(id){var d=activeDeal();if(!d)return;d.docs[id]=(d.docs[id]==='done'?'todo':'done');save('deals',S.deals);refreshAll();toast(d.docs[id]==='done'?TX('已标记已出','Marked done'):TX('已撤销','Undone'));}
 function docOpen(id){S._docOpen=id;S._docVals={};S._docTpl=null;refreshAll();}
- function docGen(id){
- var dd=DOC_DEF.find(function(x){return x.id===id;});if(!dd)return;
- var d=activeDeal();if(!d.docVals)d.docVals={};
- var v={company:S.me.company||'（你的公司）',name:S.me.name||'（你的名字）'};
- d.docVals[id]={};var missing=[];
- dd.fields.forEach(function(f){var el=document.getElementById('doc_'+f);var val=(el?el.value:'').trim();if(f==='name')val=S.me.name||'';v[f]=val;d.docVals[id][f]=val;if(!val)missing.push(DOC_FIELDS[f]?DOC_FIELDS[f].l:f);});
+function docReadForm(id){
+ var dd=DOC_DEF.find(function(x){return x.id===id;});if(!dd)return null;
+ var d=activeDeal();if(!d)return null;
+ if(!d.docVals)d.docVals={};
+ var prev=d.docVals[id]||{};
+ var cur={},missing=[];
+ dd.fields.forEach(function(f){
+  var el=document.getElementById('doc_'+f);
+  var val=el?String(el.value||'').trim():(prev[f]!=null?String(prev[f]):'');
+  if(f==='name')val=S.me.name||'';
+  cur[f]=val;
+  if(!val)missing.push(DOC_FIELDS[f]?DOC_FIELDS[f].l:f);
+ });
+ d.docVals[id]=cur;
  save('deals',S.deals);
- // 完整替换映射：声明的字段 + 交易共享字段 + 公司/署名，避免漏填字段出现 undefined
- var sm={company:v.company,name:v.name};
- Object.keys(v).forEach(function(k){sm[k]=v[k];});
- if(typeof SHARED!=='undefined')SHARED.forEach(function(f){sm[f]=(d&&d[f]!=null&&d[f]!=='')?d[f]:(sm[f]!=null?sm[f]:'');});
- var out=dd.tpl.replace(/\{(\w+)\}/g,function(m,k){return (sm[k]!=null&&sm[k]!=='')?sm[k]:'';});
- S._docTpl=out;S._docOpen=id;refreshAll();
- if(missing.length)toast(TX('已生成，以下变量未填：','Generated, unfilled: ')+missing.join('、'));
+ return {dd:dd,d:d,missing:missing};
+}
+function docBuild(id){
+ var r=docReadForm(id);if(!r)return null;
+ var dd=r.dd,d=r.d;
+ var sm={company:S.me.company||'（你的公司）',name:S.me.name||'（你的名字）'};
+ Object.keys(d.docVals[id]||{}).forEach(function(k){sm[k]=d.docVals[id][k];});
+ if(typeof SHARED!=='undefined')SHARED.forEach(function(f){sm[f]=(d[f]!=null&&d[f]!=='')?d[f]:(sm[f]!=null?sm[f]:'');});
+ var html=String(dd.tpl||'');
+ html=html.replace(/\{(\w+)\s*\?\s*"([^"]*)"\s*:\s*"([^"]*)"\}/g,function(m,k,a,b){return (sm[k]!=null&&sm[k]!=='')?a:b;});
+ html=html.replace(/\{(\w+)\}/g,function(m,k){return (sm[k]!=null&&sm[k]!=='')?sm[k]:'';});
+ return {dd:dd,html:html,missing:r.missing};
+}
+function docGen(id){
+ var r=docBuild(id);if(!r)return;
+ S._docTpl=r.html;S._docOpen=id;refreshAll();
+ if(r.missing.length)toast(TX('已生成，以下变量未填：','Generated, unfilled: ')+r.missing.join('、'));
  else toast(TX('单证已生成，可复制','Draft ready, copy it'));
 }
-function docExport(id){
- var dd=DOC_DEF.find(function(x){return x.id===id;});if(!dd)return;
- var d=activeDeal();
- var getVal=function(f){
-  if(f==='name')return S.me.name||'';
-  if(d.docVals&&d.docVals[id]&&d.docVals[id][f]!=null&&d.docVals[id][f]!=='')return d.docVals[id][f];
-  if(typeof SHARED!=='undefined'&&SHARED.indexOf(f)>=0)return (d&&d[f]!=null&&d[f]!=='')?d[f]:'';
-  if(f==='desc'){var _pr=extRow(d&&d.productId);return _pr?((_pr.name||'')+(_pr.spec?(' '+_pr.spec):'')):'Muslim prayer pillow';}
-  return '';
- };
+/* ---- 单证 -> Excel：把 grid/flex 版式摊平成 Excel 能识别的表格（与页面所见一致） ---- */
+function docXlsStamp(t){
+ return String(t==null?'':t).replace(/<span class="stamp">([\s\S]*?)<\/span>/g,'<span style="color:#b91c1c;border:1px solid #b91c1c;padding:1px 6px;font-weight:bold">$1</span>');
+}
+function docXlsCells(t){
+ return String(t==null?'':t).replace(/<(td|th)([^>]*)>/g,function(m,tag,attrs){
+  var cls=(attrs.match(/class="([^"]*)"/)||[])[1]||'';
+  var sty=(attrs.match(/style="([^"]*)"/)||[])[1]||'';
+  var rest=attrs.replace(/\s*class="[^"]*"/,'').replace(/\s*style="[^"]*"/,'');
+  var ex='border:1px solid #999;padding:4px 6px;vertical-align:top;';
+  if(tag==='th')ex+='background:#eef2f6;text-align:center;font-weight:bold;';
+  if(/(^|\s)r(\s|$)/.test(cls))ex+='text-align:right;';
+  return '<'+tag+rest+' style="'+ex+sty+'">';
+ });
+}
+function docXlsClauses(body){
+ var b=String(body==null?'':body),rows='';
+ b=b.replace(/<ul>|<\/ul>/g,'');
+ b=b.replace(/<li>([\s\S]*?)<\/li>/g,function(m,li){rows+='<tr><td style="border:none;padding:2px 0 2px 4px">\u2022 '+li+'</td></tr>';return '';});
+ b=b.replace(/<b>([\s\S]*?)<\/b>/g,function(m,t){rows='<tr><td style="border:none;padding:2px 0;font-weight:bold">'+t+'</td></tr>'+rows;return '';});
+ var rest=String(b).replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim();
+ if(rest)rows+='<tr><td style="border:none;padding:2px 0">'+rest+'</td></tr>';
+ return '<table width="100%" cellspacing="0" cellpadding="0" border="0">'+rows+'</table>';
+}
+function docXlsSign(box){
  var rows='';
- dd.fields.forEach(function(f){var lbl=DOC_FIELDS[f]?DOC_FIELDS[f].l:f;var val=getVal(f);rows+='<tr><td style="font-weight:bold;background:#f3f4f6">'+esc(lbl)+'</td><td>'+esc(val)+'</td></tr>';});
- var st=docStatus(id);
- var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>td{border:1px solid #999;padding:4px 8px;font-size:12px}th{background:#1f2937;color:#fff;font-size:13px}</style></head><body><table border="1" cellpadding="0" cellspacing="0">'
-  +'<tr><th colspan="2">'+esc(dd.zh)+' / '+esc(dd.en)+'</th></tr>'
-  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('分类','Category')+'</td><td>'+esc(dd.cat)+'</td></tr>'
-  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('交易方','Buyer')+'</td><td>'+esc((d&&d.cnee)||'')+'</td></tr>'
-  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('发票号','Invoice No.')+'</td><td>'+esc((d&&d.no)||'')+'</td></tr>'
-  +'<tr><td style="font-weight:bold;background:#f3f4f6">'+TX('状态','Status')+'</td><td>'+esc(st==='done'?TX('已出','Done'):TX('待办','To do'))+'</td></tr>'
-  +'<tr><td colspan="2" style="background:#eef2ff;font-weight:bold">'+TX('单证字段','Document fields')+'</td></tr>'
-  +rows
-  +'</table></body></html>';
- var name=(dd.zh||'doc')+'_'+todayStr()+'.xls';
- dlFile(html,name,'application/vnd.ms-excel');
- toast(TX('已导出 Excel：','Exported Excel: ')+name);
+ String(box==null?'':box).split(/<br\s*\/?>/i).forEach(function(l){
+  l=String(l).trim();if(!l)return;
+  rows+='<tr><td style="border:none;padding:1px 0">'+l+'</td></tr>';
+ });
+ return '<table width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="border:none" width="58%"></td><td style="border:none"><table cellspacing="0" cellpadding="0" border="0">'+rows+'</table></td></tr></table>';
+}
+function docXlsHtml(dd,inner){
+ var h=String(inner==null?'':inner);
+ var open='<div class="doc">';
+ var i=h.indexOf(open);if(i>=0)h=h.slice(i+open.length);
+ var j=h.lastIndexOf('</div>');if(j>=0)h=h.slice(0,j);
+ h=docXlsStamp(h);
+ var head='',pairs=[];
+ h=h.replace(/<h1>([\s\S]*?)<\/h1>/,function(m,t){head+='<tr><td colspan="4" style="border:none;text-align:center;font-size:18px;font-weight:bold;padding:3px 0">'+t+'</td></tr>';return '';});
+ h=h.replace(/<div class="dsub">([\s\S]*?)<\/div>/,function(m,t){head+='<tr><td colspan="4" style="border:none;text-align:center;color:#555;padding:0 0 6px">'+t+'</td></tr>';return '';});
+ h=h.replace(/<div class="row"><span class="k">([\s\S]*?)<\/span><span class="v">([\s\S]*?)<\/span><\/div>/g,function(m,k,v){pairs.push([k,v]);return '';});
+ h=h.replace(/<div class="doc-meta">\s*<\/div>/g,'@@META@@');
+ for(var n=0;n<pairs.length;n+=2){
+  var a=pairs[n],b=pairs[n+1];
+  head+='<tr><td style="border:none;font-weight:bold;padding:2px 8px 2px 0;white-space:nowrap">'+a[0]+'</td><td style="border:none;padding:2px 8px 2px 0">'+a[1]+'</td>'
+   +(b?('<td style="border:none;font-weight:bold;padding:2px 8px 2px 0;white-space:nowrap">'+b[0]+'</td><td style="border:none;padding:2px 0">'+b[1]+'</td>'):'<td style="border:none"></td><td style="border:none"></td>')
+   +'</tr>';
+ }
+ var headTbl='<table width="100%" cellspacing="0" cellpadding="0" border="0">'+head+'</table>';
+ if(h.indexOf('@@META@@')>=0)h=h.replace('@@META@@',headTbl);else h=headTbl+h;
+ h=h.replace(/<table class="doc-goods">/g,'<table class="doc-goods" width="100%" cellspacing="0" cellpadding="0" border="0">');
+ h=h.replace(/<div class="doc-clauses">([\s\S]*?)<\/div>/g,function(m,body){return docXlsClauses(body);});
+ h=h.replace(/<div class="doc-sign">\s*<div class="box">([\s\S]*?)<\/div>\s*<\/div>/g,function(m,box){return docXlsSign(box);});
+ h=docXlsCells(h);
+ return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>td,th{font-family:"Microsoft YaHei",Arial,sans-serif;font-size:11px;color:#111}table{border-collapse:collapse}</style></head><body>'+h+'</body></html>';
+}
+function docExport(id){
+ var r=docBuild(id);if(!r)return;
+ var name=(r.dd.zh||'doc')+'_'+todayStr()+'.xls';
+ dlFile(docXlsHtml(r.dd,r.html),name,'application/vnd.ms-excel');
+ toast(TX('已导出 Excel（版式与生成草稿一致）：','Exported Excel (same layout as draft): ')+name);
 }
 function docExportAll(){
  var d=activeDeal();if(!d){toast(TX('先新建一笔交易再导出清单','Create a deal first'));return;}
