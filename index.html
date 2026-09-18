@@ -565,95 +565,6 @@ function boot(){
  ENC_ON=false;buildState();unlocked();syncInitAuto();
 }
 function unlocked(){if(ENC_ON)persistAll();init();}
-async function doUnlock(){
- var pw=($('lk_pw')?$('lk_pw').value:'');
- if(!pw){lkErr(TX('请输入密码','Enter password'));return;}
- var verStr=localStorage.getItem(KEY+'ver');
- if(!HAS_SUBTLE&&verStr&&verStr.indexOf('a:')===0){lkErr(TX('请用在线版(HTTPS)打开以解锁加密数据','Open the HTTPS version to unlock'));return;}
- CK=await deriveKey(pw,b64dec(localStorage.getItem(KEY+'salt')||''));
- try{var tok=await decBlob(verStr);if(tok!==VER_TOKEN)throw 0;}catch(e){lkErr(TX('密码错误','Wrong password'));CK=null;return;}
- MEM={};
- var storeStr=localStorage.getItem(KEY+'store');
- if(storeStr){try{var blob=await decBlob(storeStr);for(var k in blob)MEM[k]=blob[k];}catch(e){lkErr(TX('解密失败，数据可能损坏','Decrypt failed'));CK=null;return;}}
- ENC_ON=true;hideLock();buildState();unlocked();
-}
-/* 按用户铁律：启动密码锁已禁用——doSetPw 为休眠死代码，请勿调用。 */
-async function doSetPw(){
- var pw=($('lk_pw')?$('lk_pw').value:''),cf=($('lk_cf')?$('lk_cf').value:'');
- if(!pw||pw.length<4){lkErr(TX('密码至少4位','Min 4 chars'));return;}
- if(pw!==cf){lkErr(TX('两次输入不一致','Mismatch'));return;}
- var salt=crypto.getRandomValues(new Uint8Array(16));
- CK=await deriveKey(pw,salt);
- var obj={};PERSIST_KEYS.forEach(function(k){obj[k]=(S&&S[k]!==undefined)?S[k]:load(k,null);});
- MEM=obj;
- localStorage.setItem(KEY+'salt',b64enc(salt));
- localStorage.setItem(KEY+'ver',await encBlob(VER_TOKEN));
- localStorage.setItem(KEY+'store',await encBlob(obj));
- localStorage.setItem(KEY+'enc','1');
- PERSIST_KEYS.forEach(function(k){localStorage.removeItem(KEY+k);});
- ENC_ON=true;hideLock();toast(TX('已开启加密锁','Encryption on'));refreshAll();
-}
-async function doChangePw(){
- var oldPw=($('lk_old')?$('lk_old').value:''),pw=($('lk_pw')?$('lk_pw').value:''),cf=($('lk_cf')?$('lk_cf').value:'');
- if(!oldPw){lkErr(TX('请输入原密码','Old pw required'));return;}
- if(!pw||pw.length<4){lkErr(TX('新密码至少4位','Min 4 chars'));return;}
- if(pw!==cf){lkErr(TX('两次输入不一致','Mismatch'));return;}
- CK=await deriveKey(oldPw,b64dec(localStorage.getItem(KEY+'salt')||''));
- try{var tok=await decBlob(localStorage.getItem(KEY+'ver'));if(tok!==VER_TOKEN)throw 0;}catch(e){lkErr(TX('原密码错误','Old wrong'));CK=null;return;}
- var newSalt=crypto.getRandomValues(new Uint8Array(16));
- CK=await deriveKey(pw,newSalt);
- localStorage.setItem(KEY+'salt',b64enc(newSalt));
- localStorage.setItem(KEY+'ver',await encBlob(VER_TOKEN));
- localStorage.setItem(KEY+'store',await encBlob(MEM));
- ENC_ON=true;hideLock();toast(TX('密码已修改','Password changed'));refreshAll();
-}
-async function doClosePw(){
- var pw=($('lk_pw')?$('lk_pw').value:'');
- if(!pw){lkErr(TX('请输入密码','Enter password'));return;}
- CK=await deriveKey(pw,b64dec(localStorage.getItem(KEY+'salt')||''));
- try{var tok=await decBlob(localStorage.getItem(KEY+'ver'));if(tok!==VER_TOKEN)throw 0;}catch(e){lkErr(TX('密码错误','Wrong password'));CK=null;return;}
- PERSIST_KEYS.forEach(function(k){if(k in MEM)localStorage.setItem(KEY+k,JSON.stringify(MEM[k]));});
- ['enc','salt','ver','store'].forEach(function(k){localStorage.removeItem(KEY+k);});
- ENC_ON=false;CK=null;MEM={};hideLock();toast(TX('已关闭密码锁','Lock off'));refreshAll();
-}
-/* 按用户铁律：启动密码锁已禁用——showLock 及相关 setPw 入口为休眠死代码，请勿调用或接入 UI（file:// 下开启会卡死数据）。仅保留以便日后彻底移除。 */
-function showLock(mode){
- var box=$('lock');if(!box)return;var h='';
- if(mode==='unlock'){
-  h+='<div class="lockcard"><div class="lockic">🔒</div><h2>'+TX('外贸一体化平台','FT Loop Workbench')+'</h2><p class="muted">'+TX('已开启加密锁，输入密码解锁本地数据。','Encryption on. Enter password to unlock local data.')+'</p>';
-  h+='<input id="lk_pw" type="password" class="lockin" placeholder="'+TX('启动密码','Password')+'" onkeydown="if(event.key===\'Enter\')doUnlock()">';
-  h+='<button class="btn lockbtn" data-action="unlock">'+TX('解锁','Unlock')+'</button>';
-  h+='<button class="locklink" data-action="lockReset">'+TX('忘记密码？清空数据','Forgot? Wipe data')+'</button></div>';
- }else if(mode==='set'){
-  h+='<div class="lockcard"><div class="lockic">🔐</div><h2>'+TX('设置启动密码锁','Set password lock')+'</h2><p class="muted">'+TX('设置后数据以AES加密存储，设备丢失也不怕。密码无法找回，请牢记。','Data encrypted at rest. Password can’t be recovered — remember it.')+'</p>';
-  h+='<input id="lk_pw" type="password" class="lockin" placeholder="'+TX('新密码（至少4位）','New password (min 4)')+'">';
-  h+='<input id="lk_cf" type="password" class="lockin" placeholder="'+TX('再次输入','Confirm')+'">';
-  h+='<button class="btn lockbtn" data-action="setPw">'+TX('开启加密锁','Turn on')+'</button>';
-  h+='<button class="locklink" data-action="hideLock">'+TX('暂不设置','Later')+'</button></div>';
- }else if(mode==='change'){
-  h+='<div class="lockcard"><div class="lockic">🔑</div><h2>'+TX('修改密码','Change password')+'</h2>';
-  h+='<input id="lk_old" type="password" class="lockin" placeholder="'+TX('原密码','Old password')+'">';
-  h+='<input id="lk_pw" type="password" class="lockin" placeholder="'+TX('新密码','New password')+'">';
-  h+='<input id="lk_cf" type="password" class="lockin" placeholder="'+TX('再次输入','Confirm')+'">';
-  h+='<button class="btn lockbtn" data-action="changePw">'+TX('确认修改','Confirm')+'</button>';
-  h+='<button class="locklink" data-action="hideLock">'+TX('取消','Cancel')+'</button></div>';
- }else if(mode==='close'){
-  h+='<div class="lockcard"><div class="lockic">🔓</div><h2>'+TX('关闭密码锁','Turn off lock')+'</h2><p class="muted">'+TX('关闭后数据改回明文存储。','After off, data stored in plaintext.')+'</p>';
-  h+='<input id="lk_pw" type="password" class="lockin" placeholder="'+TX('输入密码确认','Enter password')+'">';
-  h+='<button class="btn lockbtn danger" data-action="closePw">'+TX('确认关闭','Confirm off')+'</button>';
-  h+='<button class="locklink" data-action="hideLock">'+TX('取消','Cancel')+'</button></div>';
- }
- h+='<div id="lkErr" class="lkerr"></div>';
- box.innerHTML=h;box.style.display='flex';
-}
-function hideLock(){var b=$('lock');if(b){b.style.display='none';b.innerHTML='';}}
-function lkErr(m){var e=$('lkErr');if(e)e.textContent=m;}
-function lockReset(){
- openModal(TX('清空所有数据','Wipe all'),TX('忘记密码只能清空数据重来（不可恢复）。确定？','Forgot password → wipe all data (unrecoverable). Sure?'),function(){
-  for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.indexOf(KEY)===0)localStorage.removeItem(k);}
-  ENC_ON=false;CK=null;MEM={};hideLock();location.reload();
- });
-}
 /* ============ 外贸全套单据（覆盖合同/货运/清关/保险检验/结汇/通知 6 大类，一套应对各种场景） ============ */
 var DOC_FIELDS={
  cnee:{l:'买方 / Consignee'},buyerAddr:{l:'买方地址 Address'},no:{l:'发票/单证号 No.'},contractNo:{l:'合同号 Contract No.'},poNo:{l:'采购单号 PO No.'},
@@ -3845,7 +3756,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v50 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v50, hard-refresh with Ctrl+F5')+'">v50</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v51 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v50, hard-refresh with Ctrl+F5')+'">v51</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4126,12 +4037,6 @@ document.addEventListener('click',function(e){
  else if(a==='importLeads'){importLeads();}
  else if(a==='resetAll'){resetAll();}
  else if(a==='copy'){var t=$(el.dataset.copy);if(t)copyText(t.textContent);}
- else if(a==='unlock'){doUnlock();}
- else if(a==='setPw'){doSetPw();}
- else if(a==='changePw'){doChangePw();}
- else if(a==='closePw'){doClosePw();}
- else if(a==='hideLock'){hideLock();}
- else if(a==='lockReset'){lockReset();}
  else if(a==='libTab'){S._libTab=el.dataset.tab;save('_libTab',S._libTab);var lw=$('libWrap');if(lw)lw.innerHTML=libInner();}
  else if(a==='tplStage'){S._tplStage=el.dataset.stage;var lw2=$('libWrap');if(lw2)lw2.innerHTML=libInner();}
  else if(a==='tplSave'){tplSave(el.dataset.i);}
