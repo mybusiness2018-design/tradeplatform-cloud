@@ -3845,7 +3845,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v48 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v48, hard-refresh with Ctrl+F5')+'">v48</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v49 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v49, hard-refresh with Ctrl+F5')+'">v49</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4048,6 +4048,12 @@ document.addEventListener('click',function(e){
   var box=$('cadOut');if(box&&box.scrollIntoView)box.scrollIntoView({behavior:'smooth',block:'center'});
  }
  else if(a==='docOpen'){docOpen(el.dataset.id);}
+ else if(a==='docIOToggle'){docIOToggle();}
+ else if(a==='docIOTpl'){docIOTemplate();}
+ else if(a==='docIOExp'){docIOExport();}
+ else if(a==='docIOImp'){docIOImport();}
+ else if(a==='dealIOExp'){dealIOExport();}
+ else if(a==='dealIOImp'){dealIOImport();}
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
@@ -4576,10 +4582,11 @@ function viewDocs(){
  h+='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>'+TX('备单进度','Doc readiness')+'</b><span class="tag score">'+done+' / '+total+'</span></div><div style="height:8px;background:var(--line);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:6px"></div></div><div class="hint" style="margin-top:8px">'+TX('核心类 7 张每票必出（发票 / 箱单 / 重量单 / 提单 / 空运单 / 保险单 / 产地证）；其余按交易条件（木包装 / 信用证 / 目的国 / 运输方式）出具。共 27 张，分 6 类。','Core 7 every shipment (Invoice/Packing/Weight/BL/AWB/Insurance/C.O.); rest by condition (wood/LC/dest/transport). 27 docs in 6 groups.')+'</div></div>';
  h+='<div class="card" style="margin-bottom:14px"><div class="grid g3"><select id="dealSel">'+(S.deals||[]).map(function(x){return '<option value="'+x.id+'"'+(x.id===d.id?' selected':'')+'>'+(x.cnee||TX('未命名交易','Untitled'))+'</option>';}).join('')+'</select><button class="btn ghost mini" data-action="dealNew">'+TX('新建交易','New')+'</button><button class="btn ghost mini" data-action="dealEdit">'+TX('编辑交易','Edit')+'</button></div>';
  h+='<div class="muted" style="font-size:12.5px;margin-top:6px">'+(linked?TX('已关联客户','Linked customer')+'：'+esc(linked.name)+'（'+esc(linked.market||'')+'）':'<span style="color:#b45309">'+TX('未关联客户（可在「编辑交易」里关联）','Not linked to a customer (use Edit deal)')+'</span>')+'</div>';
- h+='<div class="muted" style="font-size:12.5px;margin-top:4px">'+(lnk.supplier?TX('已关联供应商','Linked supplier')+'：'+esc(lnk.supplier.name):'<span style="color:#b45309">'+TX('未关联供应商','No supplier linked')+'</span>')+' · '+(lnk.product?TX('已关联产品','Linked product')+'：'+esc(lnk.product.name):'<span style="color:#b45309">'+TX('未关联产品','No product linked')+'</span>')+'</div>';h+='<div class="row" style="margin-top:10px"><button class="btn mini" data-action="docRec">'+TX('AI 智能选单','AI pick docs')+'</button><button class="btn mini" data-action="docCheck">'+TX('AI 一致性校验','AI consistency')+'</button><button class="btn mini ghost" data-action="docDef">'+TX('单证预设','Doc presets')+'</button><button class="btn mini ghost" data-action="docExportAll">'+TX('导出备单清单Excel','Export checklist')+'</button></div>';
+ h+='<div class="muted" style="font-size:12.5px;margin-top:4px">'+(lnk.supplier?TX('已关联供应商','Linked supplier')+'：'+esc(lnk.supplier.name):'<span style="color:#b45309">'+TX('未关联供应商','No supplier linked')+'</span>')+' · '+(lnk.product?TX('已关联产品','Linked product')+'：'+esc(lnk.product.name):'<span style="color:#b45309">'+TX('未关联产品','No product linked')+'</span>')+'</div>';h+='<div class="row" style="margin-top:10px"><button class="btn mini" data-action="docRec">'+TX('AI 智能选单','AI pick docs')+'</button><button class="btn mini" data-action="docCheck">'+TX('AI 一致性校验','AI consistency')+'</button><button class="btn mini ghost" data-action="docDef">'+TX('单证预设','Doc presets')+'</button><button class="btn mini ghost" data-action="docExportAll">'+TX('导出备单清单Excel','Export checklist')+'</button><button class="btn mini ghost" data-action="docIOToggle">'+TX('单证导入/导出','Docs I/O')+'</button></div>';
  if(S._recShow)h+=docRecPanel(d);
  if(S._chkShow)h+=docChkPanel(d);
  if(S._defShow)h+=docDefPanel();
+ if(S._docIO)h+=docIOPanel(d);
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，27 单继承）','Deal shared info (fill once, inherited by all 27)')+'</h3><div class="grid g3">';
  [['cnee',TX('买方/Consignee','Buyer')],['no',TX('发票号/No.','Invoice No.')],['date',TX('日期','Date')],['amt',TX('金额 USD','Amount')],['qty',TX('数量 pcs','Qty')],['pkg',TX('件数 CTNS','Packages')],['gross',TX('毛重 KGS','G.W.')],['net',TX('净重 KGS','N.W.')],['vessel',TX('船名航次','Vessel')],['port',TX('目的港','Port')],['eta',TX('到港 ETA','ETA')],['incoterms',TX('贸易术语','Incoterms')]].forEach(function(p){h+='<label style="font-size:12px">'+p[1]+'<input id="deal_'+p[0]+'" value="'+esc(d[p[0]]||'')+'"></label>';});
  h+='</div><div class="grid g2" style="margin-top:8px"><label style="font-size:12px">'+TX('目的国','Dest country')+'<input id="deal_destCountry" value="'+esc(d.destCountry||'')+'" placeholder="如 UAE / Egypt / 加纳"></label><label style="font-size:12px">'+TX('运输方式','Transport')+'<select id="deal_transport"><option value="sea"'+(d.transport!=='air'?' selected':'')+'>'+TX('海运','Sea')+'</option><option value="air"'+(d.transport==='air'?' selected':'')+'>'+TX('空运','Air')+'</option></select></label></div>';
@@ -4669,6 +4676,328 @@ function docExportAll(){
  dlFile(html,name,'application/vnd.ms-excel');
  toast(TX('已导出备单清单 Excel','Exported checklist'));
 }
+/* ============ 单证 / 交易 数据导入·导出（模块闭环） ============ */
+function docIOToggle(){S._docIO=!S._docIO;refreshAll();}
+function docIOCols(){
+ var use={},out=[];
+ DOC_DEF.forEach(function(x){(x.fields||[]).forEach(function(f){if(DOC_FIELDS[f]!==undefined)use[f]=1;});});
+ Object.keys(DOC_FIELDS).forEach(function(k){if(use[k])out.push(k);});
+ return out;
+}
+function docIOCatLabel(c){
+ var m={contract:'合同报价',core:'核心货运',clearance:'清关',inspection:'保险检验',negotiation:'结汇议付',advice:'通知其他'};
+ return m[c]||c;
+}
+function docIOVal(d,docId,f){
+ if(f==='name')return (S.me&&S.me.name)||'';
+ if(d&&d.docVals&&d.docVals[docId]&&d.docVals[docId][f]!=null&&d.docVals[docId][f]!=='')return d.docVals[docId][f];
+ if(SHARED.indexOf(f)>=0)return (d&&d[f]!=null)?d[f]:'';
+ if(f==='desc'){var _p=extRow(d.productId);return _p?((_p.name||'')+(_p.spec?(' '+_p.spec):'')):'Muslim prayer pillow';}
+ return '';
+}
+function docIOCsv(d,withData){
+ var cols=docIOCols(),lines=[];
+ var head=[TX('单证','Doc'),TX('英文','EN'),TX('分类','Category'),TX('出具方','Issuer'),TX('状态','Status')];
+ cols.forEach(function(k){head.push(DOC_FIELDS[k]?DOC_FIELDS[k].l:k);});
+ lines.push(head.map(csvCell).join(','));
+ DOC_DEF.forEach(function(x){
+  var st=(d&&d.docs&&d.docs[x.id])?d.docs[x.id]:'todo';
+  var row=[x.zh,x.en,docIOCatLabel(x.cat),x.issuer,withData?TX(st==='done'?'已出':'待办',st==='done'?'Done':'To do'):''];
+  cols.forEach(function(k){
+   var v='';
+   if(withData&&(x.fields||[]).indexOf(k)>=0)v=docIOVal(d,x.id,k);
+   row.push(v);
+  });
+  lines.push(row.map(csvCell).join(','));
+ });
+ return '\ufeff'+lines.join('\r\n');
+}
+function docIOTemplate(){
+ dlFile(docIOCsv(null,false),TX('单证表_模板_','Docs_template_')+todayStr()+'.csv','text/csv;charset=utf-8');
+ toast(TX('空白单证模板已生成：填好「状态」与各字段，再点「导入单证表」','Template downloaded — fill status & fields, then Import'));
+}
+function docIOExport(){
+ var d=activeDeal();
+ if(!d){toast(TX('先新建一笔交易再导出','Create a deal first'));return;}
+ var safe=String(d.cnee||'deal').replace(/[\\/:*?"<>|]/g,'');
+ dlFile(docIOCsv(d,true),TX('单证表_','Docs_')+safe+'_'+todayStr()+'.csv','text/csv;charset=utf-8');
+ toast(TX('已导出本票 27 张单证数据，可发给货代/同事填写','Exported 27 docs — send to forwarder/colleague'));
+}
+function docIOStatus(v){
+ var s=extNorm(v);if(!s)return '';
+ if(/^(已出|已完成|完成|齐|已办|是|有|y|yes|done|issued|ok|1|true)$/.test(s))return 'done';
+ if(/已出|已完成|done|issued|completed/.test(s))return 'done';
+ if(/待办|未出|未完成|todo|pending/.test(s))return 'todo';
+ return '';
+}
+function docFindDoc(name,en){
+ var n=extNorm(name),e=extNorm(en),i;
+ if(n){for(i=0;i<DOC_DEF.length;i++){if(extNorm(DOC_DEF[i].zh)===n)return DOC_DEF[i];}}
+ if(n){for(i=0;i<DOC_DEF.length;i++){var z=extNorm(DOC_DEF[i].zh);if(z.length>1&&(z.indexOf(n)>=0||n.indexOf(z)>=0))return DOC_DEF[i];}}
+ if(e){for(i=0;i<DOC_DEF.length;i++){if(extNorm(DOC_DEF[i].en)===e)return DOC_DEF[i];}}
+ if(e){for(i=0;i<DOC_DEF.length;i++){var q=extNorm(DOC_DEF[i].en);if(q.length>3&&(q.indexOf(e)>=0||e.indexOf(q)>=0))return DOC_DEF[i];}}
+ return null;
+}
+function docIOImport(){
+ var f=$('docImpFile');if(!f)return;
+ if(!activeDeal()){toast(TX('先新建一笔交易再导入单证','Create a deal first'));return;}
+ f.value='';f.onchange=docIOFile;f.click();
+}
+function docIOFieldCands(){
+ var keys=Object.keys(DOC_FIELDS),cands={};
+ keys.forEach(function(k){
+  var l=(DOC_FIELDS[k]&&DOC_FIELDS[k].l)||k,arr=[extNorm(l)];
+  l.split('/').forEach(function(x){x=extNorm(x);if(x&&x.length>1)arr.push(x);});
+  l.split(/[(（]/).forEach(function(x){x=extNorm(x);if(x&&x.length>1)arr.push(x);});
+  cands[k]=arr;
+ });
+ return keys.map(function(k){return [k,cands[k]];});
+}
+function docIOFile(e){
+ var file=(e.target.files||[])[0];if(!file)return;
+ var d=activeDeal();if(!d)return;
+ var r=new FileReader();
+ r.onload=function(){
+  var rows=parseCsv(String(r.result||''));
+  if(!rows||rows.length<2){toast(TX('文件为空或只有表头','File is empty or header-only'));return;}
+  var head=rows[0],i,j,t,mi={doc:-1,en:-1,st:-1},used={};
+  for(i=0;i<head.length;i++){
+   var hk=extNorm(head[i]);if(!hk)continue;
+   if(mi.doc<0&&/^(单证|单证名|单据|名称|doc|document|doctype|docname)$/.test(hk)){mi.doc=i;used[i]=1;continue;}
+   if(mi.en<0&&/^(英文|英文名|eng|en|english)$/.test(hk)){mi.en=i;used[i]=1;continue;}
+   if(mi.st<0&&/^(状态|status|state|issued)$/.test(hk)){mi.st=i;used[i]=1;continue;}
+  }
+  if(mi.doc<0&&mi.en<0){toast(TX('未找到「单证」列，请保留表头第一行','No Doc column found; keep the header row'));return;}
+  var defs=docIOFieldCands(),fmap={};
+  for(i=0;i<head.length;i++){
+   if(used[i])continue;var a=extNorm(head[i]);if(!a)continue;
+   for(j=0;j<defs.length;j++){if(fmap[defs[j][0]]!==undefined)continue;
+    if(defs[j][1].indexOf(a)>=0){fmap[defs[j][0]]=i;break;}}
+  }
+  for(i=0;i<head.length;i++){
+   if(used[i])continue;var b=extNorm(head[i]);if(!b||b.length<2)continue;
+   for(j=0;j<defs.length;j++){if(fmap[defs[j][0]]!==undefined)continue;
+    var cs=defs[j][1];
+    for(t=0;t<cs.length;t++){if(cs[t].length>2&&b.indexOf(cs[t])>=0){fmap[defs[j][0]]=i;break;}}}
+  }
+  var list=[],skipped=0,sharedN=0,valN=0;
+  for(i=1;i<rows.length;i++){
+   var rr=rows[i];
+   var nm=(mi.doc>=0?String(rr[mi.doc]==null?'':rr[mi.doc]):'');
+   var ne=(mi.en>=0?String(rr[mi.en]==null?'':rr[mi.en]):'');
+   if(!nm.trim()&&!ne.trim())continue;
+   var dd=docFindDoc(nm,ne);
+   if(!dd){skipped++;continue;}
+   var vals={};
+   for(j=0;j<defs.length;j++){
+    var fk=defs[j][0],ix=fmap[fk];if(ix===undefined)continue;
+    var v=String(rr[ix]==null?'':rr[ix]).trim();
+    if(!v||fk==='name')continue;
+   if(SHARED.indexOf(fk)<0&&(dd.fields||[]).indexOf(fk)<0)continue;
+    vals[fk]=v;
+    if(SHARED.indexOf(fk)>=0)sharedN++;else valN++;
+   }
+   list.push({id:dd.id,status:(mi.st>=0?docIOStatus(rr[mi.st]):''),vals:vals});
+  }
+  if(!list.length){toast(TX('未识别到任何单证，请检查「单证」列名称','No docs recognized — check the Doc column'));return;}
+  S._docImp={dealId:d.id,list:list};
+  var msg=TX('识别到 ','Parsed ')+list.length+TX(' 张单证',' docs')+(skipped?TX('（另有 ',' (')+skipped+TX(' 行未匹配单证名，将跳过）',', rows unmatched, skipped)'):'')
+   +TX('：回填 ',' : writes ')+sharedN+TX(' 个共享字段（写入交易层）与 ',' shared fields (deal level) and ')+valN+TX(' 个单证专属字段。',' doc-specific fields. ')
+   +TX('仅非空值覆盖，不会清空已有内容。将应用到交易「','Only non-empty values overwrite. Applies to deal "')+String(d.cnee||TX('未命名','Untitled'))+TX('」。','".');
+  openModal(TX('确认导入单证数据','Confirm doc import'),msg,function(){docIODo();});
+ };
+ r.readAsText(file);
+}
+function docIODo(){
+ var imp=S._docImp||{dealId:'',list:[]},i,j,k;
+ var d=null;
+ for(j=0;j<(S.deals||[]).length;j++){if(S.deals[j].id===imp.dealId){d=S.deals[j];break;}}
+ if(!d){toast(TX('目标交易不存在','Target deal not found'));return;}
+ if(!d.docs)d.docs={};
+ if(!d.docVals)d.docVals={};
+ var n=0,stN=0;
+ for(i=0;i<(imp.list||[]).length;i++){
+  var x=imp.list[i],dd=null;
+  for(j=0;j<DOC_DEF.length;j++){if(DOC_DEF[j].id===x.id){dd=DOC_DEF[j];break;}}
+  if(!dd)continue;
+  if(x.status){d.docs[dd.id]=x.status;stN++;}
+  if(!d.docVals[dd.id])d.docVals[dd.id]={};
+  for(k in x.vals){
+   if(k==='name')continue;
+   if(SHARED.indexOf(k)<0&&(dd.fields||[]).indexOf(k)<0)continue;
+   if(SHARED.indexOf(k)>=0){if(/^(amt|qty|pkg|gross|net)$/.test(k)){var _n=parseFloat(String(x.vals[k]).replace(/[^\d.\-]/g,''));d[k]=isNaN(_n)?x.vals[k]:_n;}else d[k]=x.vals[k];}
+   else d.docVals[dd.id][k]=x.vals[k];
+   n++;
+  }
+ }
+ save('deals',S.deals);S._docImp=null;refreshAll();
+ toast(TX('已导入：回填 ','Imported: ')+n+TX(' 个字段、',' fields, ')+stN+TX(' 个状态',' status'));
+}
+function dealIOHead(){
+ return [TX('买方/Consignee','Buyer'),TX('发票号','Invoice No.'),TX('日期','Date'),TX('金额USD','Amount'),TX('数量','Qty'),TX('件数','Packages'),TX('毛重KGS','G.W.'),TX('净重KGS','N.W.'),TX('船名航次','Vessel'),TX('目的港','Port'),TX('到港ETA','ETA'),TX('贸易术语','Incoterms'),TX('运输方式','Transport'),TX('目的国','Dest country'),TX('木包装','Wood packing'),TX('信用证','L/C'),TX('供应商','Supplier'),TX('产品','Product'),TX('关联客户','Client'),TX('单证完成','Docs done')];
+}
+function dealIOExport(){
+ if(!(S.deals||[]).length){toast(TX('暂无交易可导出','No deals to export'));return;}
+ var lines=[dealIOHead().map(csvCell).join(',')];
+ (S.deals||[]).forEach(function(d){
+  var dn=DOC_DEF.filter(function(x){return d.docs&&d.docs[x.id]==='done';}).length;
+  var lk=dealLinked(d),ld=(S.leads||[]).filter(function(x){return x.id===d.leadId;})[0];
+  lines.push([d.cnee,d.no,d.date,d.amt,d.qty,d.pkg,d.gross,d.net,d.vessel,d.port,d.eta,d.incoterms,
+   (d.transport==='air')?TX('空运','Air'):TX('海运','Sea'),
+   d.destCountry,(d.woodPkg?TX('是','Yes'):TX('否','No')),(d.lc?TX('是','Yes'):TX('否','No')),
+   (lk.supplier?(lk.supplier.name||''):''),(lk.product?(lk.product.name||''):''),(ld?(ld.name||''):''),
+   dn+'/'+DOC_DEF.length].map(csvCell).join(','));
+ });
+ dlFile('\ufeff'+lines.join('\r\n'),TX('交易表_','Deals_')+todayStr()+'.csv','text/csv;charset=utf-8');
+ toast(TX('已导出 '+(S.deals||[]).length+' 笔交易，可批量编辑后导回','Exported '+(S.deals||[]).length+' deals'));
+}
+function dealIOImport(){var f=$('dealImpFile');if(!f)return;f.value='';f.onchange=dealIOFile;f.click();}
+function dealIONum(v){
+ var s=String(v==null?'':v).replace(/[^\d.\-]/g,'');
+ if(s==='')return null;
+ var n=parseFloat(s);
+ return isNaN(n)?null:n;
+}
+function dealIOBool(v){
+ var s=extNorm(v);if(!s)return false;
+ if(/^(否|无|不|n|no|false|0)$/.test(s))return false;
+ return /^(是|有|对|y|yes|true|1)$/.test(s)||/是|yes|true/.test(s);
+}
+function dealIOCells(arr){
+ var out=[];
+ arr.forEach(function(c){
+  for(var t=0;t<c[1].length;t++){var s=extNorm(c[1][t]);if(s&&out.indexOf(s)<0)out.push(s);}
+ });
+ return out;
+}
+function dealIOFile(e){
+ var file=(e.target.files||[])[0];if(!file)return;
+ var r=new FileReader();
+ r.onload=function(){
+  var rows=parseCsv(String(r.result||''));
+  if(!rows||rows.length<2){toast(TX('文件为空或只有表头','File is empty or header-only'));return;}
+  var head=rows[0],i,j,t,k,m={},used={};
+  var defs=[
+   ['cnee',['买方/Consignee','买方','收货人','consignee','buyer']],
+   ['no',['发票号','单证号','发票','Invoice No.','invoiceno','no','invoice']],
+   ['date',['日期','date']],
+   ['amt',['金额USD','金额','Amount','amount','amt','usd']],
+   ['qty',['数量','Qty','qty','quantity']],
+   ['pkg',['件数','Packages','pkg','ctns','cartons','packages']],
+   ['gross',['毛重KGS','毛重','G.W.','gw','gross']],
+   ['net',['净重KGS','净重','N.W.','nw','net']],
+   ['vessel',['船名航次','船名','Vessel','vessel','voyage']],
+   ['port',['目的港','Port','port','pod']],
+   ['eta',['到港ETA','到港','ETA','eta']],
+   ['incoterms',['贸易术语','术语','Incoterms','incoterms']],
+   ['transport',['运输方式','运输','Transport','transport','shipping']],
+   ['destCountry',['目的国','Dest country','destcountry','country','dest']],
+   ['woodPkg',['木包装','Wood packing','woodpacking','wood','fumigation']],
+   ['lc',['信用证','L/C','lc','letterofcredit']],
+   ['_supplier',['供应商','Supplier','supplier','vendor']],
+   ['_product',['产品','Product','product','item']],
+   ['_client',['关联客户','客户名','Client','client','lead']]
+  ];
+  for(i=0;i<head.length;i++){
+   k=extNorm(head[i]);if(!k)continue;
+   for(j=0;j<defs.length;j++){
+    if(m[defs[j][0]]!==undefined)continue;
+    if(dealIOCells([defs[j]]).indexOf(k)>=0){m[defs[j][0]]=i;used[i]=1;break;}
+   }
+  }
+  for(i=0;i<head.length;i++){
+   if(used[i])continue;var b2=extNorm(head[i]);if(!b2||b2.length<3)continue;
+   for(j=0;j<defs.length;j++){
+    if(m[defs[j][0]]!==undefined)continue;
+    var cs=dealIOCells([defs[j]]);
+    for(t=0;t<cs.length;t++){if(cs[t].length>3&&b2.indexOf(cs[t])>=0){m[defs[j][0]]=i;used[i]=1;break;}}
+    if(m[defs[j][0]]!==undefined)break;
+   }
+  }
+  if(m.cnee===undefined&&m.no===undefined){toast(TX('未找到「买方」或「发票号」列，请保留表头','Need a Buyer or Invoice No. column'));return;}
+  var cell=function(rr,key){var ix=m[key];return ix===undefined?'':String(rr[ix]==null?'':rr[ix]).trim();};
+  var list=[],add=0,upd=0;
+  for(i=1;i<rows.length;i++){
+   var rr=rows[i];
+   if(!cell(rr,'cnee')&&!cell(rr,'no'))continue;
+   var hit=null;
+   for(j=0;j<(S.deals||[]).length;j++){
+    var dd0=S.deals[j];
+    if(cell(rr,'no')&&String(dd0.no||'').trim()===cell(rr,'no')){hit=dd0;break;}
+    if(!cell(rr,'no')&&String(dd0.cnee||'').trim()===cell(rr,'cnee')&&String(dd0.date||'')===cell(rr,'date')){hit=dd0;break;}
+   }
+   var o={};
+   ['cnee','no','date','incoterms','vessel','port','eta','destCountry'].forEach(function(key){var v=cell(rr,key);if(v)o[key]=v;});
+   ['amt','qty','pkg','gross','net'].forEach(function(key){var v=dealIONum(cell(rr,key));if(v!==null)o[key]=v;});
+   var tr=cell(rr,'transport');if(tr)o.transport=/空运|air/i.test(tr)?'air':'sea';
+   ['woodPkg','lc'].forEach(function(key){var v=cell(rr,key);if(v)o[key]=dealIOBool(v);});
+   o._supplier=cell(rr,'_supplier');o._product=cell(rr,'_product');o._client=cell(rr,'_client');
+   if(hit)upd++;else add++;
+   list.push(o);
+  }
+  if(!list.length){toast(TX('没有可导入的交易行','No deal rows found'));return;}
+  S._dealImp=list;
+  openModal(TX('确认导入交易','Confirm deal import'),
+   TX('共 ','Parsed ')+list.length+TX(' 行：新增 ',' rows — new ')+add+TX(' 笔，更新 ',' , update ')+upd+TX(' 笔。按「发票号」匹配（无发票号则按买方+日期）；只覆盖非空字段。供应商/产品/客户按名称自动关联。',' . Matched by invoice no. (else buyer+date); only non-empty overwrites; supplier/product/client auto-linked by name.'),
+   function(){dealIODo();});
+ };
+ r.readAsText(file);
+}
+function dealIODo(){
+ var list=S._dealImp||[],i,j,add=0,upd=0,supId,prdId,leadId;
+ for(i=0;i<list.length;i++){
+  var o=list[i],hit=null;
+  for(j=0;j<(S.deals||[]).length;j++){
+   var dd0=S.deals[j];
+   if(o.no&&String(dd0.no||'').trim()===o.no){hit=dd0;break;}
+   if(!o.no&&String(dd0.cnee||'').trim()===String(o.cnee||'')&&String(dd0.date||'')===String(o.date||'')){hit=dd0;break;}
+  }
+  supId='';prdId='';leadId='';
+  if(o._supplier){for(j=0;j<(S.ext||[]).length;j++){var e0=S.ext[j];if(e0.type==='supplier'&&String(e0.name||'').trim()===o._supplier){supId=e0.id;break;}}}
+  if(o._product){for(j=0;j<(S.ext||[]).length;j++){var e1=S.ext[j];if(e1.type==='product'&&String(e1.name||'').trim()===o._product){prdId=e1.id;break;}}}
+  var cname=o._client||o.cnee;
+  if(cname){for(j=0;j<(S.leads||[]).length;j++){if(String(S.leads[j].name||'').trim()===cname){leadId=S.leads[j].id;break;}}}
+  if(hit){
+   ['cnee','no','date','incoterms','vessel','port','eta','destCountry','amt','qty','pkg','gross','net','transport'].forEach(function(k2){if(o[k2]!==undefined&&o[k2]!=='')hit[k2]=o[k2];});
+   if(o.woodPkg!==undefined)hit.woodPkg=o.woodPkg;
+   if(o.lc!==undefined)hit.lc=o.lc;
+   if(supId)hit.supplierId=supId;
+   if(prdId)hit.productId=prdId;
+   if(leadId)hit.leadId=leadId;
+   upd++;
+  } else {
+   var nd={id:uid(),leadId:leadId,cnee:o.cnee||'',no:o.no||('INV-'+new Date().getFullYear()+'-'+String((S.deals||[]).length+1)),date:o.date||todayStr(),amt:o.amt||0,qty:o.qty||0,pkg:o.pkg||0,gross:o.gross||0,net:o.net||0,vessel:o.vessel||'',port:o.port||'',eta:o.eta||'',incoterms:o.incoterms||'FOB',transport:o.transport||'sea',woodPkg:!!o.woodPkg,lc:!!o.lc,destCountry:o.destCountry||'',supplierId:supId,productId:prdId,docs:{},docVals:{}};
+   DOC_DEF.forEach(function(x){nd.docs[x.id]='todo';});
+   if(!S.deals)S.deals=[];
+   S.deals.unshift(nd);add++;
+  }
+ }
+ save('deals',S.deals);S._dealImp=null;refreshAll();
+ toast(TX('已导入交易：新增 ','Imported — new ')+add+TX(' 笔，更新 ',' , updated ')+upd+TX(' 笔',''));
+}
+function docIOPanel(d){
+ var cols=docIOCols().length,nd=(S.deals||[]).length;
+ var h='<div class="card" style="margin:10px 0;background:#f8fafc;border:1px solid var(--line)">';
+ h+='<h4 style="margin:0 0 6px">'+TX('单证数据导入 / 导出（模块闭环）','Doc data import / export (module loop)')+'</h4>';
+ h+='<div class="muted" style="font-size:12.5px">'+TX('把本票 27 张单证导出成表格，发给货代 / 报关行 / 同事填写或确认，再导回来自动回填，不用逐张手敲；也可把多笔交易导出批量编辑。数据只在你本机浏览器，不上传服务器。','Export the 27 docs of this deal to a sheet for your forwarder, broker or colleague to fill, then import back to auto-fill. Batch-edit deals the same way. Data stays in your browser.')+'</div>';
+ h+='<div style="margin-top:11px"><b style="font-size:13px">'+TX('① 本票单证表','1. Doc sheet of this deal')+'</b> <span class="muted" style="font-size:12px">'+TX('27 张 × '+cols+' 个字段列','27 docs × '+cols+' fields')+'</span>';
+ h+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px">';
+ h+='<button class="btn mini" data-action="docIOTpl" style="background:var(--main);color:#fff;border-color:var(--main)">'+TX('下载空白模板','Blank template')+'</button>';
+ h+='<button class="btn mini ghost" data-action="docIOExp">'+TX('导出本票单证','Export this deal')+'</button>';
+ h+='<button class="btn mini ghost" data-action="docIOImp">'+TX('导入单证表','Import sheet')+'</button>';
+ h+='</div></div>';
+ h+='<div style="margin-top:11px"><b style="font-size:13px">'+TX('② 交易表（多票批量）','2. Deal sheet (batch)')+'</b> <span class="muted" style="font-size:12px">'+TX('当前 '+nd+' 笔','now '+nd)+'</span>';
+ h+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px">';
+ h+='<button class="btn mini ghost" data-action="dealIOExp">'+TX('导出交易表','Export deals')+'</button>';
+ h+='<button class="btn mini ghost" data-action="dealIOImp">'+TX('导入交易表','Import deals')+'</button>';
+ h+='</div></div>';
+ h+='<div class="hint" style="margin-top:11px">'+TX('导入规则：单证表按「单证」列匹配，状态填「已出 / 待办」；共享字段（买方·发票号·日期·金额·数量·件数·毛重·净重·船名·目的港·ETA）写回交易层，其余写回该张单证。交易表按「发票号」匹配（无则买方+日期），供应商/产品/客户按名称自动关联。两者都只覆盖非空值，不会清空已有内容。','Rules: doc sheet matches by the Doc column, status = issued/todo; shared fields write back to deal level, the rest to that doc. Deal sheet matches by invoice no. (else buyer+date); supplier/product/client auto-linked by name. Only non-empty values overwrite.')+'</div>';
+ h+='<input type="file" id="docImpFile" accept=".csv,text/csv" style="display:none">';
+ h+='<input type="file" id="dealImpFile" accept=".csv,text/csv" style="display:none">';
+ h+='</div>';
+ return h;
+}
+
 function docPrint(){
  if(!S._docTpl){toast(TX('请先生成单证草稿','Generate draft first'));return;}
  var w=window.open('','_blank');
