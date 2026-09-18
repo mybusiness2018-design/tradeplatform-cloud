@@ -577,6 +577,7 @@ async function doUnlock(){
  if(storeStr){try{var blob=await decBlob(storeStr);for(var k in blob)MEM[k]=blob[k];}catch(e){lkErr(TX('解密失败，数据可能损坏','Decrypt failed'));CK=null;return;}}
  ENC_ON=true;hideLock();buildState();unlocked();
 }
+/* 按用户铁律：启动密码锁已禁用——doSetPw 为休眠死代码，请勿调用。 */
 async function doSetPw(){
  var pw=($('lk_pw')?$('lk_pw').value:''),cf=($('lk_cf')?$('lk_cf').value:'');
  if(!pw||pw.length<4){lkErr(TX('密码至少4位','Min 4 chars'));return;}
@@ -615,6 +616,7 @@ async function doClosePw(){
  ['enc','salt','ver','store'].forEach(function(k){localStorage.removeItem(KEY+k);});
  ENC_ON=false;CK=null;MEM={};hideLock();toast(TX('已关闭密码锁','Lock off'));refreshAll();
 }
+/* 按用户铁律：启动密码锁已禁用——showLock 及相关 setPw 入口为休眠死代码，请勿调用或接入 UI（file:// 下开启会卡死数据）。仅保留以便日后彻底移除。 */
 function showLock(mode){
  var box=$('lock');if(!box)return;var h='';
  if(mode==='unlock'){
@@ -1546,7 +1548,7 @@ function cpGrabBox(){
  h+='</div>';
  if(S._cpMode==='url'){
   h+='<input id="cp_url" placeholder="'+TX('粘贴竞品页/搜索页网址（http开头）','Paste product or search page URL')+'" value="'+esc(S._cpUrl||'')+'">';
-  h+='<div class="row" style="margin-top:6px"><button class="btn" data-action="cpGrab">'+TX('抓取','Grab')+'</button></div>';
+  h+='<div class="row" style="margin-top:6px"><button class="btn" data-action="cpGrab">'+TX('抓取（需联网，常不通）','Grab (needs internet, often fails)')+'</button></div>';
   h+='<div class="hint">'+TX('经公共代理读取页面。实测：阿里/亚马逊等反爬强、代理也会限流，成功率不稳定；抓不到请直接用「粘贴解析」。','Reads via a public proxy. In practice anti-bot sites and proxy rate limits make this unreliable - use Paste if it fails.')+'</div>';
  }else if(S._cpMode==='paste'){
   h+='<textarea id="cp_txt" rows="4" placeholder="'+TX('在竞品页面按 Ctrl+A 全选 → 复制 → 粘贴到这里','On the competitor page: Ctrl+A, copy, paste here')+'" style="width:100%;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:8px"></textarea>';
@@ -3843,7 +3845,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v47 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v47, hard-refresh with Ctrl+F5')+'">v47</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v48 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v48, hard-refresh with Ctrl+F5')+'">v48</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4124,7 +4126,7 @@ document.addEventListener('click',function(e){
  else if(a==='closePw'){doClosePw();}
  else if(a==='hideLock'){hideLock();}
  else if(a==='lockReset'){lockReset();}
- else if(a==='libTab'){S._libTab=el.dataset.tab;var lw=$('libWrap');if(lw)lw.innerHTML=libInner();}
+ else if(a==='libTab'){S._libTab=el.dataset.tab;save('_libTab',S._libTab);var lw=$('libWrap');if(lw)lw.innerHTML=libInner();}
  else if(a==='tplStage'){S._tplStage=el.dataset.stage;var lw2=$('libWrap');if(lw2)lw2.innerHTML=libInner();}
  else if(a==='tplSave'){tplSave(el.dataset.i);}
  else if(a==='libDel'){libDel(el.dataset.id);}
