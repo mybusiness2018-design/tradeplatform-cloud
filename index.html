@@ -1757,7 +1757,7 @@ function custJump(where,id,mkt){
   S.view='docs';save('view',S.view);S._activeClient='';refreshAll();return;
  }
  if(where==='today'){S.view='home';save('view',S.view);S._activeClient='';refreshAll();return;}
- if(where==='recon'){S.view='find';save('view',S.view);S._activeClient=id||'';refreshAll();return;}
+ if(where==='recon'){S.view='find';save('view',S.view);S._activeClient=id||'';S._reconLead=id||'';save('_reconLead',S._reconLead);refreshAll();return;}
  // 场景类模块锁定该客户，便于生成"针对此人"的话术
  var sceneMods=['reach','trust','deal','deliver','repeat'];
  if(sceneMods.indexOf(where)>=0){S._activeClient=id||'';}
@@ -3761,7 +3761,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v55 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v55</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v56 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v56</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -3933,6 +3933,8 @@ document.addEventListener('click',function(e){
  else if(a==='reconFollow'){reconFollow();}
  else if(a==='reconReset'){reconReset();}
  else if(a==='reconTask'){reconTask();}
+ else if(a==='reconExp'){reconExp();}
+ else if(a==='reconAuto'){reconAuto();}
  else if(a==='hotGo'){hotGo(el.dataset.p,el.dataset.k);}
  else if(a==='hotFav'){hotFavToggle(el.dataset.k);}
  else if(a==='hotExport'){hotExport();}
@@ -4204,7 +4206,7 @@ function fcSection(){
  return h;
 }
 
-/* ============ 找客户：AI 客户背调（开发前调查 → 转跟进） ============ */
+/* ============ 找客户：客户背调 2.0（查 → 填 → 判 → 跟 全流程） ============ */
 var RECON_DIMS=[
  ['web','官网 / 公司简介','Website',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('"'+n+'" '+c+' official site');}],
  ['li','LinkedIn / 决策人','LinkedIn',function(n,c,p){return 'https://www.google.com/search?q='+encodeURIComponent('site:linkedin.com '+n+' '+c);}],
@@ -4219,6 +4221,38 @@ function reconDimUrl(k,n,c,p){
  for(var i=0;i<RECON_DIMS.length;i++){ if(RECON_DIMS[i][0]===k) return RECON_DIMS[i][3](n||'',c||'',p||''); }
  return '';
 }
+function reconDimName(k){
+ for(var i=0;i<RECON_DIMS.length;i++){ if(RECON_DIMS[i][0]===k) return RECON_DIMS[i][1]; }
+ return k;
+}
+/* 六个必查项：背调的「实质内容」，每一项都对应一次真实调查动作 */
+var RECON_CHECKS=[
+ {k:'entity',zh:'公司实体',en:'Legal entity',src:'web',
+  q:'这家公司真实存在吗？（全称 / 官网 / 注册地址）',
+  hint:'查官网、公司注册库、地图地址是否对得上',
+  opts:['待查','已核实：查到官网 / 注册 / 实体地址','查不到实体信息']},
+ {k:'biz',zh:'经营实质',en:'Core business',src:'soc',
+  q:'他到底在卖什么？做多久、多大规模？',
+  hint:'看官网 / 社媒 / 店铺页的真实货架，不看自我介绍',
+  opts:['待查','已核实：主营品类 + 规模 / 年限','查不到他在卖什么']},
+ {k:'buy',zh:'采购证据',en:'Buying evidence',src:'trade',
+  q:'有他进口 / 采购我这个品类的证据吗？',
+  hint:'进出口数据、招采购岗、展会名录——最硬的信号',
+  opts:['待查','有：进口记录 / 招采购 / 展会名录','没有该品类的采购证据']},
+ {k:'dm',zh:'决策人',en:'Decision maker',src:'li',
+  q:'谁拍板？姓名、职位、怎么触达？',
+  hint:'LinkedIn 搜公司名 + 采购 / 创始人 / owner',
+  opts:['待查','已锁定：姓名 + 职位 + 联系路径','找不到决策人']},
+ {k:'credit',zh:'信用风险',en:'Credit & reputation',src:'rev',
+  q:'有没有投诉、纠纷、诉讼、黑名单？',
+  hint:'新闻、口碑、投诉站、法院公告；查无记录≠可靠，仍要交叉验证',
+  opts:['待查','未发现负面记录','发现负面 / 纠纷 / 诉讼']},
+ {k:'comply',zh:'合规门槛',en:'Compliance',src:'news',
+  q:'要什么认证 / 准入？我方现在能满足吗？',
+  hint:'Halal / CE / FDA 等，先确认再答应，别先承诺后找证书',
+  opts:['待查','要求明确，且我方满足','有门槛 / 我方暂时满足不了']}
+];
+var RECON_EV_W={entity:{ok:10,bad:-18},biz:{ok:8,bad:-8},buy:{ok:12,bad:-6},dm:{ok:7,bad:-3},credit:{ok:8,bad:-16},comply:{ok:5,bad:-5}};
 var RECON_QS=[
  {k:'size',zh:'公司规模',en:'Size',opts:['未知','1-10人','11-50人','51-200人','200人以上']},
  {k:'role',zh:'对接人角色',en:'Contact role',opts:['未知','老板/决策人','采购经理','业务/中间商']},
@@ -4249,12 +4283,43 @@ function reconMarket(l){
  return '混合';
 }
 function reconAnswers(l){ return (l&&l.recon&&l.recon.answers)||{}; }
+function reconEv(l){ return (l&&l.recon&&l.recon.ev)||{}; }
+function reconEvNote(l){ return (l&&l.recon&&l.recon.evnote)||{}; }
+function reconEvCode(l,k){ var v=reconEv(l)[k]; return (v==='ok'||v==='bad')?v:'todo'; }
+function reconCoverage(l){
+ var done=0,ok=0,bad=0,miss=[];
+ RECON_CHECKS.forEach(function(c){
+  var v=reconEvCode(l,c.k);
+  if(v==='todo'){ miss.push(c); } else { done++; if(v==='ok') ok++; else bad++; }
+ });
+ var total=RECON_CHECKS.length;
+ return {done:done,ok:ok,bad:bad,miss:miss,total:total,pct:Math.round(done/total*100)};
+}
+function reconEvLabel(c,v){
+ if(v==='ok') return c.opts[1];
+ if(v==='bad') return c.opts[2];
+ return c.opts[0];
+}
+function reconEvMark(v){ return v==='ok'?'\u2713':(v==='bad'?'\u2717':'\u25cb'); }
+function reconChip(t,k){
+ var bg='#f1f5f9',fg='#475569',bd='#e2e8f0';
+ if(k==='ok'){bg='#f0fdf4';fg='#15803d';bd='#bbf7d0';}
+ else if(k==='bad'){bg='#fef2f2';fg='#dc2626';bd='#fecaca';}
+ else if(k==='info'){bg='#eff6ff';fg='#185FA5';bd='#bfdbfe';}
+ return '<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:'+bg+';color:'+fg+';border:1px solid '+bd+';margin:2px 4px 0 0">'+esc(t)+'</span>';
+}
 function reconBuild(l){
  l=l||{};
  var a=reconAnswers(l);
  var mkt=reconMarket(l);
+ var cov=reconCoverage(l);
  var fit=40, why=[];
  function add(n,r){ fit+=n; why.push([n,r]); }
+ RECON_CHECKS.forEach(function(c){
+  var v=reconEvCode(l,c.k); var w=RECON_EV_W[c.k]; if(!w) return;
+  if(v==='ok'){ fit+=w.ok; why.push([w.ok,c.zh+TX(' · 已核实',' · verified')]); }
+  else if(v==='bad'){ fit+=w.bad; why.push([w.bad,c.zh+TX(' · 有问题',' · problem')]); }
+ });
  if(a.fit==='高度匹配')add(12,TX('品类高度匹配','category fits well'));
  else if(a.fit==='部分匹配')add(6,TX('品类部分匹配','partial fit'));
  else if(a.fit==='不匹配')add(-12,TX('品类不匹配','category mismatch'));
@@ -4279,14 +4344,18 @@ function reconBuild(l){
  fit=Math.max(0,Math.min(100,fit));
  var risks=[];
  var em=String(l.email||'').toLowerCase();
+ if(reconEvCode(l,'entity')==='bad') risks.push({lv:'h',t:TX('查不到公司实体（官网 / 注册 / 地址都对不上）——这类客户只做 100% 前 T/T，不做账期。','No verifiable entity — cash-in-advance only.')});
+ if(reconEvCode(l,'credit')==='bad') risks.push({lv:'h',t:TX('查到负面记录（投诉 / 纠纷 / 诉讼）——先让对方提供过往清关与付款证明，再谈合作。','Negative records found — ask for clearance & payment proof first.')});
+ if(reconEvCode(l,'comply')==='bad') risks.push({lv:'m',t:TX('认证门槛我方暂时满足不了——先解决认证再报价，别先答应。','Compliance gap — fix certification before quoting.')});
+ if(reconEvCode(l,'buy')==='bad') risks.push({lv:'m',t:TX('查不到采购该品类的证据——可能不是买家，先确认需求再投入。','No buying evidence — confirm the need before investing.')});
  if(em&&/@(gmail|yahoo|hotmail|outlook|163|qq|126|foxmail|sina|mail)\./.test(em))
-  risks.push(TX('用的是个人邮箱域名（非企业域名）——不等于不可靠，但必须交叉验证公司实体与官网。','Personal email domain — verify the company entity.'));
- if(!em&&!l.wa) risks.push(TX('还没有任何联系方式——先补齐邮箱 / WhatsApp，否则背调无从下手。','No contact yet — add email/WhatsApp first.'));
- else if(!em) risks.push(TX('只有手机号 / WhatsApp，没有邮箱——正规公司通常有企业邮箱。','Phone only, no corporate mailbox.'));
- if(a.risk&&a.risk!=='未见异常') risks.push(TX('你标记了风险信号（只问价 / 无官网 / 要赊账等）：首单务必收定金 + 第三方验货 + 不垫资。','Risk flagged: deposit + third-party inspection on first order.'));
- if(a.pay==='要求赊账') risks.push(TX('对方要求赊账：除非上了信用保险，否则坚决先款后货（≥30% 定金）。','Credit request: insist on deposit.'));
- if(a.cert==='需要（Halal / CE / FDA）') risks.push(TX('对方要认证：先确认我方 / 工厂能否提供，别先答应再找证书。','Confirm certificates before promising.'));
- if(!l.country) risks.push(TX('没填国家——补上后才能判断市场规则、节期与合规要求。','Fill the country to judge market rules.'));
+  risks.push({lv:'m',t:TX('用的是个人邮箱域名（非企业域名）——不等于不可靠，但必须交叉验证公司实体与官网。','Personal email domain — cross-verify the company.')});
+ if(!em&&!l.wa) risks.push({lv:'h',t:TX('还没有任何联系方式——先补齐邮箱 / WhatsApp，否则背调无从下手。','No contact yet — add email/WhatsApp first.')});
+ else if(!em) risks.push({lv:'m',t:TX('只有手机号 / WhatsApp，没有邮箱——正规公司通常有企业邮箱。','Phone only, no corporate mailbox.')});
+ if(a.risk&&a.risk!=='未见异常') risks.push({lv:'m',t:TX('你标记了风险信号（只问价 / 无官网 / 要赊账等）：首单务必收定金 + 第三方验货 + 不垫资。','Risk flagged: deposit + third-party inspection.')});
+ if(a.pay==='要求赊账') risks.push({lv:'h',t:TX('对方要求赊账：除非上了信用保险，否则坚决先款后货（≥30% 定金）。','Credit request: insist on deposit.')});
+ if(!l.country) risks.push({lv:'m',t:TX('没填国家——补上后才能判断市场规则、节期与合规要求。','Fill the country to judge market rules.')});
+ if(!risks.length) risks.push({lv:'m',t:TX('暂未发现明显风险——仍建议首单收定金 + 第三方验货，别跳过流程。','No obvious risk — still take a deposit and third-party inspection.')});
  var angles=[];
  if(mkt==='中东'){
   angles.push(TX('斋月 / 开斋节备货节奏：提前 2-3 个月锁产能，用节期做正当跟进理由。',''));
@@ -4308,6 +4377,7 @@ function reconBuild(l){
  if(l.stage==='待开发'||!l.stage) angles.push(TX('先做 2-3 次轻触达（WhatsApp / 邮件），别第一封就报报价单。',''));
  else if(l.stage==='报价') angles.push(TX('报价后 48 小时内必须跟进一次，带截止日 + 理由。',''));
  else if(l.stage==='试样') angles.push(TX('样品签收当天就追问测试结果，别等。',''));
+ else if(l.stage==='成交') angles.push(TX('已成交：把背调转成「账期额度 + 返单节奏 + 转介绍钩子」。',''));
  var taboos=[];
  if(mkt==='中东'){
   taboos.push(TX('别在周五 / 礼拜时间打电话或催单。',''));
@@ -4317,69 +4387,102 @@ function reconBuild(l){
  if(mkt==='东南亚') taboos.push(TX('别忽视 Halal 认证，也别用高压逼单。',''));
  if(mkt==='非洲') taboos.push(TX('别承诺做不到的交期——一次失信就没下一次。',''));
  taboos.push(TX('别群发同一套文案、别编造公司规模与交期。',''));
- var verdict = fit>=75?TX('优先跟进：值得投入打样、电话与视频看厂。','High priority: invest in sample, call and factory video.')
-  : (fit>=50?TX('正常跟进：先补齐问诊表空项，再决定投入多少。','Normal: fill the gaps, then decide investment.')
-  : TX('低优先级：放养，用轻触达保持存在感，先别投打样成本。','Low priority: keep light-touch, no sample cost yet.'));
- var nxt='';
- if(!l.email&&!l.wa) nxt=TX('第一步不是发话术，是补齐联系方式（邮箱优先）。','First: get contact info.');
- else if(l.stage==='待开发'||!l.stage) nxt=TX('先用 8 个信息源查 20 分钟 → 填问诊表 → 发一条"背调式"首触（点出你查到的具体事实）。','Run the 8 sources for 20 min, fill the form, then send a research-based opener.');
- else if(l.stage==='已联系'||l.stage==='已回复') nxt=TX('趁热度给具体价值：目录 + 样品 + 明确 MOQ / 交期，把对方推到试样。','Send catalog + sample with clear MOQ/lead time.');
- else if(l.stage==='试样') nxt=TX('盯样品质检与反馈，主动给第三方验货或视频看厂，把信任推到报价。','Chase the sample feedback, offer QC video, move to quote.');
- else if(l.stage==='报价') nxt=TX('48 小时内跟进报价，给截止日 + 原料 / 节期理由，逼出决策。','Follow up within 48h with a deadline and a reason.');
- else if(l.stage==='成交') nxt=TX('转交付履约：确认单证与船期，同时埋下返单 / 转介绍钩子。','Move to delivery, plant the reorder/referral hook.');
- else nxt=TX('先补齐客户资料，再决定下一步。','Fill the profile first.');
- return {fit:fit,why:why,risks:risks,angles:angles,taboos:taboos,verdict:verdict,next:nxt,market:mkt,answers:a};
+ var r={fit:fit,why:why,risks:risks,angles:angles,taboos:taboos,market:mkt,answers:a,cov:cov};
+ r.verdictInfo=reconVerdict(l,r);
+ r.next=reconNext(l,r);
+ return r;
+}
+function reconVerdict(l,r){
+ l=l||{}; r=r||{};
+ var cov=r.cov||reconCoverage(l);
+ var fit=(typeof r.fit==='number')?r.fit:35;
+ var stage=String(l.stage||'待开发');
+ var isWon=(stage==='成交'), isQuote=(stage==='报价'), isSample=(stage==='试样');
+ var isTouched=(stage==='已联系'||stage==='已回复');
+ var bad=[];
+ RECON_CHECKS.forEach(function(c){ if(reconEvCode(l,c.k)==='bad') bad.push(c); });
+ if(cov.done>=3 && bad.length>=2){
+  return {t:TX('风险优先','Risk first'),c:'r',showFit:false,col:'#dc2626',
+   text:TX('已经查出 '+bad.length+' 项硬伤（'+bad.map(function(c){return c.zh;}).join('、')+'）。先补证或直接设门槛：100% 前 T/T、不接受账期、首单第三方验货。','Two or more hard problems found — fix them or set hard terms: full prepayment, no credit, third-party inspection.')};
+ }
+  if(cov.done<3){
+   return {t:TX('信息不足 · 待背调','Not enough info'),c:'gray',showFit:false,col:'#64748b',
+    text:TX('只核验了 '+cov.done+'/'+cov.total+' 项，还有 '+cov.miss.length+' 项没查（样本不足）。先别下结论（更别因此放弃或投入）——把剩下的补完再来判断，大约 20 分钟。','Only '+cov.done+'/'+cov.total+' checks done — '+cov.miss.length+' still unchecked. Do not conclude yet; finish the rest first.')};
+  }
+ var grade=fit>=75?'g':(fit>=50?'y':'r');
+ var col=grade==='g'?'#15803d':(grade==='y'?'#b45309':'#dc2626');
+ var t=grade==='g'?TX('值得跟','Worth pursuing'):(grade==='y'?TX('正常跟','Normal follow-up'):TX('谨慎跟','Follow with caution'));
+ var text;
+ if(isWon){
+  text = grade==='r'
+   ? TX('已是成交客户，但背调有短板。先按现款 / 短账期执行，边做单边补核验；信用没查清前别放大额度。','Already won, but weaknesses remain — keep short terms and keep verifying.')
+   : TX('已是成交客户。这份背调的用途不是"要不要开发"，而是定账期额度与返单节奏：结论好可谈适度账期 + 年度框架，重点做复购与转介绍。','Won already — use this to set credit terms and reorder cadence, not to decide whether to pursue.');
+ } else if(isQuote){
+  text = TX('客户在报价阶段：背调决定"给不给账期、要不要为单量让价"。48 小时内带背调发现跟进报价，用截止日 + 原料/节期理由推动决策。','Quoting now — this decides credit terms and price concessions. Follow up within 48h with your findings.');
+ } else if(isSample){
+  text = TX('客户在试样阶段：背调重点是实体与合规能否满足。样品签收当天就追问测试结果，把信任推到报价。','Sampling now — verify entity and compliance; chase the test result the day the sample lands.');
+ } else if(isTouched){
+  text = TX('客户已接触过：趁热给具体价值（目录 + 样品 + 明确 MOQ/交期），用背调发现做二次触达的由头。','Already in touch — lead with value and use a finding as the reason to re-engage.');
+ } else {
+  text = TX('新客户：用「背调式首触」开口——第一句就点出你查到的具体事实，一眼区别于群发。','New prospect — open with a research-based line quoting what you actually found.');
+ }
+ if(cov.miss.length) text += TX('（还有 '+cov.miss.length+' 项没查：'+cov.miss.slice(0,3).map(function(c){return c.zh;}).join('、')+'，补齐后结论更准。）','');
+ return {t:t,c:grade,showFit:true,col:col,text:text};
+}
+function reconNext(l,r){
+ l=l||{}; r=r||{};
+ var cov=r.cov||reconCoverage(l);
+ if(cov.done<3) return TX('第 1 步把 8 个信息源过一遍（重点：官网 / 进出口记录 / LinkedIn），每查一项就在第 2 步勾一下，补到 5 项再来判断。','Run the 8 sources, tick each check, then judge.');
+ if(!l.email&&!l.wa) return TX('第一步不是发话术，是补齐联系方式（邮箱优先）。','First: get contact info.');
+ var st=String(l.stage||'待开发');
+ if(st==='成交') return TX('按结论定账期与额度，同时在交付完成后第 3 天埋返单钩子（节期备货 + 老客价）。','Set terms, then plant the reorder hook after delivery.');
+ if(st==='报价') return TX('48 小时内跟进报价：带一条背调发现 + 明确截止日 + 原料/节期理由。','Follow up within 48h with a finding, a deadline and a reason.');
+ if(st==='试样') return TX('盯样品质检与反馈，主动给第三方验货或视频看厂，把信任推到报价。','Chase sample feedback; offer QC video; move to quote.');
+ if(st==='已回复') return TX('趁热度给具体价值：目录 + 样品 + 明确 MOQ / 交期，把对方推到试样。','Send catalog + sample with clear MOQ/lead time.');
+ if(st==='已联系') return TX('换渠道再触达一次（邮件 → WhatsApp），开口就引用你查到的事实。','Switch channel and re-touch quoting your finding.');
+ return TX('发一条"背调式"首触：第一句引用你查到的事实，给零压力动作（要样品 / 要目录），别第一封就报价单。','Send a research-based opener with a zero-pressure ask.');
 }
 function reconFitOf(l){
  l=l||{};
  if(!l.recon) return null;
- var a=l.recon.answers||{};
- if(!(Object.keys(a).length>0) && !l.recon.report) return null;
+ var a=l.recon.answers||{}, e=l.recon.ev||{};
+ var has=(Object.keys(a).length>0)||(Object.keys(e).length>0)||!!l.recon.report;
+ if(!has) return null;
  return reconBuild(l).fit;
+}
+function reconStatus(l){
+ l=l||{};
+ var cov=reconCoverage(l);
+ var any=l.recon&&(((l.recon.answers&&Object.keys(l.recon.answers).length>0))||((l.recon.ev&&Object.keys(l.recon.ev).length>0))||l.recon.report);
+ if(!any) return {s:TX('未做','\u2014'),c:''};
+ if(cov.done===0) return {s:TX('未做','\u2014'),c:''};
+ var v=reconBuild(l).verdictInfo;
+ if(v.c==='gray') return {s:cov.done+'/'+cov.total+' '+TX('待查','todo'),c:''};
+ return {s:v.t+' '+reconBuild(l).fit,c:v.c==='g'?'g':(v.c==='y'?'y':'r')};
 }
 function reconBadge(fit){
  if(fit>=75) return {t:TX('值得跟','Worth pursuing'),c:'g'};
  if(fit>=50) return {t:TX('正常跟','Normal follow-up'),c:'y'};
- return {t:TX('先放养','Low priority'),c:'r'};
+ return {t:TX('谨慎跟','Follow with caution'),c:'r'};
 }
 function reconReasons(l,r){
  var out=[];
- (r.why||[]).slice(0,3).forEach(function(w){ out.push((w[0]>=0?'\u2713 ':'\u26a0 ')+w[1]); });
- if(out.length) return out;
+ RECON_CHECKS.forEach(function(c){
+  var v=reconEvCode(l,c.k); if(v==='todo') return;
+  out.push({t:c.zh+(v==='ok'?TX(' 已核实',' verified'):TX(' 有问题',' problem')),k:(v==='ok'?'ok':'bad')});
+ });
+ (r.why||[]).slice(0,3).forEach(function(w){ out.push({t:w[1],k:(w[0]>=0?'ok':'bad')}); });
+ if(out.length) return out.slice(0,5);
  var f=[];
- if(l.source) f.push(TX('来源 \u00b7 ','Source \u00b7 ')+l.source);
- f.push(l.email||l.wa?TX('已留联系方式','Has contact'):TX('缺联系方式','No contact yet'));
- if(l.country) f.push(TX('市场/国家已填','Market set'));
+ if(l.source) f.push({t:TX('来源 · ','Source · ')+l.source,k:'info'});
+ f.push({t:(l.email||l.wa)?TX('已留联系方式','Has contact'):TX('缺联系方式','No contact yet'),k:(l.email||l.wa)?'info':'bad'});
+ if(l.country) f.push({t:TX('市场/国家已填','Market set'),k:'info'});
  return f.slice(0,3);
 }
-function reconPick(id){ S._reconLead=id; save('_reconLead',id); refreshAll(); }
-function reconTask(){
- var l=reconCur(); if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
- if(!S.tasks) S.tasks=[];
- var title=TX('发首封开发信：','First opener: ')+l.name;
- S.tasks.push({id:uid(),title:title,due:iso(new Date(),7),done:false,clientId:l.id});
- save('tasks',S.tasks); refreshAll(); toast(TX('已加入今日待办','Added to to-dos'));
-}
-function recon360Card(l){
- l=l||{};
- var done = l.recon && ((l.recon.answers&&Object.keys(l.recon.answers).length>0)||l.recon.report);
- if(!done) return '<div class="card muted" style="padding:10px 12px;font-size:13px">'+TX('该客户还没做背调。点下方去「找客户」做一份，结论会自动回到这里。','No background check yet \u2014 run one in Find Leads and the verdict returns here.')+' <a href="javascript:void(0)" class="mini-link" data-action="custJump" data-where="recon" data-id="'+esc(l.id)+'">'+TX('去做背调 \u203a','Run it \u203a')+'</a></div>';
- var r=reconBuild(l);
- var b=reconBadge(r.fit);
- var col=b.c==='r'?' style="color:#dc2626"':b.c==='g'?' style="color:#15803d"':b.c==='y'?' style="color:#b45309"':'';
- var op=reconOpener(l,r.market);
- var rs=reconReasons(l,r);
- var hid='recon_op_'+l.id;
- var h='<div class="card" style="padding:10px 12px">';
- h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="tag '+(b.c==='g'?'g':b.c==='y'?'y':'r')+'">'+b.t+'</span><b'+col+'>'+TX('机会匹配度','Fit')+' '+r.fit+'/100</b></div>';
- h+='<div class="muted" style="font-size:13px;margin:6px 0">'+esc(r.verdict)+'</div>';
- if(rs.length) h+='<div style="font-size:12.5px;line-height:1.7;margin:4px 0">'+rs.map(function(x){return '<span class="tagmini">'+esc(x)+'</span>';}).join(' ')+'</div>';
- if(r.risks.length) h+='<div style="font-size:12.5px;color:#b45309;margin-top:4px">'+TX('风险','Risk')+'：'+r.risks.slice(0,2).map(function(x){return '\u26a0 '+esc(x);}).join('<br>')+'</div>';
- h+='<div style="font-size:12.5px;font-weight:600;margin-top:8px">'+TX('首封开发信（英文照读）','First opener (read aloud)')+'</div>';
- h+='<div class="out" id="'+hid+'" style="margin-top:4px;white-space:pre-wrap;font-size:12.5px">'+esc(op.en)+'</div>';
- h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="'+hid+'">'+TX('复制话术','Copy script')+'</button><a href="javascript:void(0)" class="mini-link" data-action="custJump" data-where="recon" data-id="'+esc(l.id)+'">'+TX('在「找客户」重做 / 看完整报告 \u203a','Redo / full report in Find Leads \u203a')+'</a></div>';
- h+='</div>';
- return h;
+function reconFact(l){
+ var n=reconEvNote(l); var keys=['biz','buy','entity','dm'];
+ for(var i=0;i<keys.length;i++){ var v=String(n[keys[i]]||'').replace(/\s+/g,' ').trim(); if(v) return v.slice(0,90); }
+ return '';
 }
 function reconOpener(l,mkt){
  l=l||{};
@@ -4387,9 +4490,11 @@ function reconOpener(l,mkt){
  var c=l.name||'(there)';
  var p=l.product||'your category';
  var geo=l.country||mkt||'your market';
- var en='Hi '+c+', this is '+nm(me)+' from '+co(me)+'.\n\n'
-  +'I did a bit of homework before writing — I can see '+c+' works on '+p+' in '+geo+'. '
-  +'We are a '+yr(me)+' of '+p+' with stable Ramadan / Hajj-season stock, MOQ 500 pcs, 15-20 days lead time.\n\n'
+ var fact=reconFact(l);
+ var en='Hi '+c+', this is '+nm(me)+' from '+co(me)+'.\n\n';
+ if(fact){ en+='I did a bit of homework before writing — I noticed '+fact+'. '; }
+ else { en+='I did a bit of homework before writing — I can see '+c+' works on '+p+' in '+geo+'. '; }
+ en+='We are a '+yr(me)+' of '+p+' with stable Ramadan / Hajj-season stock, MOQ 500 pcs, 15-20 days lead time.\n\n'
   +'Would it help if I send our best-sellers list and a sample, so you can check the quality yourself? '
   +'If '+p+' is not your line, just tell me what you do buy and I will only send relevant info.';
  var zh='原理：这条首触做了三件"背调过"的事——①点出你查过他做什么（一眼看出不是群发）；②给具体价值（MOQ / 交期 / 节期供货）；③给零压力动作（要样品）。\n'
@@ -4398,58 +4503,81 @@ function reconOpener(l,mkt){
  return {en:en,zh:zh};
 }
 function reconReport(l){
- var r=reconBuild(l||{});
- var a=r.answers;
- var op=reconOpener(l||{},r.market);
+ l=l||{};
+ var r=reconBuild(l);
+ var a=r.answers, cov=r.cov, v=r.verdictInfo;
+ var op=reconOpener(l,r.market);
  var d0=todayStr();
  var o='';
- o+='【AI 客户背调报告 · '+(l.name||'')+'】\n';
- o+='日期 '+d0+' · 市场判定 '+r.market+' · 当前阶段 '+(l.stage||'—')+' · 机会匹配度 '+r.fit+'/100\n';
- o+='\n一、公司画像（你已知的）\n';
- o+='  客户：'+l.name+'｜国家：'+(l.country||'未填')+'｜市场：'+r.market+'\n';
- o+='  来源：'+(l.source||'未填')+'｜产品线索：'+(l.product||'未填')+'\n';
+ o+='【客户背调报告 · '+(l.name||'')+'】\n';
+ o+='生成日期 '+d0+' ｜ 市场判定 '+r.market+' ｜ 当前阶段 '+(l.stage||'\u2014')+' ｜ 线索来源 '+(l.source||'\u2014')+'\n';
+ o+='结论：'+v.t+' —— '+v.text+'\n';
+ o+='机会匹配度 '+(v.showFit?r.fit+'/100':'暂不评分')+'（调查完备度 '+cov.done+'/'+cov.total+'，'+cov.pct+'%）\n';
+ o+='\n一、客户基本信息\n';
+ o+='  客户：'+(l.name||'未填')+' ｜ 国家：'+(l.country||'未填')+' ｜ 市场：'+r.market+' ｜ 阶段：'+(l.stage||'未填')+'\n';
+ o+='  来源：'+(l.source||'未填')+' ｜ 产品线索：'+(l.product||'未填')+' ｜ 金额：'+(l.amount?('$'+l.amount):'—')+'\n';
  o+='  联系方式：'+(l.email||'无邮箱')+' / '+(l.wa||'无 WhatsApp')+'\n';
- o+='  角色：'+(a.role||'未知')+'｜规模：'+(a.size||'未知')+'｜下游：'+(a.sell||'未知')+'\n';
- o+='\n二、匹配度 '+r.fit+'/100 的评分依据\n';
- if(!r.why.length) o+='  （问诊表还没填，评分只用了客户基础字段）\n';
+ o+='  对接人角色：'+(a.role||'未知')+' ｜ 公司规模：'+(a.size||'未知')+' ｜ 下游市场：'+(a.sell||'未知')+'\n';
+ o+='\n二、调查发现（6 项核验 · 逐项过）\n';
+ RECON_CHECKS.forEach(function(c){
+  var vv=reconEvCode(l,c.k);
+  var note=String(reconEvNote(l)[c.k]||'').trim();
+  o+='  '+reconEvMark(vv)+' '+c.zh+'：'+reconEvLabel(c,vv);
+  if(note) o+=' ｜证据：'+note;
+  o+='\n     怎么查：'+c.hint+'\n';
+ });
+ if(cov.miss.length){
+  o+='  → 还没查的 '+cov.miss.length+' 项：'+cov.miss.map(function(c){return c.zh;}).join('、')+'\n';
+ }else{
+  o+='  → 6 项核验全部完成。\n';
+ }
+ o+='\n三、匹配度评分依据（机会匹配度 '+(v.showFit?r.fit+'/100':'暂不评分')+'）\n';
+ if(!r.why.length) o+='  （核验项与问诊表都还没填，评分只用了客户基础字段）\n';
  for(var i=0;i<r.why.length;i++){ var w=r.why[i]; o+='  '+(w[0]>=0?'▲ +':'▼ ')+w[0]+'  '+w[1]+'\n'; }
- o+='  → '+r.verdict+'\n';
- o+='\n三、风险信号（本机规则自动提示，是提醒不是判定）\n';
- if(!r.risks.length) o+='  暂未发现明显风险信号 —— 仍建议首单收定金 + 第三方验货。\n';
- for(var j=0;j<r.risks.length;j++){ o+='  ! '+r.risks[j]+'\n'; }
- o+='\n四、切入角度（按市场与阶段）\n';
- for(var k=0;k<r.angles.length;k++){ o+='  · '+r.angles[k]+'\n'; }
- o+='\n五、沟通禁忌\n';
+ o+='\n四、风险信号（分级 · 本机规则提示，是提醒不是判定）\n';
+ for(var j=0;j<r.risks.length;j++){
+  var rk=r.risks[j];
+  o+='  '+(rk.lv==='h'?'【高】':'【中】')+' '+rk.t+'\n';
+ }
+ o+='\n五、切入角度（按市场与阶段）\n';
+ for(var k2=0;k2<r.angles.length;k2++){ o+='  · '+r.angles[k2]+'\n'; }
+ o+='\n六、沟通禁忌\n';
  for(var m=0;m<r.taboos.length;m++){ o+='  × '+r.taboos[m]+'\n'; }
- o+='\n六、首触话术（英文可直接照读）\n';
+ o+='\n七、首封开发信（英文可直接照读）\n';
  o+=op.en+'\n';
  o+='\n  [中文原理与禁忌] '+op.zh+'\n';
- o+='\n七、跟进节奏建议\n';
- o+='  触点 1（'+d0+'）：用上面的话术，提到你查到的具体事实（不是"我们公司成立于…"）。\n';
+ o+='\n八、跟进节奏（3 触点）\n';
+ o+='  触点 1（'+d0+'）：用上面的话术，第一句引用你查到的事实（不是"我们公司成立于…"）。\n';
  o+='  触点 2（'+addDays(d0,3)+'）：发目录 / 样品信息，问他的目标市场与首单量。\n';
  o+='  触点 3（'+addDays(d0,7)+'）：给报价或节期备货理由，带明确截止日。\n';
- o+='\n八、下一步动作\n  '+r.next+'\n';
- o+='\n（本报告由工作台本地规则生成，不含联网查询。要更深的背调：点「复制 AI 背调提示词」，粘给任意 AI 跑完，再把结果填回问诊表。）';
+ o+='  之后：每 10-14 天一次轻触达，换渠道换角度，别连发同一套。\n';
+ o+='\n九、下一步动作\n  '+r.next+'\n';
+ o+='\n附录 A：AI 背调原文（你粘贴的）\n';
+ var ai=String((l.recon&&l.recon.ai)||'').trim();
+ o+= ai? (ai+'\n') : '  （未回填。建议复制「AI 背调提示词」跑一遍，把结果粘回来，再核对上面的 6 项核验。）\n';
+ o+='\n附录 B：本次建议信息源\n';
+ RECON_DIMS.forEach(function(d){ o+='  · '+d[1]+'：'+reconDimUrl(d[0],l.name,l.country||r.market,l.product||'')+'\n'; });
+ o+='\n（本报告由工作台本地规则生成，不含联网查询；请以你实际查到的证据为准。真要更深：复制 AI 背调提示词 → 粘给任意 AI → 把结果回填到第 2 步。）';
  return o;
 }
 function reconAiPrompt(l){
  l=l||{}; var me=S.me||{}; var mkt=reconMarket(l);
  var s='';
- s+='You are a senior export-sales analyst. Do a background check on this prospect before I contact them.\n\n';
+ s+='You are a senior export-sales analyst. Do a background check on this prospect BEFORE I contact them.\n\n';
  s+='PROSPECT\n- Company: '+l.name+'\n- Country / market: '+(l.country||'(unknown)')+' / '+mkt+'\n';
  s+='- Product line we want to sell: '+(l.product||'(unknown)')+'\n- Lead source: '+(l.source||'(unknown)')+'\n';
  s+='- Our side: '+co(me)+', a '+yr(me)+' of this category.\n\n';
- s+='TASK\nResearch this company from public sources (official website, LinkedIn, local news, import/export records, review sites, job posts, company registry). Then output:\n';
- s+='1) Company profile: what they really do, size, main categories, markets served, years in business.\n';
- s+='2) Buying signals: do they import this category? any volume / supplier info visible?\n';
- s+='3) Decision maker: name and title if public; the best entry point.\n';
- s+='4) Red flags: no website, free email domain, unverifiable address, complaints, mismatch with their claims.\n';
- s+='5) Culture & compliance notes for '+mkt+': certifications, seasonality, communication style, taboos.\n';
- s+='6) Fit score 0-100 against our product, with reasons.\n';
- s+='7) A 3-touch follow-up plan, with the exact first-message sentence in English.\n\n';
- s+='RULES\n- Cite a source URL for each factual claim. If you cannot find something, write "NOT FOUND".\n';
+ s+='TASK\nResearch this company from public sources (official website, company registry, LinkedIn, local news, import/export records, review sites, job posts, marketplace storefronts). Then answer these 6 checks explicitly, one by one:\n';
+ s+='1) ENTITY — does the company really exist? legal name, registration, physical address, website that is actually live.\n';
+ s+='2) BIZ — what do they really sell, how long, what size (staff / stores / warehouse)?\n';
+ s+='3) BUY — any evidence they import or buy MY category (import records, sourcing job posts, trade-show listings)?\n';
+ s+='4) DM — who decides? name, title, best entry point.\n';
+ s+='5) CREDIT — any complaints, disputes, litigation, blacklisting or payment-problem reports?\n';
+ s+='6) COMPLY — what certifications / market access do they need (Halal / CE / FDA etc.), and are they a barrier for us?\n\n';
+ s+='Then output:\n- FIT SCORE 0-100 against our product, with reasons.\n- CONFIDENCE: HIGH / MEDIUM / LOW based on how much you actually found.\n- RED FLAGS list.\n- CULTURE & COMPLIANCE notes for '+mkt+' (seasonality, communication style, taboos).\n- A 3-touch follow-up plan, with the exact first-message sentence in English.\n\n';
+ s+='RULES\n- For every factual claim cite a source URL. If you cannot find something, write exactly "NOT FOUND".\n';
  s+='- Do NOT invent facts, phone numbers, revenue, employee counts or certifications.\n';
- s+='- Separate verified facts from your inference.\n- Plain text, under 600 words.';
+ s+='- Clearly separate VERIFIED FACTS from YOUR INFERENCE.\n- Plain text, under 700 words.';
  return s;
 }
 function reconCur(){
@@ -4462,11 +4590,19 @@ function reconCur(){
 }
 function reconCollect(l){
  if(!l) return;
- l.recon=l.recon||{}; l.recon.answers=l.recon.answers||{};
+ l.recon=l.recon||{}; l.recon.answers=l.recon.answers||{}; l.recon.ev=l.recon.ev||{}; l.recon.evnote=l.recon.evnote||{};
  RECON_QS.forEach(function(q){
   var e=document.getElementById('rc_'+q.k);
   if(e){ var v=String(e.value||'').trim(); if(v) l.recon.answers[q.k]=v; }
  });
+ RECON_CHECKS.forEach(function(c){
+  var e=document.getElementById('rev_'+c.k);
+  if(e){ var v=String(e.value||''); if(v==='ok'||v==='bad') l.recon.ev[c.k]=v; else delete l.recon.ev[c.k]; }
+  var t=document.getElementById('revn_'+c.k);
+  if(t){ var s=String(t.value||'').trim(); if(s) l.recon.evnote[c.k]=s; else delete l.recon.evnote[c.k]; }
+ });
+ var ai=document.getElementById('recon_ai');
+ if(ai){ var at=String(ai.value||'').trim(); if(at) l.recon.ai=at; else delete l.recon.ai; }
  l.recon.at=todayStr();
 }
 function reconGo(k){
@@ -4475,7 +4611,7 @@ function reconGo(k){
  var mkt=reconMarket(l);
  var u=reconDimUrl(k,l.name,l.country||mkt,l.product||'');
  if(!u){ toast(TX('没有该信息源','No source')); return; }
- if(typeof window!=='undefined'&&window.open){ window.open(u,'_blank'); toast(TX('已打开，可在搜索框里把公司名改精确','Opened')); }
+ if(typeof window!=='undefined'&&window.open){ window.open(u,'_blank'); toast(TX('已打开；查完记得回第 2 步勾一下','Opened — tick the check afterwards')); }
  else { copyText(u); }
 }
 function reconRun(){
@@ -4501,8 +4637,8 @@ function reconSave(){
  l.recon=l.recon||{};
  l.recon.report=reconReport(l);
  snapLeads(); save('leads',S.leads);
- var box=$('reconOut'); if(box) box.textContent=l.recon.report;
- toast(TX('背调结果已保存，报告已更新','Saved & report updated'));
+ refreshAll();
+ toast(TX('已保存，结论与报告已更新','Saved — verdict & report updated'));
 }
 function reconPrompt(){
  var l=reconCur();
@@ -4510,18 +4646,67 @@ function reconPrompt(){
  copyText(reconAiPrompt(l));
  toast(TX('AI 背调提示词已复制，粘给任意 AI 即可','Prompt copied — paste into any AI'));
 }
+function reconExp(){
+ var l=reconCur();
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ reconCollect(l);
+ l.recon=l.recon||{};
+ l.recon.report=reconReport(l);
+ snapLeads(); save('leads',S.leads);
+ var name='背调报告_'+(String(l.name||'client').replace(/[\\/:*?"<>|\s]+/g,'_'))+'_'+todayStr()+'.md';
+ try{ dlFile(l.recon.report,name,'text/markdown;charset=utf-8'); toast(TX('已导出报告文件','Report exported')); }
+ catch(e){ copyText(l.recon.report); toast(TX('导出失败，已改为复制','Exported failed — copied instead')); }
+}
+function reconAuto(){
+ var l=reconCur();
+ if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ reconCollect(l);
+ var box=$('recon_ai');
+ var txt=String((box?box.value:'')||(l.recon&&l.recon.ai)||'');
+ if(!txt.trim()){ toast(TX('先把 AI 返回的内容粘到下面的框里','Paste the AI output first')); return; }
+ var neg=/(not found|could not find|cannot find|couldn't find|no records?|no evidence|no information|no public|no\s+(?:record|evidence|negative|complaint|lawsuit|litigation|dispute|public|information)\b|未找到|查不到|没有找到|无记录|无相关信息|暂无)/i;
+ var risk=/(complaints?|lawsuit|litigation|dispute|blacklist|scam|fraud|unpaid|bad review|投诉|纠纷|诉讼|黑名单|诈骗|失信)/i;
+ var POL={entity:'bad',biz:'bad',buy:'bad',dm:'bad',credit:'ok',comply:'skip'};
+ var kw={
+  entity:/(official site|official website|website|company regist|registered|registration|官网|注册|实体)/i,
+  biz:/(main products|product line|portfolio|catalog|brand|brands|retailer|distributor|主营|经营范围|货架|门店)/i,
+  buy:/(import|importer|purchas|procure|sourcing|hs code|bill of lading|进口|采购|报关)/i,
+  dm:/(founder|owner|ceo|managing director|purchas|procurement|linkedin|创始人|总经理|决策人|采购经理)/i,
+  credit:/(complaint|lawsuit|litigation|dispute|blacklist|negative|reviews?|投诉|纠纷|诉讼|黑名单|负面)/i,
+  comply:/(certificat|halal|\bce\b|fda|reach|compliance|认证|合规)/i
+ };
+ var n=0, lines=txt.split(/\n+/);
+ RECON_CHECKS.forEach(function(c){
+  if(POL[c.k]==='skip') return;
+  var hit='',isNeg=false;
+  for(var i=0;i<lines.length;i++){
+   var ln=lines[i];
+   if(kw[c.k]&&kw[c.k].test(ln)){ hit=ln; isNeg=neg.test(ln); break; }
+  }
+  if(!hit) return;
+  if(isNeg){ l.recon.ev[c.k]=(POL[c.k]==='ok')?'ok':'bad'; }
+  else { l.recon.ev[c.k]=(c.k==='credit'&&risk.test(hit))?'bad':'ok'; }
+  n++;
+ });
+ if(!l.recon.evnote) l.recon.evnote={};
+ if(!n){ snapLeads(); save('leads',S.leads); refreshAll(); toast(TX('没能自动识别，请手动勾选 6 项核验','Could not auto-detect — set the 6 checks manually')); return; }
+ l.recon.report=reconReport(l);
+ snapLeads(); save('leads',S.leads);
+ refreshAll();
+ toast(TX('已按 AI 结果预填 '+n+' 项（请逐项复核）','Pre-filled '+n+' checks — please review'));
+}
 function reconFollow(){
  var l=reconCur();
  if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
  reconCollect(l);
  l.recon=l.recon||{};
  var r=reconBuild(l);
- var mkt=r.market;
+ var mkt=r.market, cov=r.cov, v=r.verdictInfo;
  var d0=todayStr(), d3=addDays(d0,3), d7=addDays(d0,7);
  l.logs=l.logs||[];
- l.logs.unshift({date:d0,text:TX('AI 背调切入（','AI-check angle (')+mkt+'，'+TX('匹配度','fit')+' '+r.fit+'/100）：'+r.next});
+ l.logs.unshift({date:d0,text:TX('背调完成（','Background check (')+mkt+'，'+v.t+'，'+TX('完备度','coverage')+' '+cov.done+'/'+cov.total+'）：'+r.next});
  l.last=d0;
- l.recon.follow={at:d0,fit:r.fit,mkt:mkt,
+ l.recon.follow={at:d0,fit:r.fit,mkt:mkt,verdict:v.t,cov:cov.done+'/'+cov.total,
   plan:[[d0,TX('触点1 · 背调式首触（WhatsApp / 邮件）','Touch 1 · research-based opener')],
         [d3,TX('触点2 · 目录 / 样品跟进','Touch 2 · catalog / sample')],
         [d7,TX('触点3 · 报价或节期备货理由','Touch 3 · quote or season reason')]]};
@@ -4530,72 +4715,132 @@ function reconFollow(){
  refreshAll();
  toast(TX('已写入跟进时间线，并生成 3 触点节奏','Logged & 3-touch plan created'));
 }
+function reconTask(){
+ var l=reconCur(); if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
+ if(!S.tasks) S.tasks=[];
+ var r=reconBuild(l);
+ var todo=r.cov.miss.length?TX('背调补齐 '+r.cov.miss.length+' 项：','Finish '+r.cov.miss.length+' checks: '):TX('发首封开发信：','First opener: ');
+ S.tasks.push({id:uid(),title:todo+l.name,due:iso(new Date(),r.cov.miss.length?2:7),done:false,clientId:l.id});
+ save('tasks',S.tasks); refreshAll(); toast(TX('已加入今日待办','Added to to-dos'));
+}
 function reconReset(){
  var l=reconCur();
  if(!l){ toast(TX('先选一个客户','Pick a client')); return; }
  openModal(TX('清空背调','Clear background check'),
-  TX('确定清空该客户的背调问诊表与报告吗？客户的其他信息不受影响。','Clear this client questionnaire and report? Other data is untouched.'),
+  TX('确定清空该客户的 6 项核验、问诊表、AI 回填与报告吗？客户的其他信息不受影响。','Clear this client\u2019s checks, questionnaire, AI paste and report? Other data is untouched.'),
   function(){ delete l.recon; snapLeads(); save('leads',S.leads); refreshAll(); toast(TX('已清空','Cleared')); });
+}
+function recon360Card(l){
+ l=l||{};
+ var any=l.recon&&(((l.recon.answers&&Object.keys(l.recon.answers).length>0))||((l.recon.ev&&Object.keys(l.recon.ev).length>0))||l.recon.report);
+ if(!any) return '<div class="card muted" style="padding:10px 12px;font-size:13px">'+TX('该客户还没做背调。点下方去「找客户」做一份（6 项核验，约 20 分钟），结论会自动回到这里。','No background check yet \u2014 run one in Find Leads (6 checks, ~20 min); the verdict returns here.')+' <a href="javascript:void(0)" class="mini-link" data-action="custJump" data-where="recon" data-id="'+esc(l.id)+'">'+TX('去做背调 \u203a','Run it \u203a')+'</a></div>';
+ var r=reconBuild(l), v=r.verdictInfo, cov=r.cov;
+ var tc=v.c==='g'?'g':(v.c==='y'?'a':(v.c==='r'?'r':'b'));
+ var mt=v.c==='g'?'#15803d':(v.c==='y'?'#b45309':(v.c==='r'?'#dc2626':'#64748b'));
+ var op=reconOpener(l,r.market);
+ var rs=reconReasons(l,r);
+ var hid='recon_op_'+l.id;
+ var h='<div class="card" style="padding:10px 12px">';
+ h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="tag '+tc+'">'+esc(v.t)+'</span>';
+ h+= v.showFit? ('<b style="color:'+mt+';font-size:16px">'+TX('机会匹配度','Fit')+' '+r.fit+'/100</b>') : ('<span class="muted" style="font-size:12.5px">'+TX('信息不足，暂不评分','Not scored yet')+'</span>');
+ h+='<span class="muted" style="font-size:12px">'+TX('核验','Checks')+' '+cov.done+'/'+cov.total+'</span></div>';
+ h+='<div class="muted" style="font-size:13px;line-height:1.7;margin:6px 0">'+esc(v.text)+'</div>';
+ if(rs.length) h+='<div style="margin:2px 0">'+rs.map(function(x){return reconChip('\u2713 '+x.t,x.k);}).join('')+'</div>';
+ if(r.risks.length) h+='<div style="font-size:12.5px;color:#b45309;margin-top:4px">'+r.risks.slice(0,2).map(function(x){return (x.lv==='h'?'\u26a0 ':'\u00b7 ')+esc(x.t);}).join('<br>')+'</div>';
+ h+='<div style="font-size:12.5px;font-weight:600;margin-top:8px">'+TX('首封开发信（英文照读）','First opener (read aloud)')+'</div>';
+ h+='<div class="out" id="'+hid+'" style="margin-top:4px;white-space:pre-wrap;font-size:12.5px">'+esc(op.en)+'</div>';
+ h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="'+hid+'">'+TX('复制话术','Copy script')+'</button><a href="javascript:void(0)" class="mini-link" data-action="custJump" data-where="recon" data-id="'+esc(l.id)+'">'+TX('在「找客户」看完整报告 \u203a','Full report in Find Leads \u203a')+'</a></div>';
+ h+='</div>';
+ return h;
+}
+function reconCovHtml(cov){
+ var color=cov.pct>=84?'#15803d':(cov.pct>=50?'#b45309':'#dc2626');
+ var h='<div style="margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid var(--line)">';
+ h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:600">'+TX('背调完备度','Evidence coverage');
+ h+=' <b style="color:'+color+'">'+cov.done+'/'+cov.total+'</b>';
+ h+=' <span class="muted" style="font-weight:400">'+TX('已核实 '+cov.ok+' 项，发现问题 '+cov.bad+' 项，待查 '+cov.miss.length+' 项','')+'</span></div>';
+ h+='<div style="height:6px;background:#e2e8f0;border-radius:999px;margin-top:7px;overflow:hidden"><div style="height:100%;width:'+cov.pct+'%;background:'+color+'"></div></div>';
+ if(cov.miss.length){
+  h+='<div style="margin-top:8px;font-size:12.5px;color:var(--sub)">'+TX('点一项直接去查：','Click to search: ')+cov.miss.map(function(c){
+   return '<a href="javascript:void(0)" data-action="reconGo" data-k="'+c.src+'" style="display:inline-block;margin:3px 4px 0 0;padding:2px 9px;border-radius:999px;background:#fff;border:1px solid #cbd5e1;color:#334155;text-decoration:none">'+esc(c.zh)+' \u203a</a>';
+  }).join('')+'</div>';
+ }
+ h+='</div>';
+ return h;
 }
 function reconSection(){
  var leads=S.leads||[];
  var h='';
  if(!leads.length){
-  h+='<div class="card" style="margin-top:14px;background:#f8fafc"><h3 style="margin:0 0 6px;font-size:15px">'+TX('AI 客户背调 \u00b7 先看清再开口','AI Background Check')+'</h3>';
-  h+='<div class="muted" style="font-size:13px">'+TX('先在「新增线索」加一个客户，这里自动给出背调结论、首封话术，并把结果同步到客户360与待办。','Add a lead first \u2014 we auto-generate the verdict, first-message script, and sync to Client 360 and Tasks.')+'</div></div>';
+  h+='<div class="card" style="margin-top:14px;background:#f8fafc"><h3 style="margin:0 0 6px;font-size:15px">'+TX('客户背调 \u00b7 四步走完一个客户','Background Check \u00b7 4 steps')+'</h3>';
+  h+='<div class="muted" style="font-size:13px">'+TX('先在「新增线索」加一个客户，这里会带你走完：① 查 → ② 填 → ③ 判 → ④ 跟，并自动同步到客户360与待办。','Add a lead first \u2014 this walks you through ① research \u2192 ② record \u2192 ③ verdict \u2192 ④ follow-up, and syncs to Client 360 and Tasks.')+'</div></div>';
   return h;
  }
  var cur=String(S._reconLead||'');
  var l=null,i;
  for(i=0;i<leads.length;i++){ if(leads[i].id===cur) l=leads[i]; }
  if(!l) l=leads[0];
- var r=reconBuild(l);
- var b=reconBadge(r.fit);
- var col=b.c==='r'?' style="color:#dc2626"':b.c==='g'?' style="color:#15803d"':b.c==='y'?' style="color:#b45309"':'';
- var op=reconOpener(l,r.market);
- var rs=reconReasons(l,r);
+ var r=reconBuild(l), v=r.verdictInfo, cov=r.cov, op=reconOpener(l,r.market), rs=reconReasons(l,r);
+ var tc=v.c==='g'?'g':(v.c==='y'?'a':(v.c==='r'?'r':'b'));
  h+='<div class="card" style="margin-top:14px;border:1px solid #185FA5">';
- h+='<h3 style="margin:0 0 4px;font-size:15px">'+TX('AI 客户背调 \u00b7 先看清再开口','AI Background Check \u2014 know them before you speak')+'</h3>';
- h+='<div class="hint" style="margin:0 0 10px">'+TX('结论自动算好，不用填表也能看。想更准就点开下方「深度背调工具箱」。','Verdict is auto-computed from the profile \u2014 no form needed. Open the toolkit below for a sharper read.')+'</div>';
- h+='<div class="grid g2"><select id="recon_lead" onchange="reconPick(this.value)" style="min-width:150px">'+leads.map(function(x){return '<option value="'+x.id+'"'+(x.id===l.id?' selected':'')+'>'+esc(x.name)+' \u00b7 '+esc(x.country||x.market||'\u2014')+' \u00b7 '+esc(x.stage||'')+'</option>';}).join('')+'</select>';
- h+='<span class="tag '+(b.c==='g'?'g':b.c==='y'?'y':'r')+'">'+b.t+'</span></div>';
+ h+='<h3 style="margin:0 0 4px;font-size:15px">'+TX('客户背调 \u00b7 查 → 填 → 判 → 跟','Background Check \u00b7 research \u2192 record \u2192 verdict \u2192 follow')+'</h3>';
+ h+='<div class="hint" style="margin:0 0 10px">'+TX('四步走完，结论才有依据：① 查 8 个信息源 → ② 填 6 项核验（可贴 AI 结果自动预填）→ ③ 出结论与报告 → ④ 转成跟进。','Four steps: ① run 8 sources \u2192 ② set 6 checks (AI output can pre-fill) \u2192 ③ verdict & report \u2192 ④ turn into follow-up.')+'</div>';
+ h+='<div class="grid g2"><label style="font-size:12px;color:var(--sub);font-weight:600">'+TX('对哪个客户做背调','Which client')+'<select id="recon_lead" onchange="reconPick(this.value)" style="min-width:150px">'+leads.map(function(x){return '<option value="'+x.id+'"'+(x.id===l.id?' selected':'')+'>'+esc(x.name)+' \u00b7 '+esc(x.country||x.market||'\u2014')+' \u00b7 '+esc(x.stage||'')+'</option>';}).join('')+'</select></label>';
+ h+='<div><div style="font-size:12px;color:var(--sub);font-weight:600">'+TX('当前阶段','Stage')+'</div><div style="margin-top:6px"><span class="tag b">'+esc(l.stage||'待开发')+'</span> <span class="muted" style="font-size:12px">'+TX('结论会随阶段变化（已成交≠要不要开发）','Advice adapts to the stage')+'</span></div></div></div>';
  h+='<input type="hidden" id="recon_cur" value="'+l.id+'">';
- h+='<div style="margin-top:10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><b'+col+' style="font-size:22px">'+r.fit+'</b><span class="muted" style="font-size:12px">'+TX('机会匹配度 / 100','fit score / 100')+'</span><span style="flex:1"></span><b'+col+'>'+esc(r.verdict)+'</b></div>';
- if(rs.length){
-  h+='<div style="margin-top:6px;font-size:13px;line-height:1.7">'+rs.map(function(x){return '<span class="tagmini">'+esc(x)+'</span>';}).join(' ')+'</div>';
- }else{
-  h+='<div class="hint" style="margin-top:6px">'+TX('还没填背调问诊表，以上仅按客户基础资料判定；点开「深度背调工具箱」填表可得更准结论。','No questionnaire yet \u2014 verdict is from base profile only. Open the toolkit to sharpen it.')+'</div>';
- }
- if(r.risks.length){
-  h+='<div style="margin-top:8px;font-size:12.5px;color:#b45309">'+TX('\u26a0 风险信号','\u26a0 Risk')+'：'+r.risks.slice(0,2).map(function(x){return esc(x);}).join(' \u2502 ')+'</div>';
- }
- h+='<div style="margin-top:12px;font-weight:600;font-size:13px">'+TX('\u2460 首封开发信（英文，照读）','\u2460 First opener (English, read aloud)')+'</div>';
- h+='<div class="out" id="recon_op_top" style="margin-top:4px;white-space:pre-wrap;font-size:12.5px">'+esc(op.en)+'</div>';
- h+='<div class="hint" style="margin-top:4px">'+esc(op.zh)+'</div>';
- h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="recon_op_top">'+TX('复制首封话术','Copy opener')+'</button><button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('看客户360 \u203a','Open Client 360 \u203a')+'</button></div>';
- h+='<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;font-size:13px;color:#185FA5">'+TX('\u2461 深度背调工具箱（信息源 / 问诊表 / 完整报告）','\u2461 Deep toolkit (sources / questionnaire / full report)')+'</summary>';
- h+='<div style="margin-top:10px;font-size:13px;font-weight:600">'+TX('背调信息源（点开是预填好的真实搜索）','Sources (pre-filled searches)')+'</div>';
+ h+=reconCovHtml(cov);
+ h+='<div style="margin-top:12px;padding:12px;border-radius:12px;background:#fbfcfe;border:1px solid var(--line)">';
+ h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="tag '+tc+'">'+esc(v.t)+'</span>';
+ if(v.showFit){ h+='<b style="font-size:22px;color:'+v.col+'">'+r.fit+'</b><span class="muted" style="font-size:12px">'+TX('机会匹配度 / 100','fit score / 100')+'</span>'; }
+ else { h+='<span class="muted" style="font-size:13px">'+TX('暂不评分 · 先补核验项','Not scored yet \u2014 gather evidence')+'</span>'; }
+ h+='</div>';
+ h+='<div style="margin-top:8px;font-size:13.5px;line-height:1.75">'+esc(v.text)+'</div>';
+ if(rs.length) h+='<div style="margin-top:6px">'+rs.map(function(x){return reconChip(x.t,x.k);}).join('')+'</div>';
+ if(r.risks.length) h+='<div style="margin-top:8px;font-size:12.5px;line-height:1.7">'+r.risks.map(function(x){return '<div style="color:'+(x.lv==='h'?'#dc2626':'#b45309')+'">'+(x.lv==='h'?'\u26a0 ':'\u00b7 ')+esc(x.t)+'</div>';}).join('')+'</div>';
+ h+='</div>';
+ h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2460 第 1 步 · 查（8 个信息源，点开即搜）','\u2460 Step 1 \u00b7 Research (8 pre-filled sources)')+'</div>';
+ h+='<div class="hint">'+TX('每个按钮都用这个客户的公司名 + 国家 + 产品预填好了搜索。查到什么，直接进第 2 步勾。','Each button opens a pre-filled search with this client\u2019s name, country and product.')+'</div>';
  h+='<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">';
  RECON_DIMS.forEach(function(d){ h+='<button class="btn ghost mini" data-action="reconGo" data-k="'+d[0]+'">'+esc(TX(d[1],d[2]))+'</button>'; });
  h+='</div>';
- h+='<div class="hint" style="margin-top:6px">'+TX('查什么：他卖什么、卖到哪、规模、决策人、实体地址、投诉。查不到也是结论。','What to check: what/where they sell, size, decision maker, address, complaints. NOT FOUND is a signal too.')+'</div>';
- h+='<div style="margin-top:12px;font-size:13px;font-weight:600">'+TX('背调问诊表（查完 / 沟通过后填，不填也能出报告）','Questionnaire (optional)')+'</div>';
- h+='<div class="modal-form" style="grid-template-columns:1fr 1fr;margin-top:6px">';
- RECON_QS.forEach(function(q){
-  var v=(reconAnswers(l))[q.k]||q.opts[0];
-  h+='<label style="font-size:12px">'+esc(TX(q.zh,q.en))+'<select id="rc_'+q.k+'">'+q.opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select></label>';
+ h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="reconPrompt">'+TX('复制 AI 背调提示词（6 项逐条问）','Copy AI prompt (asks all 6 checks)')+'</button></div>';
+ h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2461 第 2 步 · 填（6 项核验 + AI 结果回填）','\u2461 Step 2 \u00b7 Record (6 checks + AI paste)')+'</div>';
+ h+='<div class="hint">'+TX('每项三选一：查到什么就点什么。「查不到」也是结论，别留「待查」。','Pick one of three per item. "Not found" is also a finding.')+'</div>';
+ RECON_CHECKS.forEach(function(c){
+  var vv=reconEvCode(l,c.k);
+  var note=String(reconEvNote(l)[c.k]||'');
+  h+='<div style="padding:9px 0;border-top:1px dashed var(--line)">';
+  h+='<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline"><b style="font-size:13px">'+esc(TX(c.zh,c.en))+'</b><span class="muted" style="font-size:12px">'+esc(TX(c.q,c.q))+'</span></div>';
+  h+='<div class="row" style="gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap">';
+  h+='<select id="rev_'+c.k+'" class="chip-sel">'+['todo','ok','bad'].map(function(o){return '<option value="'+o+'"'+(vv===o?' selected':'')+'>'+esc(reconEvLabel(c,o))+'</option>';}).join('')+'</select>';
+  h+='<input id="revn_'+c.k+'" value="'+esc(note)+'" placeholder="'+TX('证据：一句话或 URL（可留空）','Evidence: one line or URL (optional)')+'" style="flex:1;min-width:170px;font-size:14px">';
+  h+='<button class="btn ghost mini" data-action="reconGo" data-k="'+c.src+'">'+TX('去查','Search')+'</button>';
+  h+='</div><div class="hint" style="margin-top:4px">'+esc(TX(c.hint,c.hint))+'</div></div>';
  });
+ h+='<div style="margin-top:12px"><b style="font-size:13px">'+TX('AI 背调结果回填（可选，但强烈建议）','Paste AI result (optional, recommended)')+'</b>';
+ h+='<div class="hint">'+TX('把第 1 步复制的提示词粘给任意 AI（DeepSeek / ChatGPT / Claude 都行），把它的回答整段粘进下面 → 点「按 AI 结果预填」→ 再逐项复核。','Paste the AI answer below, click "Pre-fill from AI", then review each item.')+'</div>';
+ h+='<textarea id="recon_ai" rows="3" style="margin-top:6px;font-size:14px" placeholder="'+TX('（把 AI 返回的背调结果粘在这里）','(paste AI output here)')+'">'+esc(String((l.recon&&l.recon.ai)||''))+'</textarea>';
+ h+='<div class="row" style="margin-top:6px;flex-wrap:wrap"><button class="btn ghost mini" data-action="reconAuto">'+TX('按 AI 结果预填核验项','Pre-fill from AI')+'</button><button class="btn ghost mini" data-action="reconSave">'+TX('保存背调结果','Save findings')+'</button></div>';
  h+='</div>';
- h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn" data-action="reconSave">'+TX('保存背调结果','Save findings')+'</button><button class="btn ghost mini" data-action="reconPrompt">'+TX('复制 AI 背调提示词','Copy AI prompt')+'</button><button class="btn ghost mini" data-action="reconFollow">'+TX('转成跟进','Turn into follow-up')+'</button><button class="btn ghost mini" data-action="reconTask">'+TX('加入今日待办','Add to to-dos')+'</button><button class="btn ghost mini" data-action="reconReset">'+TX('清空','Clear')+'</button></div>';
- h+='<div style="margin-top:12px;font-size:13px;font-weight:600">'+TX('完整背调报告','Full report')+'</div>';
+ h+='<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;color:#185FA5;font-weight:600">'+TX('可选：11 项问诊表（沟通过后填，影响评分）','Optional: 11-item questionnaire')+'</summary>';
+ h+='<div class="modal-form" style="grid-template-columns:1fr 1fr;margin-top:8px">';
+ RECON_QS.forEach(function(q){
+  var val=(reconAnswers(l))[q.k]||q.opts[0];
+  h+='<label style="font-size:12px">'+esc(TX(q.zh,q.en))+'<select id="rc_'+q.k+'">'+q.opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select></label>';
+ });
+ h+='</div></details>';
+ h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2462 第 3 步 · 判（结论 + 完整报告）','\u2462 Step 3 \u00b7 Verdict & report')+'</div>';
+ h+='<div class="row" style="margin-top:6px;flex-wrap:wrap"><button class="btn" data-action="reconRun">'+TX('生成 / 更新报告','Generate / update report')+'</button><button class="btn ghost mini" data-action="copy" data-copy="reconOut">'+TX('复制报告','Copy report')+'</button><button class="btn ghost mini" data-action="reconExp">'+TX('导出报告 (.md)','Export (.md)')+'</button><button class="btn ghost mini" data-action="reconReset">'+TX('清空该客户背调','Clear')+'</button></div>';
  h+='<div class="out" id="reconOut" style="margin-top:8px;white-space:pre-wrap;font-size:12.5px">'+esc(reconReport(l))+'</div>';
- h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="reconOut">'+TX('复制报告','Copy report')+'</button></div>';
- h+='</details>';
- h+='<div class="hint" style="margin-top:10px">'+TX('结论与首封话术已自动同步到该客户的「客户360」；背调过的客户在「客户汇总 / 复盘」里评分更高、闭环状态多一格「背调」。','Verdict & opener auto-sync to this client\u2019s Client 360; checked clients score higher in Hub/Review and get a \u201cBack-check\u201d tile.')+'</div>';
+ h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2463 第 4 步 · 跟（开口 + 转跟进）','\u2463 Step 4 \u00b7 Follow up')+'</div>';
+ h+='<div style="margin-top:6px;font-size:12.5px;font-weight:600">'+TX('首封开发信（英文，照读）','First opener (English, read aloud)')+'</div>';
+ h+='<div class="out" id="recon_op_top" style="margin-top:4px;white-space:pre-wrap;font-size:12.5px">'+esc(op.en)+'</div>';
+ h+='<div class="hint" style="margin-top:4px">'+esc(op.zh)+'</div>';
+ h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="recon_op_top">'+TX('复制首封话术','Copy opener')+'</button><button class="btn ghost mini" data-action="reconFollow">'+TX('转成跟进（写时间线 + 3 触点）','Turn into follow-up')+'</button><button class="btn ghost mini" data-action="reconTask">'+TX('加入今日待办','Add to to-dos')+'</button><button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('看客户360 \u203a','Open Client 360 \u203a')+'</button></div>';
+ h+='<div class="hint" style="margin-top:10px">'+TX('结论与首封话术已自动同步到该客户的「客户360」；背调过的客户在「客户汇总 / 复盘」里评分更高、闭环状态多一格「背调」。','Verdict & opener sync to Client 360; checked clients score higher in Hub/Review and get a "Check" tile.')+'</div>';
  h+='</div>';
  return h;
 }
-
 /* ============ 找客户操作 ============ */
 function addLead(){
  var name=$('ld_name').value.trim();if(!name){toast(TX('填客户名','Enter name'));return;}
@@ -5380,8 +5625,8 @@ function hubStatus(k,l,follow,days,docPct){
   case 'docs':return {t:TX('外贸单据','Docs'),s:(docPct!==null?docPct+'%':'—'),c:(docPct===null?'':(docPct>=100?'g':'y'))};
   case 'repeat':{var rs=l.repeatStatus;if(rs)return {t:TX('复购转介','Reorder'),s:rs,c:(rs==='已返单'?'g':(rs==='放弃'?'r':'y'))};return {t:TX('复购转介','Reorder'),s:(l.stage==='成交'?TX('待复购','to reorder'):'—'),c:(l.stage==='成交'?'y':'')};}
   case 'today':return {t:TX('今天要处理','Today'),s:(follow?(days+TX('天逾期','d late')):TX('正常','OK')),c:(follow?'r':'g')};
-  case 'recon':{var _rf=reconFitOf(l);if(_rf===null)return {t:TX('背调','Check'),s:TX('未做','\u2014'),c:''};return {t:TX('背调','Check'),s:(_rf>=75?TX('优','A'):_rf>=50?TX('中','B'):TX('弱','C'))+' '+_rf,c:(_rf>=75?'g':_rf>=50?'y':'r')};}
-  case 'review':return {t:TX('复盘增长','Review'),s:String(scoreLead(l)),c:''};
+  case 'recon':{var _rs=reconStatus(l);return {t:TX('背调','Check'),s:_rs.s,c:_rs.c};}
+ case 'review':return {t:TX('复盘增长','Review'),s:String(scoreLead(l)),c:''};
  }
  return {t:k,s:'—',c:''};
 }
