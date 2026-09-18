@@ -3756,7 +3756,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v51 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v50, hard-refresh with Ctrl+F5')+'">v51</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v52 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v52</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4493,7 +4493,7 @@ function viewDocs(){
  if(S._defShow)h+=docDefPanel();
  if(S._docIO)h+=docIOPanel(d);
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，27 单继承）','Deal shared info (fill once, inherited by all 27)')+'</h3><div class="grid g3">';
- [['cnee',TX('买方/Consignee','Buyer')],['no',TX('发票号/No.','Invoice No.')],['date',TX('日期','Date')],['amt',TX('金额 USD','Amount')],['qty',TX('数量 pcs','Qty')],['pkg',TX('件数 CTNS','Packages')],['gross',TX('毛重 KGS','G.W.')],['net',TX('净重 KGS','N.W.')],['vessel',TX('船名航次','Vessel')],['port',TX('目的港','Port')],['eta',TX('到港 ETA','ETA')],['incoterms',TX('贸易术语','Incoterms')]].forEach(function(p){h+='<label style="font-size:12px">'+p[1]+'<input id="deal_'+p[0]+'" value="'+esc(d[p[0]]||'')+'"></label>';});
+ [['cnee',TX('买方/Consignee','Buyer')],['no',TX('发票号/No.','Invoice No.')],['date',TX('日期','Date')],['amt',TX('金额 USD','Amount')],['qty',TX('数量 pcs','Qty')],['pkg',TX('件数 CTNS','Packages')],['gross',TX('毛重 KGS','G.W.')],['net',TX('净重 KGS','N.W.')],['vessel',TX('船名航次','Vessel')],['port',TX('目的港','Port')],['eta',TX('到港 ETA','ETA')],['incoterms',TX('贸易术语','Incoterms')]].forEach(function(p){h+='<label style="font-size:12px">'+p[1]+(p[0]==='incoterms'?'<select id="deal_incoterms">'+incotermOpts(d.incoterms)+'</select>':'<input id="deal_'+p[0]+'" value="'+esc(d[p[0]]||'')+'">')+'</label>';});
  h+='</div><div class="grid g2" style="margin-top:8px"><label style="font-size:12px">'+TX('目的国','Dest country')+'<input id="deal_destCountry" value="'+esc(d.destCountry||'')+'" placeholder="如 UAE / Egypt / 加纳"></label><label style="font-size:12px">'+TX('运输方式','Transport')+'<select id="deal_transport"><option value="sea"'+(d.transport!=='air'?' selected':'')+'>'+TX('海运','Sea')+'</option><option value="air"'+(d.transport==='air'?' selected':'')+'>'+TX('空运','Air')+'</option></select></label></div>';
  h+='<div class="row" style="margin-top:8px"><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_woodPkg"'+(d.woodPkg?' checked':'')+'>'+TX('木包装（需熏蒸证）','Wood packing (fumigation)')+'</label><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_lc"'+(d.lc?' checked':'')+'>'+TX('信用证 L/C（需受益人/船公司证明）','L/C (beneficiary cert)')+'</label></div>';
  h+='<button class="btn mini" data-action="dealSave" style="margin-top:8px">'+TX('保存交易信息','Save deal')+'</button></div>';
@@ -4516,7 +4516,7 @@ function viewDocs(){
   if(dd){
    h+='<div class="card" style="margin-top:4px"><div class="shead" style="margin:0 0 8px"><div class="ic">'+ICON.docs+'</div><div><h2 style="font-size:16px">'+esc(dd.zh)+' · '+esc(dd.en)+'</h2><p>'+TX('共享字段已自动带入交易信息，只需补本单特有项。','Shared fields auto-filled from the deal; fill only doc-specific ones.')+'</p></div></div>';
    h+='<div class="grid g2">';
-   dd.fields.forEach(function(f){if(f==='name')return;var lbl=DOC_FIELDS[f]?DOC_FIELDS[f].l:f;var dv='';if(d.docVals&&d.docVals[dd.id]&&d.docVals[dd.id][f]!=null&&d.docVals[dd.id][f]!=='')dv=d.docVals[dd.id][f];else if(SHARED.indexOf(f)>=0)dv=(d[f]||'');else if(f==='desc'){var _pr=extRow(d&&d.productId);dv=_pr?((_pr.name||'')+(_pr.spec?(' '+_pr.spec):'')):'Muslim prayer pillow';}h+='<div class="field"><label>'+esc(lbl)+'</label><input id="doc_'+f+'" value="'+esc(dv)+'" placeholder="'+esc(lbl)+'"></div>';});
+   dd.fields.forEach(function(f){if(f==='name')return;var lbl=DOC_FIELDS[f]?DOC_FIELDS[f].l:f;var dv='';if(d.docVals&&d.docVals[dd.id]&&d.docVals[dd.id][f]!=null&&d.docVals[dd.id][f]!=='')dv=d.docVals[dd.id][f];else if(SHARED.indexOf(f)>=0)dv=(d[f]||'');else if(f==='desc'){var _pr=extRow(d&&d.productId);dv=_pr?((_pr.name||'')+(_pr.spec?(' '+_pr.spec):'')):'Muslim prayer pillow';}h+='<div class="field"><label>'+esc(lbl)+'</label>'+(f==='incoterms'?'<select id="doc_incoterms">'+incotermOpts(dv)+'</select>':'<input id="doc_'+f+'" value="'+esc(dv)+'" placeholder="'+esc(lbl)+'">')+'</div>';});
    h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-action="docGen" data-id="'+dd.id+'">'+TX('生成单证草稿','Generate draft')+'</button></div>';
    if(S._docTpl){h+='<div id="docTplOut" style="margin-top:10px">'+S._docTpl+'</div><div class="row" style="margin-top:8px"><button class="btn ghost mini" data-action="copy" data-copy="docTplOut">'+TX('复制单证文本','Copy text')+'</button><button class="btn ghost mini" data-action="docPrint">'+TX('打印 / 导出PDF','Print / PDF')+'</button><button class="btn ghost mini" data-action="docExport" data-id="'+dd.id+'">'+TX('导出Excel','Export Excel')+'</button></div>';}
    else{h+='<div class="out muted" style="margin-top:10px">'+TX('填好变量点"生成单证草稿"。','Fill vars and tap Generate.')+'</div>';}
@@ -5027,6 +5027,11 @@ function lead360(id){
  $('modal').classList.add('show');
 }
 function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');l.wa=g('v360_wa');l.email=g('v360_email');l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.source=g('v360_source');l.note=g('v360_note');var rsEl=document.getElementById('v360_repeatStatus');if(rsEl)l.repeatStatus=rsEl.value;var rfEl=document.getElementById('v360_referralStatus');if(rfEl)l.referralStatus=rfEl.value;var rbEl=document.getElementById('v360_referrer');if(rbEl)l.referrer=rbEl.value;var rnbEl=document.getElementById('v360_referralNote');if(rnbEl)l.referralNote=rnbEl.value;snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
+/* Incoterms 2020 十一种贸易术语（下拉补全；保留历史自定义值，不丢数据） */
+var INCOTERMS=['EXW','FCA','FAS','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP'];
+var INCOTERMS_ZH={EXW:'工厂交货（买方提货）',FCA:'货交承运人',FAS:'装运港船边交货',FOB:'装运港船上交货（买方付海运费）',CFR:'成本加运费',CIF:'成本保险费加运费',CPT:'运费付至目的地',CIP:'运费保险费付至目的地',DAP:'目的地交货（不缴税）',DPU:'目的地卸货交货',DDP:'完税后交货'};
+function incotermOpts(cur){var c=String(cur==null?'':cur).trim();if(!c)c='FOB';var list=INCOTERMS.slice();if(list.indexOf(c)<0)list.push(c);return list.map(function(t){return '<option value="'+esc(t)+'"'+(t===c?' selected':'')+'>'+esc(t)+(INCOTERMS_ZH[t]?' '+INCOTERMS_ZH[t]:'')+'</option>';}).join('');}
+
 function dealNew(){
  var d={id:uid(),leadId:'',cnee:'',no:'INV-'+new Date().getFullYear()+'-'+(S.deals.length+1),date:todayStr(),amt:0,qty:0,pkg:0,gross:0,net:0,vessel:'',port:'',eta:'',incoterms:'FOB',transport:'sea',woodPkg:false,lc:false,destCountry:'',supplierId:'',productId:'',docs:{},docVals:{}};
  DOC_DEF.forEach(function(x){d.docs[x.id]='todo';});
@@ -5047,11 +5052,12 @@ function dealEdit(){
   +'<label>'+TX('船名航次','Vessel')+'<input id="de_vessel" value="'+esc(d.vessel||'')+'"></label>'
   +'<label>'+TX('目的港','Port')+'<input id="de_port" value="'+esc(d.port||'')+'"></label>'
   +'<label>'+TX('到港 ETA','ETA')+'<input id="de_eta" value="'+esc(d.eta||'')+'"></label>'
+  +'<label>'+TX('贸易术语','Incoterms')+'<select id="de_incoterms">'+incotermOpts(d.incoterms)+'</select></label>'
   +'</div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="deSave">'+TX('保存','Save')+'</button></div>';
  $('modalBody').innerHTML='<h3>'+TX('编辑交易','Edit deal')+'</h3>'+body;
  $('modal').classList.add('show');
  $('deSave').onclick=function(){
-  d.leadId=$('de_leadId').value;d.supplierId=$('de_supplierId').value;d.productId=$('de_productId').value;d.cnee=$('de_cnee').value.trim();d.no=$('de_no').value.trim();d.date=$('de_date').value;d.amt=parseFloat($('de_amt').value)||0;d.qty=parseFloat($('de_qty').value)||0;d.pkg=parseFloat($('de_pkg').value)||0;d.gross=parseFloat($('de_gross').value)||0;d.net=parseFloat($('de_net').value)||0;d.vessel=$('de_vessel').value.trim();d.port=$('de_port').value.trim();d.eta=$('de_eta').value.trim();
+  d.leadId=$('de_leadId').value;d.supplierId=$('de_supplierId').value;d.productId=$('de_productId').value;d.cnee=$('de_cnee').value.trim();d.no=$('de_no').value.trim();d.date=$('de_date').value;d.amt=parseFloat($('de_amt').value)||0;d.qty=parseFloat($('de_qty').value)||0;d.pkg=parseFloat($('de_pkg').value)||0;d.gross=parseFloat($('de_gross').value)||0;d.net=parseFloat($('de_net').value)||0;d.vessel=$('de_vessel').value.trim();d.port=$('de_port').value.trim();d.eta=$('de_eta').value.trim();if($('de_incoterms'))d.incoterms=$('de_incoterms').value;
   save('deals',S.deals);refreshAll();closeModal();toast(TX('已更新','Updated'));
  };
 }
