@@ -2129,7 +2129,7 @@ h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid
 
 /* ============ 外部资料导入（客户驾驶舱） ============ */
 var EXT_DEFS=[
- {k:'customer',n:['客户名单','Customer list'],
+ {k:'customer',n:['客户明细','Customer details'],
   cols:[{k:'name',a:'客户名|客户|名称|姓名|name|client|customer',zh:'客户名',en:'Name',req:1},
    {k:'country',a:'国家|country|nation',zh:'国家',en:'Country'},
    {k:'market',a:'市场|market|region|area',zh:'市场',en:'Market'},
@@ -2348,7 +2348,7 @@ function extPanel(){
  h+='</div>';
  h+='<div class="ext-note">'+TX('表格第一行必须保留（表头）；中英文表头都能识别，标 * 为必填：','Keep row 1 as the header; CN/EN headers both work, * = required: ')+d.cols.map(function(c){return TX(c.zh,c.en)+(c.req?' *':'');}).join(' · ')+'</div>';
  h+='<div class="ext-note">'+TX('示例一行：','Sample row: ')+'<span class="ext-eg">'+(d.eg||[]).join('  |  ')+'</span></div>';
- if(type==='customer')h+='<div class="ext-note">'+TX('客户名单导入后进入「客户驾驶舱」，按「客户名 + 国家」匹配更新；想直接看或改客户，切到上面的「表格」视图。','Customer lists import into the Customer Hub, matched by name + country. To view or edit clients directly, switch to the Table view above.')+'</div>';
+ if(type==='customer')h+='<div class="ext-note">'+TX('客户明细导入后进入「客户驾驶舱」，按「客户名 + 国家」匹配更新；想直接看或改客户，切到上面的「表格」视图。','Customer lists import into the Customer Hub, matched by name + country. To view or edit clients directly, switch to the Table view above.')+'</div>';
  else h+='<div class="ext-note">'+TX('这类资料只存在你本机浏览器（随「备份」一起导出），不会上传任何服务器。','This data stays in your browser (included in Backup exports); nothing is uploaded.')+'</div>';
  h+='</div>';
  if(type!=='customer'){
@@ -3843,7 +3843,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v43 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v42, hard-refresh with Ctrl+F5')+'">v46</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v47 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not v47, hard-refresh with Ctrl+F5')+'">v47</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
