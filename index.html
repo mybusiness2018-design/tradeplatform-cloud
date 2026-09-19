@@ -1296,6 +1296,7 @@ var MARKET_SEED=[
  {k:'s30',n:'婴儿背带腰凳（透气款）',i:'母婴玩具',p:'¥55-95',s:'阿里国际站',t:'四季可用，户外带娃'}
 ];
 var MARKET_IND=['3C电子','家居礼品','户外运动','美妆个护','母婴玩具'];
+var cloudSeed=[], cloudSeedDate=''; /* R62 线上版自动拉取的云端趋势（market_seed.json） */
 
 function marketHotKw(v){
  var q=(v||'').trim();
@@ -1334,6 +1335,16 @@ function marketHotAdd(k){
  toast(TX('已加入今日热榜：'+it.n,'Added: '+it.n));
 }
 
+function marketHotAddName(it){
+ if(!it||!it.name)return;
+ if(!Array.isArray(S.marketHot))S.marketHot=[];
+ if(marketHotHas(it.name)){toast(TX('已在你的热榜里','Already in your list'));return;}
+ S.marketHot.push({k:'mh'+Date.now()+'_'+S.marketHot.length,name:it.name,ind:it.ind||'',price:it.price||'',src:it.src||'',note:it.note||''});
+ marketHotLogAdd(it);
+ S.marketHotDay=todayStr(); save(); refreshAll();
+ toast(TX('已加入今日热榜：'+it.name,'Added: '+it.name));
+}
+
 /* ============ R60 今日市场热榜：紧凑折叠（默认收起，不占空间） ============ */
 function marketHotSection(){
  var items=S.marketHot||[];
@@ -1361,10 +1372,47 @@ function marketHotSection(){
   h+='<div class="hint" style="margin:8px 0 0">'+TX('把平台今天真实的在卖/起量品粘进来，即生成你的实时榜单。平台禁止跨站读取，需手动导入（格式：每行一个品名，或 品名,行业,价格,来源,备注）。','Paste todays real hot items to build your live list. One name per line, or name,ind,price,source,note.')+'</div>';
  }
 
- // 选品灵感参考：默认收起，不占空间
+ // 选品灵感参考：默认收起，不占空间；云端趋势 + 我的真实导入 + 内置方向（最新优先）
+ var _cloudN=(typeof cloudSeed!=='undefined'&&cloudSeed)?cloudSeed.length:0;
  h+='<details style="margin-top:10px">';
- h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('选品灵感参考（内置 '+MARKET_SEED.length+' 款方向 · 非实时）','Sourcing inspiration ('+MARKET_SEED.length+' · not live)')+'</summary>';
- h+='<div class="hint" style="margin:6px 0 4px">'+TX('常年跑量的选品方向（含穆斯林/斋月礼品专款），点「加入」并入你的今日榜单。','Evergreen directions; tap Add to merge.')+'</div>';
+ h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('选品灵感参考（内置 '+MARKET_SEED.length+' 款 · 非实时'+( _cloudN? ' · 云端 '+_cloudN+' 款 更新于 '+cloudSeedDate : '')+')','Sourcing inspiration ('+MARKET_SEED.length+' · not live'+( _cloudN? ' · cloud '+_cloudN+' @ '+cloudSeedDate : '')+')')+'</summary>';
+ h+='<div class="hint" style="margin:6px 0 4px">'+TX('内置常年跑量方向；云端为定期更新的趋势（非平台实时销量）；「加入」并入你的今日榜单。','Evergreen + periodically refreshed cloud trends; tap Add to merge.')+'</div>';
+
+ // A. 云端趋势（线上版自动拉取 market_seed.json）
+ if(_cloudN){
+  h+='<div class="hint" style="margin:6px 0 3px;font-weight:600">云端趋势 · 更新于 '+esc(cloudSeedDate)+'</div>';
+  h+='<div class="grid g2">';
+  for(var c=0;c<cloudSeed.length;c++){
+   var cd=cloudSeed[c]; var chas=marketHotHas(cd.name);
+   h+='<div class="card" style="padding:8px 10px;margin:0;border-left:3px solid #2a7">';
+   h+='<div style="font-weight:600;font-size:12px">'+esc(cd.name)+'</div>';
+   var cmeta=[]; if(cd.ind)cmeta.push(esc(cd.ind)); if(cd.price)cmeta.push(esc(cd.price)); if(cd.src)cmeta.push(esc(cd.src));
+   if(cmeta.length)h+='<div class="hint" style="margin:2px 0;font-size:11px">'+cmeta.join(' · ')+'</div>';
+   if(cd.note)h+='<div class="muted" style="margin:2px 0;font-size:11px">'+esc(cd.note)+'</div>';
+   h+='<button class="btn ghost mini" data-action="mhCloudAdd" data-name="'+esc(cd.name)+'" data-ind="'+esc(cd.ind||'')+'" data-price="'+esc(cd.price||'')+'" data-src="'+esc(cd.src||'')+'" style="margin-top:4px"'+(chas?' disabled':'')+'>'+(chas?TX('已加入','Added'):TX('加入','Add'))+'</button>';
+   h+='</div>';
+  }
+  h+='</div>';
+ }
+
+ // B. 我导入过的真实热销（本地累积，越用越新；R61 补渲染）
+ var _log=(S.marketHotLog||[]);
+ if(_log.length){
+  h+='<div class="hint" style="margin:8px 0 3px;font-weight:600">我导入过的真实热销（'+_log.length+' 款 · 越用越新）</div>';
+  h+='<div class="grid g2">';
+  for(var l=0;l<_log.length;l++){
+   var ld=_log[l];
+   h+='<div class="card" style="padding:8px 10px;margin:0;border-left:3px solid var(--main)">';
+   h+='<div style="font-weight:600;font-size:12px">'+esc(ld.name)+'</div>';
+   var lmeta=[]; if(ld.ind)lmeta.push(esc(ld.ind)); if(ld.price)lmeta.push(esc(ld.price)); if(ld.src)lmeta.push(esc(ld.src)); if(ld.date)lmeta.push(TX('记录于','on')+' '+esc(ld.date));
+   if(lmeta.length)h+='<div class="hint" style="margin:2px 0;font-size:11px">'+lmeta.join(' · ')+'</div>';
+   h+='</div>';
+  }
+  h+='</div>';
+  h+='<div class="row" style="margin:4px 0 0"><button class="btn ghost mini" data-action="marketHotLogClear">'+TX('清空导入记录','Clear import history')+'</button></div>';
+ }
+
+ // C. 内置方向（常年跑量，含穆斯林/斋月礼品专款）
  for(var g=0;g<MARKET_IND.length;g++){
   var ind=MARKET_IND[g];
   h+='<div class="hint" style="margin:6px 0 3px;font-weight:600">'+esc(ind)+'</div>';
@@ -1446,6 +1494,24 @@ function marketHotApply(text){
 function marketHotClear(){
  if(typeof confirm==='function' && !confirm(TX('确定清空今日市场热榜？','Clear today hotlist?')) )return;
  S.marketHot=[]; S.marketHotDay=''; save(); refreshAll();
+}
+
+function marketHotLogClear(){
+ if(typeof confirm==='function' && !confirm(TX('确定清空「我导入过的真实热销」记录？','Clear import history?')) )return;
+ S.marketHotLog=[]; save(); refreshAll();
+}
+
+/* 线上版自动拉取同仓库 market_seed.json（file:// 与失败静默回退） */
+function fetchCloudSeed(){
+ try{
+  if(typeof location==='undefined'||location.protocol!=='https:'||typeof fetch!=='function')return;
+  fetch('market_seed.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(j){
+   if(!j||!Array.isArray(j.items))return;
+   cloudSeed=[]; for(var i=0;i<j.items.length;i++){var x=j.items[i]; if(x&&x.n)cloudSeed.push({name:x.n,ind:x.i||'',price:x.p||'',src:x.s||'',note:x.t||''});}
+   cloudSeedDate=j.date||todayStr();
+   if(typeof refreshAll==='function')refreshAll();
+  }).catch(function(){});
+ }catch(e){}
 }
 
 function hotSection(){
@@ -4051,7 +4117,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v61</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v62</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4280,7 +4346,7 @@ document.addEventListener('click',function(e){
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
  else if(a==='marketHotImport'){marketHotImport();}
- else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}else if(a==='marketHotLogClear'){marketHotLogClear();}
+ else if(a==='mhCloudAdd'){marketHotAddName({name:el.dataset.name,ind:el.dataset.ind,price:el.dataset.price,src:el.dataset.src,note:''});}else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}else if(a==='marketHotLogClear'){marketHotLogClear();}
  else if(a==='marketHotClear'){marketHotClear();}
  else if(a==='extType'){S._extType=el.dataset.type;save('_extType',S._extType);refreshAll();}
  else if(a==='extTemplate'){extTemplate();}
