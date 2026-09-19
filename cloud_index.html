@@ -1372,15 +1372,13 @@ function marketHotSection(){
   h+='<div class="hint" style="margin:8px 0 0">'+TX('把平台今天真实的在卖/起量品粘进来，即生成你的实时榜单。平台禁止跨站读取，需手动导入（格式：每行一个品名，或 品名,行业,价格,来源,备注）。','Paste todays real hot items to build your live list. One name per line, or name,ind,price,source,note.')+'</div>';
  }
 
- // 选品灵感参考：默认收起，不占空间；云端趋势 + 我的真实导入 + 内置方向（最新优先）
+ // 选品灵感参考：云端趋势独立显示、默认可见（R63 可见性优化：从收起区拎出）
  var _cloudN=(typeof cloudSeed!=='undefined'&&cloudSeed)?cloudSeed.length:0;
- h+='<details style="margin-top:10px">';
- h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('选品灵感参考（内置 '+MARKET_SEED.length+' 款 · 非实时'+( _cloudN? ' · 云端 '+_cloudN+' 款 更新于 '+cloudSeedDate : '')+')','Sourcing inspiration ('+MARKET_SEED.length+' · not live'+( _cloudN? ' · cloud '+_cloudN+' @ '+cloudSeedDate : '')+')')+'</summary>';
- h+='<div class="hint" style="margin:6px 0 4px">'+TX('内置常年跑量方向；云端为定期更新的趋势（非平台实时销量）；「加入」并入你的今日榜单。','Evergreen + periodically refreshed cloud trends; tap Add to merge.')+'</div>';
-
- // A. 云端趋势（线上版自动拉取 market_seed.json）
+ /* R63 云端趋势：从收起区拎出，独立默认可见；线上版自动拉取，桌面 file:// 拉不到 */
  if(_cloudN){
-  h+='<div class="hint" style="margin:6px 0 3px;font-weight:600">云端趋势 · 更新于 '+esc(cloudSeedDate)+'</div>';
+  h+='<div style="margin-top:14px;padding:10px 12px;background:rgba(42,119,90,.06);border:1px solid rgba(42,119,90,.25);border-radius:10px">';
+  h+='<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px"><span style="font-weight:700;font-size:14px;color:#2a7">'+TX('云端趋势 · 更新于 '+cloudSeedDate,'Cloud trends · '+cloudSeedDate)+'</span><span class="hint" style="margin:0">'+TX('（AI 定期更新，非平台实时销量）','(AI refresh, not live sales)')+'</span></div>';
+  h+='<div class="hint" style="margin:0 0 8px">'+TX('线上版每次打开自动拉取；想更新告诉我“刷新趋势”。桌面离线版（file://）看不到此区（浏览器禁止跨站读取）。','Online auto-fetches on open; say 刷新趋势 to refresh. Desktop file:// hides this (browser blocks cross-site).')+'</div>';
   h+='<div class="grid g2">';
   for(var c=0;c<cloudSeed.length;c++){
    var cd=cloudSeed[c]; var chas=marketHotHas(cd.name);
@@ -1393,7 +1391,13 @@ function marketHotSection(){
    h+='</div>';
   }
   h+='</div>';
+  h+='</div>';
  }
+
+ // 选品灵感参考：默认收起，不占空间；我的真实导入 + 内置方向
+ h+='<details style="margin-top:10px">';
+ h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('选品灵感参考（内置 '+MARKET_SEED.length+' 款 · 非实时）','Sourcing inspiration ('+MARKET_SEED.length+' · not live)')+'</summary>';
+ h+='<div class="hint" style="margin:6px 0 4px">'+TX('内置常年跑量方向（含穆斯林/斋月礼品专款）；「加入」并入你的今日榜单。','Evergreen directions; tap Add to merge.')+'</div>';
 
  // B. 我导入过的真实热销（本地累积，越用越新；R61 补渲染）
  var _log=(S.marketHotLog||[]);
@@ -4117,7 +4121,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v62</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v63</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
