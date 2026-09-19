@@ -1582,6 +1582,9 @@ function fetchCloudSeed(){
  }catch(e){}
 }
 
+/* R68 热销选品库：标题常显、内容默认折叠；_hotOpen 记住展开态，点行业标签重渲染后不会自动收起 */
+var _hotOpen=false;
+function hotFoldSet(v){_hotOpen=!!v;}
 function hotSection(){
  hotDailyCheck();
  var ind=S._hotInd||hotSmartInd();var _autoInd=(!S._hotInd);
@@ -1595,6 +1598,8 @@ function hotSection(){
  var h='<div class="card" style="margin-bottom:12px;border:1px solid var(--main)">';
  h+='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">'+TX('热销选品库','Hot Product Library')+'</h3><span class="muted" style="font-size:12px">'+TX('内置选品池 + 你导入的私藏，每天自动换一批','Built-in pool + your imports, a fresh set every day')+'</span>';
  h+='<span class="hint" style="margin:0">'+esc(todayStr())+' · '+TX('今日 '+list.length+' 款全新',''+list.length+' fresh today')+' · '+TX('含 '+nw+' 款近期热销新品',''+nw+' rising-new')+' · '+TX('池内 '+pc+' 款，约 '+cyc+' 天轮完不重复',''+pc+' in pool, ~'+cyc+' days to cycle')+'</span></div>';
+ h+='<details style="margin-top:6px"'+(_hotOpen?' open':'')+' ontoggle="hotFoldSet(this.open)">';
+ h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('▸ 展开今日 '+list.length+' 款热销选品（含搜索 / 换一批 / 平台实时榜单）','▸ Expand today picks ('+list.length+'): search / shuffle / live boards')+'</summary>';
  h+='<div class="hint" style="margin:6px 0 8px">'+TX('按行业给你推值得看的产品：参考价、MOQ、目标市场、为什么热。「近期热销新品」= 趋势上升/新起量的品类，「持续热销」= 长期稳定出单的品类；标签为参考判断（本工具离线运行，不联网抓取），真实实时热销请点下方平台榜单。','Daily picks by industry: ref price, MOQ, target market, why it sells. Tags are reference judgements only (offline tool, no live scraping) - use the platform boards below for real-time data.')+'</div>';
  if(!myMkt)h+='<div class="hint" style="margin:0 0 8px;color:#b45309">'+TX('还没设目标市场：去「我的资料」填主打市场，这里会自动按你的市场标红推荐。','No target market set: fill "Main market" in My Profile, then picks here auto-highlight in red for your market.')+'</div>';
  if(_autoInd)h+='<div class="hint" style="margin:0 0 8px">'+TX('已按你的资料智能推荐「'+IND_NAME[ind]+'」行业（该行业池内 '+poolNew+' 款近期热销新品）；点上面的行业标签可手动切换。','Auto-recommended "'+IND_NAME[ind]+'" from your profile ('+poolNew+' rising-new items); tap an industry tag to switch.')+'</div>';
@@ -1622,6 +1627,7 @@ function hotSection(){
  h+='<div id="hot_qr">'+hotCardsHTML()+'</div>';
  var fav=S.hotFav||[];
  h+='<div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn ghost mini" data-action="hotExport">'+TX('导出我的收藏（'+fav.length+'）','Export favorites ('+fav.length+')')+'</button></div>';
+ h+='</details>';
  h+='</div>';
  return h;
 }
@@ -4185,7 +4191,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v67</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v68</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
