@@ -1387,7 +1387,7 @@ function marketHotAdd(k){
  if(!Array.isArray(S.marketHot))S.marketHot=[];
  if(marketHotHas(it.n)){toast(TX('已在你的热榜里','Already in your list'));return;}
  S.marketHot.push({k:'mh'+Date.now()+'_'+S.marketHot.length,name:it.n,ind:it.i,price:it.p,src:it.s,note:it.t});
- S.marketHotDay=todayStr(); save(); refreshAll();
+ S.marketHotDay=todayStr(); save('marketHot',S.marketHot); save('marketHotDay',S.marketHotDay); refreshAll();
  toast(TX('已加入今日热榜：'+it.n,'Added: '+it.n));
 }
 
@@ -1397,7 +1397,7 @@ function marketHotAddName(it){
  if(marketHotHas(it.name)){toast(TX('已在你的热榜里','Already in your list'));return;}
  S.marketHot.push({k:'mh'+Date.now()+'_'+S.marketHot.length,name:it.name,ind:it.ind||'',price:it.price||'',src:it.src||'',note:it.note||''});
  marketHotLogAdd(it);
- S.marketHotDay=todayStr(); save(); refreshAll();
+ S.marketHotDay=todayStr(); save('marketHot',S.marketHot); save('marketHotDay',S.marketHotDay); save('marketHotLog',S.marketHotLog); refreshAll();
  toast(TX('已加入今日热榜：'+it.name,'Added: '+it.name));
 }
 
@@ -1452,27 +1452,34 @@ function marketHotSection(){
   h+='</div>';
  }
 
- // 选品灵感参考：默认收起，不占空间；我的真实导入 + 内置方向
- h+='<details style="margin-top:10px">';
- h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('选品灵感参考（内置 '+MARKET_SEED.length+' 款 · 非实时）','Sourcing inspiration ('+MARKET_SEED.length+' · not live)')+'</summary>';
- h+='<div class="hint" style="margin:6px 0 4px">'+TX('内置常年跑量方向（含穆斯林/斋月礼品专款）；「加入」并入你的今日榜单。','Evergreen directions; tap Add to merge.')+'</div>';
-
- // B. 我导入过的真实热销（本地累积，越用越新；R61 补渲染）
+ /* R69 我的导入记录：从「选品灵感参考」内整块独立出来（用户要求：不与灵感参考混放）。
+    本机长期保存，不随界面版本更新而清空；空态也常显区块，保证功能位置不消失。 */
  var _log=(S.marketHotLog||[]);
+ h+='<div id="mhLogBox" style="margin-top:14px;padding:10px 12px;background:rgba(42,90,160,.06);border:1px solid rgba(42,90,160,.25);border-radius:10px">';
+ h+='<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-weight:700;font-size:14px;color:#2a5aa0">'+TX('我导入过的真实热销 · '+_log.length+' 款','My imported hot items · '+_log.length)+'</span><span class="hint" style="margin:0">'+TX('（本机长期保存，不随版本更新清空）','(Kept on this device across updates)')+'</span></div>';
  if(_log.length){
-  h+='<div class="hint" style="margin:8px 0 3px;font-weight:600">我导入过的真实热销（'+_log.length+' 款 · 越用越新）</div>';
-  h+='<div class="grid g2">';
+  h+='<details style="margin-top:4px"><summary style="cursor:pointer;font-weight:600;font-size:13px;color:#2a5aa0">'+TX('▸ 展开我的 '+_log.length+' 款导入记录（越用越新）','▸ Expand my '+_log.length+' imports')+'</summary>';
+  h+='<div class="grid g2" style="margin-top:6px">';
   for(var l=0;l<_log.length;l++){
    var ld=_log[l];
-   h+='<div class="card" style="padding:8px 10px;margin:0;border-left:3px solid var(--main)">';
+   h+='<div class="card" style="padding:8px 10px;margin:0;border-left:3px solid #2a5aa0">';
    h+='<div style="font-weight:600;font-size:12px">'+esc(ld.name)+'</div>';
    var lmeta=[]; if(ld.ind)lmeta.push(esc(ld.ind)); if(ld.price)lmeta.push(esc(ld.price)); if(ld.src)lmeta.push(esc(ld.src)); if(ld.date)lmeta.push(TX('记录于','on')+' '+esc(ld.date));
    if(lmeta.length)h+='<div class="hint" style="margin:2px 0;font-size:11px">'+lmeta.join(' · ')+'</div>';
    h+='</div>';
   }
   h+='</div>';
-  h+='<div class="row" style="margin:4px 0 0"><button class="btn ghost mini" data-action="marketHotLogClear">'+TX('清空导入记录','Clear import history')+'</button></div>';
+  h+='<div class="row" style="margin:6px 0 0"><button class="btn ghost mini" data-action="marketHotLogClear">'+TX('清空导入记录','Clear import history')+'</button></div>';
+  h+='</details>';
+ } else {
+  h+='<div class="hint" style="margin:6px 0 0">'+TX('还没有导入记录：点上方「＋ 导入今日热销」或任意「加入」，都会沉淀到这里，长期保存、越用越新。','No imports yet: use + Import today or Add — they accumulate here permanently.')+'</div>';
  }
+ h+='</div>';
+
+ // 选品灵感参考：默认收起，不占空间（R69 起「我的导入记录」已独立到上方，不再混放于此）
+ h+='<details style="margin-top:10px">';
+ h+='<summary style="cursor:pointer;font-weight:600;font-size:13px">'+TX('选品灵感参考（内置 '+MARKET_SEED.length+' 款 · 非实时）','Sourcing inspiration ('+MARKET_SEED.length+' · not live)')+'</summary>';
+ h+='<div class="hint" style="margin:6px 0 4px">'+TX('内置常年跑量方向（含穆斯林/斋月礼品专款）；「加入」并入你的今日榜单。','Evergreen directions; tap Add to merge.')+'</div>';
 
  // C. 内置方向（常年跑量，含穆斯林/斋月礼品专款）
  for(var g=0;g<MARKET_IND.length;g++){
@@ -1554,19 +1561,19 @@ function marketHotApply(text){
  }
  if(!items.length){toast(TX('没有解析到任何产品','No products parsed'));return false;}
  for(var q=0;q<items.length;q++)marketHotLogAdd(items[q]); /* R67：导入即沉淀进「我导入过的真实热销」，越用越新 */
- S.marketHot=items; S.marketHotDay=todayStr(); save(); refreshAll();
+ S.marketHot=items; S.marketHotDay=todayStr(); save('marketHot',S.marketHot); save('marketHotDay',S.marketHotDay); save('marketHotLog',S.marketHotLog); refreshAll();
  toast(TX('已导入今日市场热榜：'+items.length+' 款','Imported '+items.length+' today'));
  return true;
 }
 
 function marketHotClear(){
  if(typeof confirm==='function' && !confirm(TX('确定清空今日市场热榜？','Clear today hotlist?')) )return;
- S.marketHot=[]; S.marketHotDay=''; save(); refreshAll();
+ S.marketHot=[]; S.marketHotDay=''; save('marketHot',S.marketHot); save('marketHotDay',S.marketHotDay); refreshAll();
 }
 
 function marketHotLogClear(){
  if(typeof confirm==='function' && !confirm(TX('确定清空「我导入过的真实热销」记录？','Clear import history?')) )return;
- S.marketHotLog=[]; save(); refreshAll();
+ S.marketHotLog=[]; save('marketHotLog',S.marketHotLog); refreshAll();
 }
 
 /* 线上版自动拉取同仓库 market_seed.json（file:// 与失败静默回退） */
@@ -4191,7 +4198,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v68</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v69</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
