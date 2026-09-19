@@ -1296,7 +1296,63 @@ var MARKET_SEED=[
  {k:'s30',n:'婴儿背带腰凳（透气款）',i:'母婴玩具',p:'¥55-95',s:'阿里国际站',t:'四季可用，户外带娃'}
 ];
 var MARKET_IND=['3C电子','家居礼品','户外运动','美妆个护','母婴玩具'];
-var cloudSeed=[], cloudSeedDate=''; /* R62 线上版自动拉取的云端趋势（market_seed.json） */
+var CLOUD_SEED_EMBEDDED=[
+  {name:"智能礼拜毯（带指南针+阿赞喇叭）",ind:"穆斯林礼品",price:"¥35-70",src:"阿里国际站",note:"朝觐/旅行刚需，2026 穆斯林科技礼热门"},
+  {name:"数码古兰经播读器+礼拜时间钟",ind:"穆斯林礼品",price:"¥40-85",src:"阿里国际站",note:"年轻穆斯林科技礼，阿语/英语双显"},
+  {name:"Tasbih 电子念珠计数环",ind:"穆斯林礼品",price:"¥12-28",src:"1688",note:"传统念珠+电子计数，复购高"},
+  {name:"古兰经电子笔 Quran Pen Reader 32G",ind:"穆斯林礼品",price:"¥35-70",src:"阿里国际站",note:"2026 升级款，背诵学习刚需"},
+  {name:"儿童礼拜毯/祈祷垫（Kid Prayer Rug）",ind:"穆斯林礼品",price:"¥15-35",src:"阿里国际站",note:"2026 Ramadan 实销热款，穆斯林家庭刚需"},
+  {name:"斋月 LED 月亮星星灯串/台灯",ind:"穆斯林礼品",price:"¥9-22",src:"1688",note:"TikTok 节庆爆款，开斋节刚需"},
+  {name:"Eid 倒数日历 DIY Countdown 30天",ind:"穆斯林礼品",price:"¥25-50",src:"1688",note:"2026 Ramadan 爆款（月销 477+），节前礼赠"},
+  {name:"Ramadan 金属托盘 Eid Mubarak 礼盘",ind:"穆斯林礼品",price:"¥20-60",src:"阿里国际站",note:"2026 新款，节庆餐桌高溢价"},
+  {name:"Eid Mubarak 靠枕套（Peach Skin 4件）",ind:"穆斯林礼品",price:"¥12-28",src:"1688",note:"家居+节庆双场景复用"},
+  {name:"伊斯兰墙艺 Ayatul Kursi 金属挂画",ind:"穆斯林礼品",price:"¥25-55",src:"阿里国际站",note:"高端家居装饰，溢价明显"},
+  {name:"开斋节糖果纸盒/礼盒（Party Favors）",ind:"穆斯林礼品",price:"¥0.2-1",src:"1688",note:"量大走货，节庆分装刚需"},
+  {name:"清真祈祷珠 Islamic Rosary",ind:"穆斯林礼品",price:"¥2-8",src:"1688",note:"传统念珠批量，复购稳"},
+  {name:"高端椰枣礼盒（Medjool/Ajwa）",ind:"穆斯林礼品",price:"¥28-60",src:"AliExpress",note:"开斋节送礼升级，溢价明显"},
+  {name:"阿拉伯书法裱框画（中东家居）",ind:"穆斯林礼品",price:"¥22-45",src:"阿里国际站",note:"中东家居装饰刚需"},
+  {name:"万圣节装饰灯串/南瓜灯/恐怖道具",ind:"节日旺季",price:"¥5-30",src:"1688",note:"9月起订单爬坡，10/31 全年装饰峰值"},
+  {name:"万圣节 Cosplay 服装面具",ind:"节日旺季",price:"¥15-60",src:"AliExpress",note:"派对刚需，节庆爆单"},
+  {name:"圣诞 LED 灯饰/投影灯/挂件",ind:"节日旺季",price:"¥9-40",src:"AliExpress",note:"全球圣诞装饰中国占90%，Q4最大品类"},
+  {name:"圣诞倒数日历 Advent Calendar 礼盒",ind:"节日旺季",price:"¥20-60",src:"1688",note:"早季(9月前)上架，黑五圣诞双峰"},
+  {name:"圣诞主题抱枕套/桌饰（Throw Pillow）",ind:"节日旺季",price:"¥8-25",src:"1688",note:"低成本焕新家居，礼赠属性强"},
+  {name:"圣诞丑毛衣/亲子套装（Ugly Sweater）",ind:"节日旺季",price:"¥35-90",src:"AliExpress",note:"黑五服装热销之王，客单高"},
+  {name:"宠物圣诞服饰/人宠同款",ind:"节日旺季",price:"¥10-40",src:"AliExpress",note:"#pet christmas 社媒爆，双流量"},
+  {name:"来图定制拼图/定制秋冬卫衣（POD）",ind:"节日旺季",price:"¥15-90",src:"1688",note:"POD 高溢价，亲子套装客单高转化强"},
+  {name:"感恩节桌布/餐具套装/香薰蜡烛",ind:"节日旺季",price:"¥10-45",src:"AliExpress",note:"host 场景刚需，黑五家居礼品爆发"},
+  {name:"40OZ 大容量保温杯（Stanley 风）",ind:"节日旺季",price:"¥25-70",src:"AliExpress",note:"圣诞礼赠实用爆款"},
+  {name:"室内桌游/拼图/卡拉OK机",ind:"节日旺季",price:"¥30-150",src:"AliExpress",note:"黑五圣诞双驱动，强礼品属性"},
+  {name:"陶瓷火焰取暖器/电壁炉（PTC+LED）",ind:"冬季保暖",price:"¥80-220",src:"阿里国际站",note:"2026 欧洲冬季爆款，带香薰托盘/火焰视效溢价"},
+  {name:"暖风机/小太阳（静音速热）",ind:"冬季保暖",price:"¥40-120",src:"1688",note:"北半球入冬刚需，欧盟需 CE"},
+  {name:"电热毯/可穿戴加热毯/加热坐垫",ind:"冬季保暖",price:"¥30-120",src:"AliExpress",note:"冬季保暖刚需，欧洲需 CE 认证"},
+  {name:"门窗密封条/遮光加厚窗帘",ind:"冬季保暖",price:"¥8-35",src:"1688",note:"保暖省电，退货低长尾复购"},
+  {name:"空气炸锅/咖啡机（网红小家电）",ind:"冬季保暖",price:"¥90-260",src:"阿里国际站",note:"节日焕新厨电，数据稳定爆单"},
+  {name:"智能插头/智能灯 Starter Kit",ind:"冬季保暖",price:"¥25-80",src:"AliExpress",note:"智能家居礼赠入门，跨生态兼容"},
+  {name:"机器人吸尘器（高客单礼品）",ind:"冬季保暖",price:"¥300-900",src:"TikTok Shop",note:"黑五折扣感强，演示型高转化"},
+  {name:"雨云香薰加湿器/除湿机",ind:"冬季保暖",price:"¥35-90",src:"AliExpress",note:"TikTok 爆款家居，情绪价值+干燥护理"},
+  {name:"宠物保暖窝/宠物服饰/加热垫",ind:"宠物保暖",price:"¥15-90",src:"AliExpress",note:"养宠家庭冬季刚需，俄/欧增量明显"},
+  {name:"滑雪手套/防冻面罩/保暖帽",ind:"户外运动",price:"¥10-50",src:"AliExpress",note:"冬季运动旺季，配件无尺码退换低"},
+  {name:"室内健身器材（甩脂机/阻力带）",ind:"户外运动",price:"¥30-200",src:"AliExpress",note:"12月居家健身爆发，复购低退率高"},
+  {name:"轻量化 1kg 快开帐篷 + 折叠桌椅",ind:"户外运动",price:"¥80-220",src:"1688",note:"露营增速 63%+，欧美/东南亚旺季"},
+  {name:"折叠太阳能板 100W / 户外电源站",ind:"户外运动",price:"¥220-1500",src:"阿里国际站",note:"露营+停电应急，欧洲能源刚需"},
+  {name:"车载除冰铲/防滑链/行车记录仪",ind:"汽车养护",price:"¥8-120",src:"AliExpress",note:"俄/欧严冬硬通货，客单高利润"},
+  {name:"USB 低压暖手宝/充电加热坐垫",ind:"汽车养护",price:"¥15-60",src:"1688",note:"俄罗斯市场爆款，物流省事合规易"},
+  {name:"俄罗斯市场保暖刚需包（Ozon/WB）",ind:"汽车养护",price:"¥20-80",src:"Ozon/WB",note:"俄下半年占全年70%，9月最后备货窗，需 EAC"},
+  {name:"AI 翻译机 ODM（离线 138 国语言）",ind:"3C电子",price:"¥120-180",src:"阿里国际站",note:"出海沟通刚需，跨境卖家转售"},
+  {name:"65W GaN 氮化镓充电宝二合一",ind:"3C电子",price:"¥55-85",src:"1688",note:"充电头+充电宝一体，出差爆款"},
+  {name:"3合1 无线充电基站（表/机/耳机）",ind:"3C电子",price:"¥45-90",src:"AliExpress",note:"2026 高毛利（约70%差价比）"},
+  {name:"AI 翻译耳机 / 防汗运动 TWS",ind:"3C电子",price:"¥30-60",src:"1688",note:"全球通吃，更新快复购高"},
+  {name:"智能健康戒指（心率/睡眠）",ind:"3C电子",price:"¥150-260",src:"TikTok Shop",note:"可穿戴新宠，短视频素材多"},
+  {name:"便携蓝牙音箱/便携投影仪",ind:"3C电子",price:"¥25-260",src:"AliExpress",note:"高感知价值，节日捆赠/家庭影院"},
+  {name:"无线充电板/笔记本支架（黑五数码周边）",ind:"3C电子",price:"¥15-50",src:"1688",note:"网一数码配件爆发，轻小走量"},
+  {name:"磁性睫毛（免胶）/ 便携美甲套装",ind:"美妆个护",price:"¥8-30",src:"AliExpress",note:"TikTok 美妆 +29% 增长"},
+  {name:"射频美容仪 / 脱毛仪 IPL",ind:"美妆个护",price:"¥120-280",src:"TikTok Shop",note:"抗衰家用，欧美热"},
+  {name:"冬季干燥护肤套装（润唇膏+护手霜+真丝枕套）",ind:"美妆个护",price:"¥15-60",src:"AliExpress",note:"冷气+暖气干皮刚需，礼赠属性强"},
+  {name:"AI 智能互动玩具 / 语音公仔",ind:"母婴玩具",price:"¥40-90",src:"阿里国际站",note:"客单价 +60-70%，欧美东南亚量价齐升"},
+];
+var CLOUD_SEED_DATE='2026-09-19';
+var cloudSeed=CLOUD_SEED_EMBEDDED.slice(); /* R65 内联：桌面 file:// 离线即见，线上 fetch 覆盖刷新 */
+var cloudSeedDate=CLOUD_SEED_DATE;
 
 function marketHotKw(v){
  var q=(v||'').trim();
@@ -1378,7 +1434,7 @@ function marketHotSection(){
  if(_cloudN){
   h+='<div style="margin-top:14px;padding:10px 12px;background:rgba(42,119,90,.06);border:1px solid rgba(42,119,90,.25);border-radius:10px">';
   h+='<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px"><span style="font-weight:700;font-size:14px;color:#2a7">'+TX('云端趋势 · 更新于 '+cloudSeedDate,'Cloud trends · '+cloudSeedDate)+'</span><span class="hint" style="margin:0">'+TX('（AI 定期更新，非平台实时销量）','(AI refresh, not live sales)')+'</span></div>';
-  h+='<div class="hint" style="margin:0 0 8px">'+TX('线上版每次打开自动拉取；想更新告诉我“刷新趋势”。桌面离线版（file://）看不到此区（浏览器禁止跨站读取）。','Online auto-fetches on open; say 刷新趋势 to refresh. Desktop file:// hides this (browser blocks cross-site).')+'</div>';
+  h+='<div class="hint" style="margin:0 0 8px">'+TX('内置离线版同样可见；线上版每次打开自动拉取最新，想更新告诉我“刷新趋势”。','Embedded offline visible; online auto-fetches latest on open; say 刷新趋势 to refresh.')+'</div>';
   h+='<div class="grid g2">';
   for(var c=0;c<cloudSeed.length;c++){
    var cd=cloudSeed[c]; var chas=marketHotHas(cd.name);
@@ -4121,7 +4177,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v64</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v65</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
