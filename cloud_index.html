@@ -360,7 +360,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead','marketHot','marketHotDay'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead','marketHot','marketHotDay','marketHotLog'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -380,7 +380,7 @@ var S={
  _recShow:false,_chkShow:false,
  _activeClient:load('_activeClient',''),
  _cadText:load('_cadText',''),
- _reconLead:load('_reconLead',''),marketHot:load('marketHot',[]),marketHotDay:load('marketHotDay',''),
+ _reconLead:load('_reconLead',''),marketHot:load('marketHot',[]),marketHotDay:load('marketHotDay',''),marketHotLog:load('marketHotLog',[]),
  docDefaults:load('docDefaults',{}),
  _defShow:false,
  hidden:load('hidden',[]),
@@ -487,7 +487,7 @@ function buildState(){
   _recShow:false,_chkShow:false,
   _activeClient:load('_activeClient',''),
   _cadText:load('_cadText',''),
-  _reconLead:load('_reconLead',''),marketHot:load('marketHot',[]),marketHotDay:load('marketHotDay',''),
+  _reconLead:load('_reconLead',''),marketHot:load('marketHot',[]),marketHotDay:load('marketHotDay',''),marketHotLog:load('marketHotLog',[]),
   docDefaults:load('docDefaults',{}),
   _defShow:false,
   hidden:load('hidden',[]),
@@ -1314,6 +1314,15 @@ function marketHotHas(nm){
  return false;
 }
 
+function marketHotLogAdd(it){
+ if(!Array.isArray(S.marketHotLog))S.marketHotLog=[];
+ var nm=(it.name||'').trim(); if(!nm)return;
+ var d=todayStr();
+ for(var i=0;i<S.marketHotLog.length;i++){
+  if((S.marketHotLog[i].name||'').trim()===nm){ S.marketHotLog[i].date=d; if(it.ind&&!S.marketHotLog[i].ind)S.marketHotLog[i].ind=it.ind; return; }
+ }
+ S.marketHotLog.push({k:'ml'+(Date.now())+'_'+S.marketHotLog.length,name:nm,ind:it.ind||'',price:it.price||'',src:it.src||'',note:it.note||'',date:d});
+}
 function marketHotAdd(k){
  var it=null;
  for(var i=0;i<MARKET_SEED.length;i++){if(MARKET_SEED[i].k===k){it=MARKET_SEED[i];break;}}
@@ -4042,7 +4051,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v60</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v61</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4271,7 +4280,7 @@ document.addEventListener('click',function(e){
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
  else if(a==='marketHotImport'){marketHotImport();}
- else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}
+ else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}else if(a==='marketHotLogClear'){marketHotLogClear();}
  else if(a==='marketHotClear'){marketHotClear();}
  else if(a==='extType'){S._extType=el.dataset.type;save('_extType',S._extType);refreshAll();}
  else if(a==='extTemplate'){extTemplate();}
