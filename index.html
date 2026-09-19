@@ -1510,13 +1510,18 @@ function marketHotSection(){
 }
 
 function marketHotImport(){
- var body='<p class="hint">'+TX('粘贴今日市场热销（每行一个品名；或用制表符/逗号分隔 品名,行业,价格,来源,备注；首行可写表头）。也可选择 CSV 或 TXT 文件，会自动填入下方。','Paste todays hotlist (one name per line; or tab/comma separated name,ind,price,source,note; optional header row). Or pick a CSV or TXT file to auto-fill below.')+'</p>';
- body+='<textarea id="mhText" rows="9" style="width:100%;box-sizing:border-box;font-family:inherit"></textarea>';
- body+='<div style="margin-top:8px"><input type="file" id="mhFile" accept=".csv,.txt"></div>';
- openModal(TX('导入今日市场热榜','Import Live Market Hotlist'), body, function(){
-  var t=$('mhText').value;
-  if(marketHotApply(t)) closeModal();
- });
+ /* R67 修复：原先误用 openModal（纯文本确认框，body 会被 esc() 转义），导致输入框渲染不出来、点“确定”时取 mhText 抛错 → 按钮形同失效。
+    改为与 hotImportModal 一致：直接设 modalBody.innerHTML 渲染真实 HTML，再手动弹层。 */
+ var _mhDemo='记忆棉祈祷毯,家居礼品,¥28-45,1688,斋月旺季\n电子念珠 Tasbih,3C电子,¥12-20,AliExpress,数字计数\n古兰经蓝牙音箱,3C电子,¥65-99,1688,斋月礼品\n圣诞 LED 灯串,节日装饰,¥8-15,义乌,黑色星期五\n冬季加绒手套,服饰配件,¥6-12,1688,俄罗斯市场';
+ var h='<h3 style="margin:0 0 8px">'+TX('导入今日市场热榜','Import Live Market Hotlist')+'</h3>';
+ h+='<p class="hint" style="margin:0 0 8px">'+TX('粘贴今日在卖/起量的品：每行一个品名；或 品名,行业,价格,来源,备注（逗号/制表符分隔，首行可写表头）。也可选 CSV/TXT 文件自动填入。','Paste today hot items: one name per line; or name,ind,price,source,note (comma/tab, optional header). Or pick a CSV/TXT to auto-fill.')+'</p>';
+ h+='<textarea id="mhText" rows="9" placeholder="'+TX('记忆棉祈祷毯,家居礼品,¥28-45,1688,斋月旺季','Prayer mat,home gift,¥28-45,1688,Ramadan')+'" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:16px"></textarea>';
+ h+='<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input type="file" id="mhFile" accept=".csv,.txt" style="flex:1;min-width:150px"><button type="button" class="btn ghost mini" id="mhDemo">'+TX('载入示例','Load sample')+'</button></div>';
+ h+='<div class="hint" style="margin:6px 0 0">'+TX('导入会覆盖「今日市场热榜」，并沉淀进「我导入过的真实热销」。','Import replaces today hotlist and logs into your import history.')+'</div>';
+ h+='<div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="mhImpOk">'+TX('导入','Import')+'</button></div>';
+ $('modalBody').innerHTML=h; $('modal').classList.add('show');
+ var ok=$('mhImpOk'); if(ok)ok.onclick=function(){ var ta=$('mhText'); if(marketHotApply(ta?ta.value:'')) closeModal(); };
+ var dm=$('mhDemo'); if(dm)dm.onclick=function(){ var ta=$('mhText'); if(ta)ta.value=_mhDemo; };
  var fi=$('mhFile');
  if(fi)fi.onchange=function(e){
   var f=(e.target.files||[])[0]; if(!f)return;
@@ -1548,6 +1553,7 @@ function marketHotApply(text){
   }
  }
  if(!items.length){toast(TX('没有解析到任何产品','No products parsed'));return false;}
+ for(var q=0;q<items.length;q++)marketHotLogAdd(items[q]); /* R67：导入即沉淀进「我导入过的真实热销」，越用越新 */
  S.marketHot=items; S.marketHotDay=todayStr(); save(); refreshAll();
  toast(TX('已导入今日市场热榜：'+items.length+' 款','Imported '+items.length+' today'));
  return true;
@@ -4179,7 +4185,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v66</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v67</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4287,6 +4293,9 @@ function refreshAll(){
  applyGlossary();
 }
 /* ============ 弹窗 ============ */
+/* 注意：openModal 仅用于「纯文本确认」弹窗——body 会被 esc() 转义。
+   凡需要输入框/按钮/任意 HTML 的弹窗（如导入框），请勿使用本函数；
+   应自行 $('modalBody').innerHTML=h; $('modal').classList.add('show'); 再按 id 绑定事件（见 hotImportModal / marketHotImport）。 */
 function openModal(title,body,onOk){
  $('modalBody').innerHTML='<h3>'+esc(title)+'</h3><p style="color:var(--sub);font-size:14px;line-height:1.6">'+esc(body)+'</p><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn danger" id="modalOk">'+TX('确定','OK')+'</button></div>';
  $('modal').classList.add('show');
