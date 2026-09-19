@@ -4121,7 +4121,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v63</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v64</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -6191,7 +6191,7 @@ function docDefApply(pid){
  toast(TX('已按【'+p.zh+'】套用：已设置交易条件并预勾所需单证，请逐项核对实际出单后取消未出的勾选','Applied preset: '+p.en+'. Review and uncheck docs not actually issued.'));
 }
 /* ============ 初始化 ============ */
-function init(){hotDailyCheck();hotStartTimer();refreshAll();}
+function init(){hotDailyCheck();hotStartTimer();fetchCloudSeed();refreshAll();}
 
 /* ===== 本地身份门禁（纯前端：账号与数据仅存本机浏览器，非云端账号） ===== */
 function wbHash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(16);}
