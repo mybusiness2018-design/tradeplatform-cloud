@@ -1262,7 +1262,69 @@ function hotQIn(v){
  var box=(typeof document!=='undefined')&&document.getElementById&&document.getElementById('hot_qr');
  if(box)box.innerHTML=hotCardsHTML();
 }
-/* ============ 今日市场热榜（真实数据导入 + 平台榜单入口，与离线热销选品库并存） ============ */
+/* ============ 今日市场热榜 R59：站内直显参考热榜 + 关键词搜索直达（与离线热销选品库并存） ============ */
+var MARKET_SEED=[
+ {k:'s01',n:'磁吸充电宝 10000mAh（15W 无线快充）',i:'3C电子',p:'¥38-55',s:'TikTok Shop',t:'磁吸+支架一体，iPhone 通用'},
+ {k:'s02',n:'三合一折叠无线充',i:'3C电子',p:'¥45-70',s:'1688',t:'手机/耳机/手表同时充，出差好卖'},
+ {k:'s03',n:'ANC 主动降噪 TWS 耳机',i:'3C电子',p:'¥55-95',s:'阿里国际站',t:'降噪+长续航，欧美热销'},
+ {k:'s04',n:'65W GaN 氮化镓多口充电头',i:'3C电子',p:'¥28-42',s:'1688',t:'小体积多口，笔电手机通用'},
+ {k:'s05',n:'太阳能充电宝 20000mAh',i:'3C电子',p:'¥85-120',s:'阿里国际站',t:'户外/停电应急，中东需求高'},
+ {k:'s06',n:'车载磁吸无线充支架',i:'3C电子',p:'¥22-35',s:'AliExpress',t:'车载+磁吸，车品常青款'},
+ {k:'s07',n:'电子念珠 Tasbih（数字计数）',i:'家居礼品',p:'¥18-30',s:'1688',t:'斋月热销，可定制刻字'},
+ {k:'s08',n:'古兰经蓝牙音箱',i:'家居礼品',p:'¥60-95',s:'阿里国际站',t:'预装诵读音频，中东爆款'},
+ {k:'s09',n:'LED 斋月灯串（星月造型）',i:'家居礼品',p:'¥12-25',s:'1688',t:'斋月装饰刚需，节前放量'},
+ {k:'s10',n:'记忆棉祈祷毯 Prayer Mat',i:'家居礼品',p:'¥35-65',s:'阿里国际站',t:'加厚防滑，朝拜日用'},
+ {k:'s11',n:'香薰加湿器（椰枣/乌木香型）',i:'家居礼品',p:'¥45-80',s:'AliExpress',t:'中东香型，礼品场景'},
+ {k:'s12',n:'椰枣礼盒空包装（烫金）',i:'家居礼品',p:'¥8-18',s:'1688',t:'斋月/开斋节送礼刚需'},
+ {k:'s13',n:'太阳能露营灯（三档调光）',i:'户外运动',p:'¥25-40',s:'1688',t:'露营+停电应急，中东畅销'},
+ {k:'s14',n:'折叠露营桌椅套装',i:'户外运动',p:'¥120-220',s:'阿里国际站',t:'家庭露营，欧美旺季'},
+ {k:'s15',n:'便携折叠水桶 10L',i:'户外运动',p:'¥15-28',s:'AliExpress',t:'露营/洗车两用'},
+ {k:'s16',n:'316 不锈钢保温杯 500ml',i:'户外运动',p:'¥28-48',s:'1688',t:'24h 保温，礼品定制多'},
+ {k:'s17',n:'迷你折叠烧烤炉',i:'户外运动',p:'¥45-75',s:'阿里国际站',t:'露营+庭院，欧美热卖'},
+ {k:'s18',n:'户外战术腰包/胸包',i:'户外运动',p:'¥22-38',s:'AliExpress',t:'徒步通勤，轻量防水'},
+ {k:'s19',n:'硅胶头皮按摩刷',i:'美妆个护',p:'¥12-22',s:'1688',t:'洗头按摩，短视频带货强'},
+ {k:'s20',n:'负离子直发梳',i:'美妆个护',p:'¥35-58',s:'TikTok Shop',t:'便携速热，欧美热销'},
+ {k:'s21',n:'硅胶声波电动洁面仪',i:'美妆个护',p:'¥28-45',s:'阿里国际站',t:'清洁+按摩，复购高'},
+ {k:'s22',n:'冷光美牙笔/家用美白仪',i:'美妆个护',p:'¥30-55',s:'AliExpress',t:'家用美白，耗材复购'},
+ {k:'s23',n:'便携电动剃须刀',i:'美妆个护',p:'¥40-70',s:'1688',t:'旅行便携，礼盒装好卖'},
+ {k:'s24',n:'面部/颈部滚轮按摩仪',i:'美妆个护',p:'¥18-32',s:'TikTok Shop',t:'紧致按摩，爆款素材多'},
+ {k:'s25',n:'婴儿推车夹式风扇',i:'母婴玩具',p:'¥18-30',s:'1688',t:'夏天刚需，中东常年热'},
+ {k:'s26',n:'食品级硅胶牙胶（多造型）',i:'母婴玩具',p:'¥6-12',s:'AliExpress',t:'安全材质，复购高'},
+ {k:'s27',n:'婴儿感温变色勺',i:'母婴玩具',p:'¥8-15',s:'1688',t:'防烫，家长必买'},
+ {k:'s28',n:'阿拉伯语儿童早教机',i:'母婴玩具',p:'¥45-80',s:'阿里国际站',t:'中东语种，教育刚需'},
+ {k:'s29',n:'折叠婴儿澡盆',i:'母婴玩具',p:'¥35-60',s:'AliExpress',t:'省空间，欧美热销'},
+ {k:'s30',n:'婴儿背带腰凳（透气款）',i:'母婴玩具',p:'¥55-95',s:'阿里国际站',t:'四季可用，户外带娃'}
+];
+var MARKET_IND=['3C电子','家居礼品','户外运动','美妆个护','母婴玩具'];
+
+function marketHotKw(v){
+ var q=(v||'').trim();
+ var pairs=[
+  ['mhL1','https://www.aliexpress.com/wholesale?SearchText=',q||'hot selling'],
+  ['mhL2','https://s.1688.com/selloffer/offer_search.htm?keywords=',q||'热销'],
+  ['mhL3','https://www.alibaba.com/trade/search?SearchText=',q||'hot selling'],
+  ['mhL4','https://www.douyin.com/search/',q||'爆款']
+ ];
+ for(var i=0;i<pairs.length;i++){var a=$(pairs[i][0]); if(a)a.setAttribute('href',pairs[i][1]+encodeURIComponent(pairs[i][2]));}
+}
+
+function marketHotHas(nm){
+ if(!Array.isArray(S.marketHot))return false;
+ for(var i=0;i<S.marketHot.length;i++){if((S.marketHot[i].name||'')===nm)return true;}
+ return false;
+}
+
+function marketHotAdd(k){
+ var it=null;
+ for(var i=0;i<MARKET_SEED.length;i++){if(MARKET_SEED[i].k===k){it=MARKET_SEED[i];break;}}
+ if(!it)return;
+ if(!Array.isArray(S.marketHot))S.marketHot=[];
+ if(marketHotHas(it.n)){toast(TX('已在你的热榜里','Already in your list'));return;}
+ S.marketHot.push({k:'mh'+Date.now()+'_'+S.marketHot.length,name:it.n,ind:it.i,price:it.p,src:it.s,note:it.t});
+ S.marketHotDay=todayStr(); save(); refreshAll();
+ toast(TX('已加入今日热榜：'+it.n,'Added: '+it.n));
+}
+
 function marketHotSection(){
  var items=S.marketHot||[];
  var day=S.marketHotDay||'';
@@ -1270,30 +1332,14 @@ function marketHotSection(){
  var h='<div class="card" style="margin-bottom:12px;border:1px solid var(--main)">';
  h+='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">'+TX('今日市场热榜','Live Market Hotlist')+'</h3>';
  h+='<span class="muted" style="font-size:12px">'+(day?TX('最后更新：'+day+(isToday?'（今日）':''),'Updated: '+day+(isToday?' (today)':'')):TX('尚未导入','Not imported'))+'</span></div>';
- h+='<div class="hint" style="margin:6px 0 8px">'+TX('这是「真实市场」热销榜：从 1688 / 阿里国际站 / 选品工具 导出 CSV 或粘贴今日榜单导入，每天更新一次即反映当天市场。与上面热销选品库（内置离线池轮换）是两个独立功能。','This is the REAL-MARKET hotlist: import today list from 1688 / Alibaba / a tooling CSV or paste it; refresh daily to reflect the live market. It is a separate function from the offline Hot Product Library above.')+'</div>';
- h+='<div class="hint" style="margin:0 0 6px">'+TX('看平台实时榜单（真实数据，直接打开）：','Live platform boards (real data, opens directly):')+'</div>';
- h+='<div style="margin-bottom:10px">';
- var boards=[
-  {n:'AliExpress 热销榜',u:'https://www.aliexpress.com/wholesale?SearchText=hot+products'},
-  {n:'1688 新品上架',u:'https://www.1688.com/chanpin/'},
-  {n:'阿里国际站 热销',u:'https://www.alibaba.com/products/hot-products.html'},
-  {n:'抖音 爆款',u:'https://www.douyin.com/search/'+encodeURIComponent('爆款')}
- ];
- for(var b=0;b<boards.length;b++){
-  h+='<a class="btn ghost mini" href="'+esc(boards[b].u)+'" target="_blank" rel="noopener" style="margin:0 6px 6px 0">'+esc(boards[b].n)+'</a>';
- }
- h+='</div>';
- h+='<div class="row" style="flex-wrap:wrap;margin-bottom:8px">';
- h+='<button class="btn" data-action="marketHotImport">'+TX('导入今日热销','Import today hotlist')+'</button>';
- if(items.length)h+='<button class="btn ghost mini" data-action="marketHotClear">'+TX('清空','Clear')+'</button>';
- h+='</div>';
- if(!items.length){
-  h+='<div class="hint" style="margin-top:6px">'+TX('把今天市场真正在卖或起量的品导入进来：每行一个品名，或用制表符/逗号分隔 品名,行业,价格,来源,备注，首行可写表头。导入即覆盖为今天的真实市场。','Paste or import what is actually selling or rising today: one product per line, or tab/comma separated name,ind,price,source,note with an optional header. Import replaces it with todays real market.')+'</div>';
- }else{
-  h+='<div class="grid g2" style="margin-top:8px">';
+ h+='<div class="hint" style="margin:6px 0 8px">'+TX('平台页面禁止跨站读取、多数还要登录，所以热销内容直接放在下面，不用点出去找。你在平台看到的真实榜单，可用「导入今日热销」粘进来覆盖，即成为当天真实市场。与上面热销选品库（内置离线池轮换）是两个独立功能。','Platforms block cross-site reads, so the hot content is shown right here. Paste your real list via Import to make it todays live market. Separate from the offline Hot Product Library above.')+'</div>';
+
+ if(items.length){
+  h+='<div class="hint" style="margin:0 0 4px;font-weight:600">'+TX('你的今日榜单（'+items.length+' 款）','Your list ('+items.length+')')+'</div>';
+  h+='<div class="grid g2" style="margin-top:4px">';
   for(var i=0;i<items.length;i++){
    var it=items[i];
-   h+='<div class="card" style="padding:10px;margin:0">';
+   h+='<div class="card" style="padding:10px;margin:0;border-left:3px solid var(--main)">';
    h+='<div style="font-weight:600;font-size:14px">'+esc(it.name)+'</div>';
    if(it.ind)h+='<div class="hint" style="margin:2px 0">'+TX('行业','Ind')+'：'+esc(it.ind)+'</div>';
    if(it.price)h+='<div class="hint" style="margin:2px 0">'+TX('参考价','Price')+'：'+esc(it.price)+'</div>';
@@ -1302,6 +1348,47 @@ function marketHotSection(){
    h+='</div>';
   }
   h+='</div>';
+ }
+
+ h+='<details'+(items.length?'':' open')+' style="margin-top:8px">';
+ h+='<summary style="cursor:pointer;font-weight:600;font-size:14px">'+TX('站内参考热榜（内置选品方向 · '+MARKET_SEED.length+' 款 · 非实时）','In-page reference board ('+MARKET_SEED.length+' items)')+'</summary>';
+ h+='<div class="hint" style="margin:6px 0 4px">'+TX('以下是常年跑量的选品方向参考（含穆斯林/斋月礼品专款），点「加入」即并入你的今日榜单。','Evergreen sourcing directions; tap Add to merge into your list.')+'</div>';
+ for(var g=0;g<MARKET_IND.length;g++){
+  var ind=MARKET_IND[g];
+  h+='<div class="hint" style="margin:8px 0 4px;font-weight:600">'+esc(ind)+'</div>';
+  h+='<div class="grid g2">';
+  for(var s=0;s<MARKET_SEED.length;s++){
+   var sd=MARKET_SEED[s]; if(sd.i!==ind)continue;
+   var has=marketHotHas(sd.n);
+   h+='<div class="card" style="padding:10px;margin:0">';
+   h+='<div style="font-weight:600;font-size:13px">'+esc(sd.n)+'</div>';
+   h+='<div class="hint" style="margin:2px 0;font-size:12px">'+esc(sd.p)+' · '+esc(sd.s)+'</div>';
+   h+='<div class="muted" style="margin:2px 0;font-size:12px">'+esc(sd.t)+'</div>';
+   h+='<button class="btn ghost mini" data-action="mhAdd" data-k="'+esc(sd.k)+'" style="margin-top:6px"'+(has?' disabled':'')+'>'+(has?TX('已加入','Added'):TX('加入我的热榜','Add'))+'</button>';
+   h+='</div>';
+  }
+  h+='</div>';
+ }
+ h+='</details>';
+
+ h+='<details style="margin-top:8px">';
+ h+='<summary style="cursor:pointer;font-size:13px">'+TX('站外搜索直达（可选 · 需登录 · 按关键词精确搜索）','Out-site keyword search (optional)')+'</summary>';
+ h+='<div class="row" style="margin:6px 0"><input id="mhKw" placeholder="'+TX('输关键词，如 power bank / 斋月灯串 / prayer mat','Keyword, e.g. power bank / prayer mat')+'" oninput="marketHotKw(this.value)" style="flex:1;min-width:180px"></div>';
+ var defs=[['mhL1','AliExpress 搜','https://www.aliexpress.com/wholesale?SearchText='+encodeURIComponent('hot selling')],
+  ['mhL2','1688 搜','https://s.1688.com/selloffer/offer_search.htm?keywords='+encodeURIComponent('热销')],
+  ['mhL3','阿里国际站 搜','https://www.alibaba.com/trade/search?SearchText='+encodeURIComponent('hot selling')],
+  ['mhL4','抖音 搜','https://www.douyin.com/search/'+encodeURIComponent('爆款')]];
+ for(var d=0;d<defs.length;d++){
+  h+='<a id="'+defs[d][0]+'" class="btn ghost mini" href="'+esc(defs[d][2])+'" target="_blank" rel="noopener" style="margin:0 6px 6px 0">'+esc(defs[d][1])+'</a>';
+ }
+ h+='</details>';
+
+ h+='<div class="row" style="flex-wrap:wrap;margin:8px 0">';
+ h+='<button class="btn" data-action="marketHotImport">'+TX('导入今日热销','Import today hotlist')+'</button>';
+ if(items.length)h+='<button class="btn ghost mini" data-action="marketHotClear">'+TX('清空','Clear')+'</button>';
+ h+='</div>';
+ if(!items.length){
+  h+='<div class="hint" style="margin-top:6px">'+TX('导入格式：每行一个品名；或用制表符/逗号分隔 品名,行业,价格,来源,备注，首行可写表头。导入即覆盖为今天的真实市场。','Format: one name per line, or name,ind,price,source,note. Import replaces the list.')+'</div>';
  }
  h+='</div>';
  return h;
@@ -1312,14 +1399,14 @@ function marketHotImport(){
  body+='<textarea id="mhText" rows="9" style="width:100%;box-sizing:border-box;font-family:inherit"></textarea>';
  body+='<div style="margin-top:8px"><input type="file" id="mhFile" accept=".csv,.txt"></div>';
  openModal(TX('导入今日市场热榜','Import Live Market Hotlist'), body, function(){
-  var t=el('mhText').value;
+  var t=$('mhText').value;
   if(marketHotApply(t)) closeModal();
  });
- var fi=el('mhFile');
+ var fi=$('mhFile');
  if(fi)fi.onchange=function(e){
   var f=(e.target.files||[])[0]; if(!f)return;
   var r=new FileReader();
-  r.onload=function(){var ta=el('mhText'); if(ta)ta.value=r.result;};
+  r.onload=function(){var ta=$('mhText'); if(ta)ta.value=r.result;};
   r.readAsText(f);
  };
 }
@@ -3959,7 +4046,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v58</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v59</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4188,6 +4275,7 @@ document.addEventListener('click',function(e){
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
  else if(a==='marketHotImport'){marketHotImport();}
+ else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}
  else if(a==='marketHotClear'){marketHotClear();}
  else if(a==='extType'){S._extType=el.dataset.type;save('_extType',S._extType);refreshAll();}
  else if(a==='extTemplate'){extTemplate();}
