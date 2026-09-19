@@ -360,7 +360,7 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead','marketHot','marketHotDay'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
@@ -380,7 +380,7 @@ var S={
  _recShow:false,_chkShow:false,
  _activeClient:load('_activeClient',''),
  _cadText:load('_cadText',''),
- _reconLead:load('_reconLead',''),
+ _reconLead:load('_reconLead',''),marketHot:load('marketHot',[]),marketHotDay:load('marketHotDay',''),
  docDefaults:load('docDefaults',{}),
  _defShow:false,
  hidden:load('hidden',[]),
@@ -487,7 +487,7 @@ function buildState(){
   _recShow:false,_chkShow:false,
   _activeClient:load('_activeClient',''),
   _cadText:load('_cadText',''),
-  _reconLead:load('_reconLead',''),
+  _reconLead:load('_reconLead',''),marketHot:load('marketHot',[]),marketHotDay:load('marketHotDay',''),
   docDefaults:load('docDefaults',{}),
   _defShow:false,
   hidden:load('hidden',[]),
@@ -1262,6 +1262,100 @@ function hotQIn(v){
  var box=(typeof document!=='undefined')&&document.getElementById&&document.getElementById('hot_qr');
  if(box)box.innerHTML=hotCardsHTML();
 }
+/* ============ 今日市场热榜（真实数据导入 + 平台榜单入口，与离线热销选品库并存） ============ */
+function marketHotSection(){
+ var items=S.marketHot||[];
+ var day=S.marketHotDay||'';
+ var isToday=(day===todayStr());
+ var h='<div class="card" style="margin-bottom:12px;border:1px solid var(--main)">';
+ h+='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">'+TX('今日市场热榜','Live Market Hotlist')+'</h3>';
+ h+='<span class="muted" style="font-size:12px">'+(day?TX('最后更新：'+day+(isToday?'（今日）':''),'Updated: '+day+(isToday?' (today)':'')):TX('尚未导入','Not imported'))+'</span></div>';
+ h+='<div class="hint" style="margin:6px 0 8px">'+TX('这是「真实市场」热销榜：从 1688 / 阿里国际站 / 选品工具 导出 CSV 或粘贴今日榜单导入，每天更新一次即反映当天市场。与上面热销选品库（内置离线池轮换）是两个独立功能。','This is the REAL-MARKET hotlist: import today list from 1688 / Alibaba / a tooling CSV or paste it; refresh daily to reflect the live market. It is a separate function from the offline Hot Product Library above.')+'</div>';
+ h+='<div class="hint" style="margin:0 0 6px">'+TX('看平台实时榜单（真实数据，直接打开）：','Live platform boards (real data, opens directly):')+'</div>';
+ h+='<div style="margin-bottom:10px">';
+ var boards=[
+  {n:'AliExpress 热销榜',u:'https://www.aliexpress.com/wholesale?SearchText=hot+products'},
+  {n:'1688 新品上架',u:'https://www.1688.com/chanpin/'},
+  {n:'阿里国际站 热销',u:'https://www.alibaba.com/products/hot-products.html'},
+  {n:'抖音 爆款',u:'https://www.douyin.com/search/'+encodeURIComponent('爆款')}
+ ];
+ for(var b=0;b<boards.length;b++){
+  h+='<a class="btn ghost mini" href="'+esc(boards[b].u)+'" target="_blank" rel="noopener" style="margin:0 6px 6px 0">'+esc(boards[b].n)+'</a>';
+ }
+ h+='</div>';
+ h+='<div class="row" style="flex-wrap:wrap;margin-bottom:8px">';
+ h+='<button class="btn" data-action="marketHotImport">'+TX('导入今日热销','Import today hotlist')+'</button>';
+ if(items.length)h+='<button class="btn ghost mini" data-action="marketHotClear">'+TX('清空','Clear')+'</button>';
+ h+='</div>';
+ if(!items.length){
+  h+='<div class="hint" style="margin-top:6px">'+TX('把今天市场真正在卖或起量的品导入进来：每行一个品名，或用制表符/逗号分隔 品名,行业,价格,来源,备注，首行可写表头。导入即覆盖为今天的真实市场。','Paste or import what is actually selling or rising today: one product per line, or tab/comma separated name,ind,price,source,note with an optional header. Import replaces it with todays real market.')+'</div>';
+ }else{
+  h+='<div class="grid g2" style="margin-top:8px">';
+  for(var i=0;i<items.length;i++){
+   var it=items[i];
+   h+='<div class="card" style="padding:10px;margin:0">';
+   h+='<div style="font-weight:600;font-size:14px">'+esc(it.name)+'</div>';
+   if(it.ind)h+='<div class="hint" style="margin:2px 0">'+TX('行业','Ind')+'：'+esc(it.ind)+'</div>';
+   if(it.price)h+='<div class="hint" style="margin:2px 0">'+TX('参考价','Price')+'：'+esc(it.price)+'</div>';
+   if(it.src)h+='<div class="hint" style="margin:2px 0">'+TX('来源','Src')+'：'+esc(it.src)+'</div>';
+   if(it.note)h+='<div class="muted" style="margin:2px 0;font-size:12px">'+esc(it.note)+'</div>';
+   h+='</div>';
+  }
+  h+='</div>';
+ }
+ h+='</div>';
+ return h;
+}
+
+function marketHotImport(){
+ var body='<p class="hint">'+TX('粘贴今日市场热销（每行一个品名；或用制表符/逗号分隔 品名,行业,价格,来源,备注；首行可写表头）。也可选择 CSV 或 TXT 文件，会自动填入下方。','Paste todays hotlist (one name per line; or tab/comma separated name,ind,price,source,note; optional header row). Or pick a CSV or TXT file to auto-fill below.')+'</p>';
+ body+='<textarea id="mhText" rows="9" style="width:100%;box-sizing:border-box;font-family:inherit"></textarea>';
+ body+='<div style="margin-top:8px"><input type="file" id="mhFile" accept=".csv,.txt"></div>';
+ openModal(TX('导入今日市场热榜','Import Live Market Hotlist'), body, function(){
+  var t=el('mhText').value;
+  if(marketHotApply(t)) closeModal();
+ });
+ var fi=el('mhFile');
+ if(fi)fi.onchange=function(e){
+  var f=(e.target.files||[])[0]; if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){var ta=el('mhText'); if(ta)ta.value=r.result;};
+  r.readAsText(f);
+ };
+}
+
+function marketHotApply(text){
+ var lines=(text||'').replace(/\r/g,'').split('\n');
+ var items=[], keys=null, headerDone=false;
+ for(var i=0;i<lines.length;i++){
+  var ln=lines[i].trim(); if(!ln)continue;
+  var cols=ln.split(/\t|,|；|;/);
+  if(!headerDone && /^(品名|产品|标题|name|product|keyword|关键词|item)/i.test(ln) && cols.length>=2){
+   keys={};
+   for(var c=0;c<cols.length;c++){var cc=cols[c].trim().toLowerCase(); if(cc)keys[cc]=c;}
+   headerDone=true; continue;
+  }
+  if(headerDone){
+   var gi=function(z){return keys[z]!=null?cols[keys[z]]:'';};
+   var nm=gi('品名')||gi('产品')||gi('标题')||gi('name')||gi('product')||gi('keyword')||gi('关键词')||gi('item')||cols[0];
+   nm=(nm||'').trim(); if(!nm)continue;
+   items.push({k:'mh'+(Date.now())+'_'+items.length, name:nm, ind:(gi('行业')||gi('ind')||gi('category')||cols[1]||'').trim(), price:(gi('价格')||gi('price')||cols[2]||'').trim(), src:(gi('来源')||gi('source')||gi('src')||cols[3]||'').trim(), note:(gi('备注')||gi('note')||cols[4]||'').trim()});
+  }else{
+   var name0=cols[0].trim(); if(!name0)continue;
+   items.push({k:'mh'+(Date.now())+'_'+items.length, name:name0, ind:(cols[1]||'').trim(), price:(cols[2]||'').trim(), src:(cols[3]||'').trim(), note:(cols[4]||'').trim()});
+  }
+ }
+ if(!items.length){toast(TX('没有解析到任何产品','No products parsed'));return false;}
+ S.marketHot=items; S.marketHotDay=todayStr(); save(); refreshAll();
+ toast(TX('已导入今日市场热榜：'+items.length+' 款','Imported '+items.length+' today'));
+ return true;
+}
+
+function marketHotClear(){
+ if(typeof confirm==='function' && !confirm(TX('确定清空今日市场热榜？','Clear today hotlist?')) )return;
+ S.marketHot=[]; S.marketHotDay=''; save(); refreshAll();
+}
+
 function hotSection(){
  hotDailyCheck();
  var ind=S._hotInd||hotSmartInd();var _autoInd=(!S._hotInd);
@@ -1451,6 +1545,7 @@ function cpSection(){
  h+='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0;font-size:16px">'+TX('每日竞品分析','Daily Competitor Scan')+'</h3><span class="hint" style="margin:0">'+TX('关键词矩阵搜竞品 → 记价格 → 自动算价格带；上面是每天要盯的清单。','Keyword matrix to find rivals -> log prices -> band computed; the daily watchlist is above.')+'</span></div>';
  h+=wsSection();
  h+=hotSection();
+ h+=marketHotSection();
  h+=cpqSection();
  h+='<div class="grid g2">';
  /* 左：关键词矩阵 + 平台直达 */
@@ -3864,7 +3959,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；若不是 v56 说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v57</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v58</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4092,6 +4187,8 @@ document.addEventListener('click',function(e){
  else if(a==='lead360'){lead360(el.dataset.id);}
  else if(a==='custSheet'){S._custSheet=el.dataset.sheet;save('_custSheet',S._custSheet);refreshAll();}
  else if(a==='custViewToggle'){S._custView=el.dataset.mode;save('_custView',S._custView);refreshAll();}
+ else if(a==='marketHotImport'){marketHotImport();}
+ else if(a==='marketHotClear'){marketHotClear();}
  else if(a==='extType'){S._extType=el.dataset.type;save('_extType',S._extType);refreshAll();}
  else if(a==='extTemplate'){extTemplate();}
  else if(a==='extImport'){extImport();}
