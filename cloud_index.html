@@ -212,6 +212,12 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .list-item .main .t{font-weight:700;font-size:14.5px}
 .list-item .main .s{font-size:12.5px;color:var(--sub)}
 .list-item .ops{display:flex;gap:6px;flex-wrap:wrap}
+#leadBarWrap{position:sticky;top:0;z-index:35;background:var(--bg);padding-top:2px}
+#leadBarWrap .card{box-shadow:0 2px 10px rgba(15,23,42,.06)}
+.lead-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:var(--shadow);margin-bottom:12px}
+.lead-nav .pos{font-size:13px;color:var(--sub);white-space:nowrap}
+.lead-nav .sbtn{padding:6px 10px;font-size:13px;min-height:34px}
+.list-item.lead-hit{border-color:var(--main);box-shadow:0 0 0 3px rgba(37,99,235,.2)}
 .pipe{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .pchip{padding:5px 10px;border-radius:999px;font-size:12.5px;border:1px solid var(--line);background:#fff;cursor:pointer}
 .pchip.on{background:var(--main);color:#fff;border-color:var(--main)}
@@ -2056,6 +2062,11 @@ function enText(s){
 var SOURCES=['展会','Google','阿里巴巴','中国制造网','社媒','转介绍','其他'];
 var REPEAT_STATUS=['待跟进','已报价','已返单','放弃'];
 var REFERRAL_STATUS=['待开口','已开口','已加样','已成交','无回应'];
+/* R70 find-leads: pinned add-form + up/down list nav (module-level vars) */
+var _ldFormOpen=true;
+var _ldNavIdx=-1;
+var _ldNavBound=false;
+var _ldScrollT=null;
 function viewFind(){
  var h=shead('find',TX('把线索按 Pipeline 管起来，AI 自动评分排优先级。别每次从零开发。','Manage the pipeline; AI scores and prioritizes. Stop starting from zero.'));
  h+=fcSection();
@@ -2085,11 +2096,12 @@ if(S._findHelp){
  h+= scc?('<div style="margin-top:8px;font-size:12px;color:var(--sub)">'+TX('渠道分布','Channel spread')+'：'+scc+'</div>'):'';
  h+='</div></div>';
  h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><h3 style="margin:0 0 8px;font-size:15px">'+TX('今日优先（AI 评分）','Today’s Priority (AI score)')+'</h3><div id="prioBox"></div></div>';
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:15px">'+TX('新增线索','Add lead')+'</h3><div class="grid g3">';
+ h+='<div id="leadBarWrap"><div class="card" style="margin-bottom:8px"><div class="row" style="align-items:center;flex-wrap:nowrap;margin-bottom:'+(_ldFormOpen?'10px':'0')+'"><h3 style="margin:0;font-size:15px;white-space:nowrap">'+TX('新增线索','Add lead')+'</h3><span class="muted" style="font-size:12px;white-space:nowrap">'+TX('固定在此，滚动不动','Pinned while scrolling')+'</span><span style="flex:1"></span><button class="btn ghost mini" data-action="ldFormToggle">'+(_ldFormOpen?TX('收起','Collapse'):TX('展开','Expand'))+'</button></div><div id="ldFormBody" style="display:'+(_ldFormOpen?'block':'none')+'"><div class="grid g3">';
 h+='<input id="ld_name" placeholder="'+TX('客户名','Name')+'"><input id="ld_country" placeholder="'+TX('国家','Country')+'">';
 h+='<input id="ld_wa" placeholder="WhatsApp / '+TX('手机号','Phone')+'" style="margin-top:6px"><input id="ld_email" placeholder="'+TX('邮箱','Email')+'" style="margin-top:6px">';
  h+='</div><div class="grid g3" style="margin-top:10px"><input id="ld_product" placeholder="'+TX('产品','Product')+'"><select id="ld_market">'+['中东','东南亚','欧美','非洲','混合'].map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><select id="ld_stage">'+PIPE.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select></div>';h+='<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><select id="ld_source">'+SOURCES.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><span class="hint">'+TX('来源渠道：用来复盘哪个渠道最有效','Source: track which channel works best')+'</span></div>';
- h+='<button class="btn" data-action="addLead" style="margin-top:10px">'+TX('添加线索','Add lead')+'</button></div>';
+ h+='<button class="btn" data-action="addLead" style="margin-top:10px">'+TX('添加线索','Add lead')+'</button></div></div>';
+h+='<div class="lead-nav" id="leadNavBar"><span class="muted" style="font-size:12px;font-weight:700">'+TX('列表导航','List nav')+'</span><button class="btn ghost mini sbtn" data-action="ldNavUp">▲ '+TX('上一条','Prev')+'</button><button class="btn ghost mini sbtn" data-action="ldNavDn">▼ '+TX('下一条','Next')+'</button><b class="pos" id="leadNavPos">'+TX('共 0 条','0 items')+'</b><span style="flex:1"></span><button class="btn ghost mini sbtn" data-action="ldNavTop" title="'+TX('回到列表顶部','Back to top of list')+'">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="ldNavBot" title="'+TX('跳到列表底部','Jump to bottom')+'">⤓ '+TX('底部','Bottom')+'</button></div></div>';
  h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品','Search name/country/product')+'"><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
  h+='<div class="row" style="margin-bottom:10px;justify-content:flex-end"><button class="btn ghost mini" data-action="trashToggle">'+TX('回收站','Trash')+' ('+(S.trash||[]).length+')</button></div>';
 h+='<div id="leadList"></div>';
@@ -2107,7 +2119,7 @@ function renderPrio(){
 }
 function renderLeads(){
  var box=$('leadList');if(!box)return;
- if(S._trashShow){box.innerHTML=renderTrash();return;}
+ if(S._trashShow){box.innerHTML=renderTrash();_ldNavIdx=-1;var _np=$('leadNavPos');if(_np)_np.textContent=TX('回收站视图','Trash view');return;}
  var f=S._leadFilter||{};
  var hs=S.leads.slice().sort(function(a,b){return scoreLead(b)-scoreLead(a);});
  if(f.q){var q=f.q.toLowerCase();hs=hs.filter(function(l){return ((l.name+' '+(l.country||'')+' '+(l.product||'')).toLowerCase().indexOf(q)>=0);});}
@@ -2119,15 +2131,15 @@ function renderLeads(){
  if(f.overdue)hs=hs.filter(function(l){var d=Math.round((new Date(todayStr())-new Date(l.last))/864e5);return d>=14&&l.stage!=='成交';});
  if(f.reorder)hs=hs.filter(function(l){return l.stage==='成交'&&mailCount(l.id)>0;});
  if(f.nomail)hs=hs.filter(function(l){return l.stage!=='成交'&&mailCount(l.id)===0;});
- if(!hs.length){box.innerHTML='<div class="card muted" style="text-align:center">'+TX('没有匹配的线索。','No matching leads.')+'</div>';return;}
+ if(!hs.length){box.innerHTML='<div class="card muted" style="text-align:center">'+TX('没有匹配的线索。','No matching leads.')+'</div>';ldNavAfter();return;}
  var html='';
- hs.forEach(function(l){
+ hs.forEach(function(l,li){
   var stageIdx=PIPE.indexOf(l.stage);
   var next=stageIdx<PIPE.length-1?PIPE[stageIdx+1]:null;
   var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);
   var follow=days>=14&&l.stage!=='成交';
   var mc=mailCount(l.id);
-  html+='<div class="list-item"><div class="main"><div class="t"><button class="linkbtn" data-action="lead360" data-id="'+l.id+'">'+esc(l.name)+'</button> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.source?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.source)+'</span>':'')+' <span class="tag score">'+scoreLead(l)+'</span>'+(mc?' <button class="tag b" data-action="mailOf" data-id="'+l.id+'" style="background:#DBEAFE;color:#1D4ED8;border:none;cursor:pointer" title="'+TX('看这个客户的发送记录','See this client’s sent log')+'">✉ '+mc+'</button>':'')+(follow?' <span class="tag r">'+days+TX('天未跟','d no follow')+'</span>':'')+'</div>';
+  html+='<div class="list-item" data-li="'+li+'"><div class="main"><div class="t"><button class="linkbtn" data-action="lead360" data-id="'+l.id+'">'+esc(l.name)+'</button> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.source?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.source)+'</span>':'')+' <span class="tag score">'+scoreLead(l)+'</span>'+(mc?' <button class="tag b" data-action="mailOf" data-id="'+l.id+'" style="background:#DBEAFE;color:#1D4ED8;border:none;cursor:pointer" title="'+TX('看这个客户的发送记录','See this client’s sent log')+'">✉ '+mc+'</button>':'')+(follow?' <span class="tag r">'+days+TX('天未跟','d no follow')+'</span>':'')+'</div>';
   html+='<div class="s">'+esc(l.product||'')+(l.amount?(' · $'+esc(l.amount)):'')+'</div>';
   html+='<div class="s" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px"><span><b>WhatsApp</b>：'+esc(l.wa||'—')+'</span><span><b>'+TX('邮箱','Email')+'</b>：'+esc(l.email||'—')+'</span></div></div>';
   var waBtn=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn mini" data-action="leadWa" data-id="'+l.id+'">WhatsApp</button>':'';
@@ -2135,6 +2147,63 @@ function renderLeads(){
   html+='<div class="ops">'+waBtn+emailBtn+'<button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('详情','360')+'</button><button class="btn ghost mini" data-action="leadAdv" data-id="'+l.id+'">'+(next?(TX('→','→')+next):TX('已成交','Closed'))+'</button><button class="btn ghost mini" data-action="leadTouch" data-id="'+l.id+'">'+TX('记录跟进','Log')+'</button><button class="btn ghost mini" data-action="leadEdit" data-id="'+l.id+'">'+TX('改','Edit')+'</button><button class="btn danger mini" data-action="leadDel" data-id="'+l.id+'">'+TX('删','Del')+'</button></div></div>';
  });
  box.innerHTML=html;
+ ldNavAfter();
+}
+/* ============ R70 find-leads: up/down list mini-nav ============ */
+function ldFormToggle(){_ldFormOpen=!_ldFormOpen;refreshAll();}
+function ldNavItems(){var b=$('leadList');if(!b||!b.querySelectorAll)return [];return Array.prototype.slice.call(b.querySelectorAll('.list-item'));}
+function ldNavLabel(t){var p=$('leadNavPos');if(p)p.textContent=t;}
+function ldNavAfter(){ldNavBind();ldNavSync();}
+function ldNavSync(){
+ var items=ldNavItems();
+ if(!items.length){_ldNavIdx=-1;ldNavLabel(TX('共 0 条','0 items'));return;}
+ var bar=$('leadNavBar'),base=0;
+ try{base=bar?bar.getBoundingClientRect().bottom+4:0;}catch(e){base=0;}
+ var i=0,j,t;
+ for(j=0;j<items.length;j++){
+  try{t=items[j].getBoundingClientRect().top;}catch(e){t=0;}
+  if(t>=base){i=j;break;}
+  i=j;
+ }
+ _ldNavIdx=i;
+ ldNavLabel(TX('第 ','#')+(i+1)+TX(' / ',' / ')+items.length+TX(' 条',''));
+}
+function ldNavCount(){return ldNavItems().length;}
+function ldScrollTo(el,block){
+ if(!el)return;
+ var w=$('leadBarWrap'),off=0;
+ try{off=w?w.getBoundingClientRect().height:0;}catch(e){off=0;}
+ try{if(el.style)el.style.scrollMarginTop=(off+12)+'px';}catch(e){}
+ try{if(el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:block||'center'});}catch(e){try{el.scrollIntoView();}catch(e2){}}
+ var all=ldNavItems(),idx=all.indexOf(el);
+ if(idx>=0){_ldNavIdx=idx;ldNavLabel(TX('第 ','#')+(idx+1)+TX(' / ',' / ')+all.length+TX(' 条',''));}
+ try{var _old=ldNavItems();for(var _q=0;_q<_old.length;_q++){if(_old[_q]!==el&&_old[_q].classList)_old[_q].classList.remove('lead-hit');}}catch(e){}
+ try{if(el.classList){el.classList.add('lead-hit');setTimeout(function(){try{el.classList.remove('lead-hit');}catch(e){}},1500);}}catch(e){}
+}
+function ldNavGo(dir){
+ var items=ldNavItems();
+ if(!items.length){toast(TX('还没有线索，先在上面添加一条','No leads yet - add one above'));return;}
+ ldNavSync();
+ var i=_ldNavIdx;
+ if(i<0)i=(dir>0?-1:items.length);
+ i=i+dir;
+ if(i<0)i=0;
+ if(i>items.length-1)i=items.length-1;
+ ldScrollTo(items[i],'center');
+}
+function ldNavEnd(which){
+ var items=ldNavItems();
+ if(!items.length){toast(TX('还没有线索，先在上面添加一条','No leads yet - add one above'));return;}
+ ldScrollTo(items[which==='bottom'?(items.length-1):0],which==='bottom'?'center':'start');
+}
+function ldNavBind(){
+ if(_ldNavBound)return;_ldNavBound=true;
+ if(typeof window==='undefined'||!window.addEventListener)return;
+ try{window.addEventListener('scroll',function(){
+  if(S.view!=='find')return;
+  if(_ldScrollT)return;
+  _ldScrollT=setTimeout(function(){_ldScrollT=null;try{ldNavSync();}catch(e){}},140);
+ },{passive:true});}catch(e){}
 }
 /* ============ 客户汇总（AI 联动中枢） ============ */
 function docAvgCal(lines){if(!lines.length)return 0;var s=0,c=0;lines.forEach(function(x){if(x.docPct!==null){s+=x.docPct;c++;}});return c?Math.round(s/c):0;}
@@ -4198,7 +4267,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v69</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v70</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4394,6 +4463,11 @@ document.addEventListener('click',function(e){
  else if(a==='leadNew'){leadNew();}else if(a==='leadNewRef'){leadNewRef();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
+ else if(a==='ldFormToggle'){ldFormToggle();}
+ else if(a==='ldNavUp'){ldNavGo(-1);}
+ else if(a==='ldNavDn'){ldNavGo(1);}
+ else if(a==='ldNavTop'){ldNavEnd('top');}
+ else if(a==='ldNavBot'){ldNavEnd('bottom');}
  else if(a==='custFilterReset'){custFilterReset();}
  else if(a==='custSort'){custSort(el.dataset.key);}
  else if(a==='lead360Save'){lead360Save(el.dataset.id);}
