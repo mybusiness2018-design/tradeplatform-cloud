@@ -218,6 +218,10 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .lead-nav .pos{font-size:13px;color:var(--sub);white-space:nowrap}
 .lead-nav .sbtn{padding:6px 10px;font-size:13px;min-height:34px}
 .list-item.lead-hit{border-color:var(--main);box-shadow:0 0 0 3px rgba(37,99,235,.2)}
+#reconBarWrap{position:sticky;top:0;z-index:34;background:var(--card);border-radius:13px 13px 0 0;border-bottom:1px solid var(--line);padding:12px 16px 10px;box-shadow:0 2px 10px rgba(15,23,42,.06)}
+#reconBarWrap .lead-nav{margin-bottom:0}
+.rc-step{border-radius:12px;scroll-margin-top:8px}
+.rc-step.rc-hit{background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
 .pipe{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .pchip{padding:5px 10px;border-radius:999px;font-size:12.5px;border:1px solid var(--line);background:#fff;cursor:pointer}
 .pchip.on{background:var(--main);color:#fff;border-color:var(--main)}
@@ -2067,6 +2071,12 @@ var _ldFormOpen=true;
 var _ldNavIdx=-1;
 var _ldNavBound=false;
 var _ldScrollT=null;
+/* R72 recon: pinned header + 4-step up/down nav (module-level vars) */
+var _rcBarOpen=true;
+var _rcNavIdx=-1;
+var _rcNavBound=false;
+var _rcScrollT=null;
+var _rcProgT=0;
 function viewFind(){
  var h=shead('find',TX('把线索按 Pipeline 管起来，AI 自动评分排优先级。别每次从零开发。','Manage the pipeline; AI scores and prioritizes. Stop starting from zero.'));
  h+=fcSection();
@@ -2203,6 +2213,62 @@ function ldNavBind(){
   if(S.view!=='find')return;
   if(_ldScrollT)return;
   _ldScrollT=setTimeout(function(){_ldScrollT=null;try{ldNavSync();}catch(e){}},140);
+ },{passive:true});}catch(e){}
+}
+/* ============ R72 客户背调：固定表头 + 四步上下导航 ============ */
+function rcBarToggle(){_rcBarOpen=!_rcBarOpen;refreshAll();}
+function rcNavItems(){var b=$('reconScope');if(!b||!b.querySelectorAll)return [];return Array.prototype.slice.call(b.querySelectorAll('.rc-step'));}
+function rcNavLabel(t){var p=$('reconNavPos');if(p)p.textContent=t;}
+function rcNavAfter(){rcNavBind();rcNavSync();}
+function rcNavSync(){
+ var items=rcNavItems();
+ if(!items.length){_rcNavIdx=-1;rcNavLabel(TX('第 1 / 4 步','Step 1 / 4'));return;}
+ var bar=$('reconNavBar'),base=0;
+ try{base=bar?bar.getBoundingClientRect().bottom+6:0;}catch(e){base=0;}
+ var i=0,j,t;
+ for(j=0;j<items.length;j++){
+  try{t=items[j].getBoundingClientRect().bottom;}catch(e){t=0;}
+  if(t>=base){i=j;break;}
+  i=j;
+ }
+ _rcNavIdx=i;
+ rcNavLabel(TX('第 ','Step ')+(i+1)+TX(' / ',' / ')+items.length+TX(' 步',' steps'));
+}
+function rcScrollTo(el,block){
+ if(!el)return;
+ _rcProgT=Date.now();
+ var w=$('reconBarWrap'),off=0;
+ try{off=w?w.getBoundingClientRect().height:0;}catch(e){off=0;}
+ try{if(el.style)el.style.scrollMarginTop=(off+12)+'px';}catch(e){}
+ try{if(el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:block||'start'});}catch(e){try{el.scrollIntoView();}catch(e2){}}
+ var all=rcNavItems(),idx=all.indexOf(el);
+ if(idx>=0){_rcNavIdx=idx;rcNavLabel(TX('第 ','Step ')+(idx+1)+TX(' / ',' / ')+all.length+TX(' 步',' steps'));}
+ try{for(var q=0;q<all.length;q++){if(all[q]!==el&&all[q].classList)all[q].classList.remove('rc-hit');}}catch(e){}
+ try{if(el.classList){el.classList.add('rc-hit');setTimeout(function(){try{el.classList.remove('rc-hit');}catch(e){}},1500);}}catch(e){}
+}
+function rcNavGo(dir){
+ var items=rcNavItems();
+ if(!items.length){toast(TX('先在「新增线索」加一个客户','Add a client first'));return;}
+ var i=_rcNavIdx;
+ if(i<0)i=(dir>0?-1:items.length);
+ i=i+dir;
+ if(i<0)i=0;
+ if(i>items.length-1)i=items.length-1;
+ rcScrollTo(items[i],'start');
+}
+function rcNavEnd(which){
+ var items=rcNavItems();
+ if(!items.length){toast(TX('先在「新增线索」加一个客户','Add a client first'));return;}
+ rcScrollTo(items[which==='bottom'?(items.length-1):0],'start');
+}
+function rcNavBind(){
+ if(_rcNavBound)return;_rcNavBound=true;
+ if(typeof window==='undefined'||!window.addEventListener)return;
+ try{window.addEventListener('scroll',function(){
+  if(S.view!=='find')return;
+  if(_rcScrollT)return;
+  if(_rcProgT&&Date.now()-_rcProgT<900)return; /* 平滑滚动中，勿用中间态重算 */
+  _rcScrollT=setTimeout(function(){_rcScrollT=null;try{rcNavSync();}catch(e){}},140);
  },{passive:true});}catch(e){}
 }
 /* ============ 客户汇总（AI 联动中枢） ============ */
@@ -4267,7 +4333,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v71</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v72</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4368,7 +4434,7 @@ function applyGlossary(){
 function refreshAll(){
  var _rf=[renderNav,renderView,renderToday];
  for(var _i=0;_i<_rf.length;_i++){try{_rf[_i]();}catch(e){try{console.error('[render]',e);}catch(_e){}}}
- try{if(S.view==='find'){renderLeads();renderPrio();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='find'){renderLeads();renderPrio();rcNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='repeat'){renderFest();renderHolidays();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='review'){renderIns();renderRvDraft();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat')renderSceneFields();}catch(e){try{console.error('[render]',e);}catch(_e){}}
@@ -4468,6 +4534,11 @@ document.addEventListener('click',function(e){
  else if(a==='ldNavDn'){ldNavGo(1);}
  else if(a==='ldNavTop'){ldNavEnd('top');}
  else if(a==='ldNavBot'){ldNavEnd('bottom');}
+ else if(a==='rcNavUp'){rcNavGo(-1);}
+ else if(a==='rcNavDn'){rcNavGo(1);}
+ else if(a==='rcNavTop'){rcNavEnd('top');}
+ else if(a==='rcNavBot'){rcNavEnd('bottom');}
+ else if(a==='rcBarToggle'){rcBarToggle();}
  else if(a==='custFilterReset'){custFilterReset();}
  else if(a==='custSort'){custSort(el.dataset.key);}
  else if(a==='lead360Save'){lead360Save(el.dataset.id);}
@@ -5122,6 +5193,28 @@ function reconCollect(l){
  if(ai){ var at=String(ai.value||'').trim(); if(at) l.recon.ai=at; else delete l.recon.ai; }
  l.recon.at=todayStr();
 }
+function reconDirty(l){
+ if(!l)return false;
+ var N=reconEvNote(l);
+ for(var i=0;i<RECON_CHECKS.length;i++){
+  var c=RECON_CHECKS[i];
+  var e=document.getElementById('rev_'+c.k);
+  if(e&&String(e.value||'')!==reconEvCode(l,c.k))return true;
+  var t=document.getElementById('revn_'+c.k);
+  if(t&&String(t.value||'').trim()!==String(N[c.k]||''))return true;
+ }
+ var ai=document.getElementById('recon_ai');
+ if(ai&&String(ai.value||'').trim()!==String((l.recon&&l.recon.ai)||''))return true;
+ return false;
+}
+/* R72 修复：下拉 onchange 引用 reconPick，此前未定义 -> 切换客户无效 */
+function reconPick(id){
+ id=String(id||'');
+ var old=reconCur();
+ if(old&&old.id!==id&&reconDirty(old)){try{reconCollect(old);snapLeads();save('leads',S.leads);}catch(e){}}
+ S._reconLead=id;save('_reconLead',S._reconLead);
+ refreshAll();
+}
 function reconGo(k){
  var l=reconCur();
  if(!l){ toast(TX('先加一个客户','Add a client first')); return; }
@@ -5299,8 +5392,10 @@ function reconSection(){
  if(!l) l=leads[0];
  var r=reconBuild(l), v=r.verdictInfo, cov=r.cov, op=reconOpener(l,r.market), rs=reconReasons(l,r);
  var tc=v.c==='g'?'g':(v.c==='y'?'a':(v.c==='r'?'r':'b'));
- h+='<div class="card" style="margin-top:14px;border:1px solid #185FA5">';
- h+='<h3 style="margin:0 0 4px;font-size:15px">'+TX('客户背调 \u00b7 查 → 填 → 判 → 跟','Background Check \u00b7 research \u2192 record \u2192 verdict \u2192 follow')+'</h3>';
+h+='<div class="card" id="reconScope" style="margin-top:14px;border:1px solid #185FA5;padding:0">';
+h+='<div id="reconBarWrap">';
+h+='<div class="row" style="align-items:center;flex-wrap:nowrap;margin-bottom:'+(_rcBarOpen?'8px':'0')+'"><h3 style="margin:0;font-size:15px;white-space:nowrap">'+TX('客户背调 \u00b7 查 → 填 → 判 → 跟','Background Check \u00b7 research \u2192 record \u2192 verdict \u2192 follow')+'</h3><span class="muted" style="font-size:12px;white-space:nowrap">'+TX('固定在此，滚动不动','Pinned while scrolling')+'</span><span style="flex:1"></span><button class="btn ghost mini" data-action="rcBarToggle">'+(_rcBarOpen?TX('收起','Collapse'):TX('展开','Expand'))+'</button></div>';
+h+='<div id="reconBarBody" style="display:'+(_rcBarOpen?'block':'none')+'">';
  h+='<div class="hint" style="margin:0 0 10px">'+TX('四步走完，结论才有依据：① 查 8 个信息源 → ② 填 6 项核验（可贴 AI 结果自动预填）→ ③ 出结论与报告 → ④ 转成跟进。','Four steps: ① run 8 sources \u2192 ② set 6 checks (AI output can pre-fill) \u2192 ③ verdict & report \u2192 ④ turn into follow-up.')+'</div>';
  h+='<div class="grid g2"><label style="font-size:12px;color:var(--sub);font-weight:600">'+TX('对哪个客户做背调','Which client')+'<select id="recon_lead" onchange="reconPick(this.value)" style="min-width:150px">'+leads.map(function(x){return '<option value="'+x.id+'"'+(x.id===l.id?' selected':'')+'>'+esc(x.name)+' \u00b7 '+esc(x.country||x.market||'\u2014')+' \u00b7 '+esc(x.stage||'')+'</option>';}).join('')+'</select></label>';
  h+='<div><div style="font-size:12px;color:var(--sub);font-weight:600">'+TX('当前阶段','Stage')+'</div><div style="margin-top:6px"><span class="tag b">'+esc(l.stage||'待开发')+'</span> <span class="muted" style="font-size:12px">'+TX('结论会随阶段变化（已成交≠要不要开发）','Advice adapts to the stage')+'</span></div></div></div>';
@@ -5315,12 +5410,19 @@ function reconSection(){
  if(rs.length) h+='<div style="margin-top:6px">'+rs.map(function(x){return reconChip(x.t,x.k);}).join('')+'</div>';
  if(r.risks.length) h+='<div style="margin-top:8px;font-size:12.5px;line-height:1.7">'+r.risks.map(function(x){return '<div style="color:'+(x.lv==='h'?'#dc2626':'#b45309')+'">'+(x.lv==='h'?'\u26a0 ':'\u00b7 ')+esc(x.t)+'</div>';}).join('')+'</div>';
  h+='</div>';
+h+='</div>';
+h+='<div class="lead-nav" id="reconNavBar"><span class="muted" style="font-size:12px;font-weight:700">'+TX('步骤导航','Step nav')+'</span><button class="btn ghost mini sbtn" data-action="rcNavUp">▲ '+TX('上一步','Prev step')+'</button><button class="btn ghost mini sbtn" data-action="rcNavDn">▼ '+TX('下一步','Next step')+'</button><b class="pos" id="reconNavPos">'+TX('第 1 / 4 步','Step 1 / 4')+'</b><span style="flex:1"></span><button class="btn ghost mini sbtn" data-action="rcNavTop" title="'+TX('回到第 1 步','Back to step 1')+'">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="rcNavBot" title="'+TX('跳到第 4 步 · 跟','Jump to step 4')+'">⤓ '+TX('底部','Bottom')+'</button></div>';
+h+='</div>';
+h+='<div id="reconBody" style="padding:0 16px 16px">';
+h+='<div class="rc-step" data-rc="1" id="rcStep1">';
  h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2460 第 1 步 · 查（8 个信息源，点开即搜）','\u2460 Step 1 \u00b7 Research (8 pre-filled sources)')+'</div>';
  h+='<div class="hint">'+TX('每个按钮都用这个客户的公司名 + 国家 + 产品预填好了搜索。查到什么，直接进第 2 步勾。','Each button opens a pre-filled search with this client\u2019s name, country and product.')+'</div>';
  h+='<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">';
  RECON_DIMS.forEach(function(d){ h+='<button class="btn ghost mini" data-action="reconGo" data-k="'+d[0]+'">'+esc(TX(d[1],d[2]))+'</button>'; });
  h+='</div>';
  h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="reconPrompt">'+TX('复制 AI 背调提示词（6 项逐条问）','Copy AI prompt (asks all 6 checks)')+'</button></div>';
+h+='</div>';
+h+='<div class="rc-step" data-rc="2" id="rcStep2">';
  h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2461 第 2 步 · 填（6 项核验 + AI 结果回填）','\u2461 Step 2 \u00b7 Record (6 checks + AI paste)')+'</div>';
  h+='<div class="hint">'+TX('每项三选一：查到什么就点什么。「查不到」也是结论，别留「待查」。','Pick one of three per item. "Not found" is also a finding.')+'</div>';
  RECON_CHECKS.forEach(function(c){
@@ -5346,15 +5448,21 @@ function reconSection(){
   h+='<label style="font-size:12px">'+esc(TX(q.zh,q.en))+'<select id="rc_'+q.k+'">'+q.opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select></label>';
  });
  h+='</div></details>';
+h+='</div>';
+h+='<div class="rc-step" data-rc="3" id="rcStep3">';
  h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2462 第 3 步 · 判（结论 + 完整报告）','\u2462 Step 3 \u00b7 Verdict & report')+'</div>';
  h+='<div class="row" style="margin-top:6px;flex-wrap:wrap"><button class="btn" data-action="reconRun">'+TX('生成 / 更新报告','Generate / update report')+'</button><button class="btn ghost mini" data-action="copy" data-copy="reconOut">'+TX('复制报告','Copy report')+'</button><button class="btn ghost mini" data-action="reconExp">'+TX('导出报告 (.md)','Export (.md)')+'</button><button class="btn ghost mini" data-action="reconReset">'+TX('清空该客户背调','Clear')+'</button></div>';
  h+='<div class="out" id="reconOut" style="margin-top:8px;white-space:pre-wrap;font-size:12.5px">'+esc(reconReport(l))+'</div>';
+h+='</div>';
+h+='<div class="rc-step" data-rc="4" id="rcStep4">';
  h+='<div style="margin-top:14px;font-weight:700;font-size:13.5px">'+TX('\u2463 第 4 步 · 跟（开口 + 转跟进）','\u2463 Step 4 \u00b7 Follow up')+'</div>';
  h+='<div style="margin-top:6px;font-size:12.5px;font-weight:600">'+TX('首封开发信（英文，照读）','First opener (English, read aloud)')+'</div>';
  h+='<div class="out" id="recon_op_top" style="margin-top:4px;white-space:pre-wrap;font-size:12.5px">'+esc(op.en)+'</div>';
  h+='<div class="hint" style="margin-top:4px">'+esc(op.zh)+'</div>';
  h+='<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost mini" data-action="copy" data-copy="recon_op_top">'+TX('复制首封话术','Copy opener')+'</button><button class="btn ghost mini" data-action="reconFollow">'+TX('转成跟进（写时间线 + 3 触点）','Turn into follow-up')+'</button><button class="btn ghost mini" data-action="reconTask">'+TX('加入今日待办','Add to to-dos')+'</button><button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('看客户360 \u203a','Open Client 360 \u203a')+'</button></div>';
  h+='<div class="hint" style="margin-top:10px">'+TX('结论与首封话术已自动同步到该客户的「客户360」；背调过的客户在「客户汇总 / 复盘」里评分更高、闭环状态多一格「背调」。','Verdict & opener sync to Client 360; checked clients score higher in Hub/Review and get a "Check" tile.')+'</div>';
+h+='</div>';
+h+='</div>';
  h+='</div>';
  return h;
 }
