@@ -146,6 +146,10 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .ext-tools{padding:10px 12px;border-bottom:1px solid #d0d7de;background:#fbfcfd}
 .ext-note{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:6px}
 .ext-eg{background:#eef2f7;border-radius:5px;padding:1px 6px;color:var(--ink);font-size:12px}
+.ext-spec{margin-top:8px;background:#f6f9fc;border:1px solid #dbe6f0;border-left:3px solid var(--main);border-radius:9px;padding:9px 11px}
+.ext-spec-t{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.ext-spec-l{font-size:12.5px;color:var(--sub);line-height:1.75}
+.ext-spec-l b{color:var(--ink)}
 .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;margin:8px 0}
 .hub-cell{border:1px solid var(--line);border-radius:10px;padding:9px 6px;text-align:center;cursor:pointer;font-size:12px;color:var(--sub);background:#fafbfc;transition:border-color .12s,color .12s}
 .hub-cell:hover{border-color:var(--main);color:var(--main)}
@@ -2695,8 +2699,14 @@ function extMap(type,head){
 function extTemplate(){
  var d=extDef(extType());
  var head=d.cols.map(function(c){return TX(c.zh,c.en);});
- dlFile('\ufeff'+head.map(csvCell).join(',')+'\r\n',TX(d.n[0],d.n[1])+TX('_模板_','_template_')+todayStr()+'.csv','text/csv;charset=utf-8');
- toast(TX('标准表格已生成，用 Excel 打开填好再导入','Template downloaded — open in Excel, fill in, then import'));
+ var lines=[head.map(csvCell).join(',')];
+ if(d.eg&&d.eg.length){
+  var eg=['#'+TX(' 示例行：照着这一行填你的数据；本行以 # 开头，导入时自动忽略',' sample row - fill your own data like this; starts with # so it is ignored on import')];
+  for(var i=1;i<d.cols.length;i++)eg.push(d.eg[i-1]||'');
+  lines.push(eg.map(csvCell).join(','));
+ }
+ dlFile('\ufeff'+lines.join('\r\n')+'\r\n',TX(d.n[0],d.n[1])+'_'+TX('导入模板','import-template')+'_'+todayStr()+'.csv','text/csv;charset=utf-8');
+ toast(TX('模板已下载：第 1 行表头 + 1 行以 # 开头的示例（示例行导入时自动忽略）','Template downloaded: header + one # sample row (the # row is ignored on import)'));
 }
 function extExport(){
  var type=extType();
@@ -2724,8 +2734,8 @@ function extFile(e,type){
    try{var dj=JSON.parse(text);list=(dj&&dj.items)?dj.items:(Object.prototype.toString.call(dj)==='[object Array]'?dj:null);}catch(err){list=null;}
   }
   if(!list){
-   rows=parseCsv(text);
-   if(!rows||rows.length<2){toast(TX('文件为空或只有表头','File is empty or header-only'));return;}
+   rows=csvNoCmts(parseCsv(text));
+   if(!rows||rows.length<2){toast(TX('文件为空或只有表头（需要表头 + 至少 1 行数据）','File is empty or header-only (need a header row plus at least 1 data row)'));return;}
    var map=extMap(type,rows[0]);
    if(map.name===undefined){toast(TX('未识别到「名称」列，请保留表头第一行','No name column found; keep the header row'));return;}
    list=[];
@@ -2830,15 +2840,22 @@ function extPanel(){
  h+='</div>';
  h+='<div class="ext-tools">';
  h+='<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">';
- h+='<button class="btn mini" data-action="extTemplate" style="background:var(--main);color:#fff;border-color:var(--main)">'+TX('一键生成标准表格','Download template')+'</button>';
+ h+='<button class="btn mini" data-action="extTemplate" style="background:var(--main);color:#fff;border-color:var(--main)">'+TX('下载导入模板（CSV）','Download CSV template')+'</button>';
  h+='<button class="btn mini ghost" data-action="extImport">'+TX('导入文件','Import file')+'</button>';
- h+='<button class="btn mini ghost" data-action="extExport">'+TX('导出该类','Export')+'</button>';
+ h+='<button class="btn mini ghost" data-action="extExport">'+TX('导出该类 CSV','Export CSV')+'</button>';
  if(rows.length)h+='<button class="btn mini ghost" data-action="extClear">'+TX('清空该类','Clear')+'</button>';
  if(type==='customer'){h+='<button class="btn mini" data-action="leadNew" style="background:var(--main);color:#fff;border-color:var(--main)">+ '+TX('新建客户','New client')+'</button>';h+='<button class="btn mini ghost" data-action="extExportJson">'+TX('导出 JSON','Export JSON')+'</button>';} h+='<span style="flex:1"></span><span class="muted" style="font-size:12px">'+TX('共 ','Total ')+total+TX(' 条 · ',' rows · ')+d.cols.length+TX(' 列',' columns')+'</span>';
  h+='</div>';
- h+='<div class="ext-note">'+TX('表格第一行必须保留（表头）；中英文表头都能识别，标 * 为必填：','Keep row 1 as the header; CN/EN headers both work, * = required: ')+d.cols.map(function(c){return TX(c.zh,c.en)+(c.req?' *':'');}).join(' · ')+'</div>';
- h+='<div class="ext-note">'+TX('示例一行：','Sample row: ')+'<span class="ext-eg">'+(d.eg||[]).join('  |  ')+'</span></div>';
- if(type==='customer')h+='<div class="ext-note">'+TX('客户明细导入后进入「客户驾驶舱」，按「客户名 + 国家」匹配更新；想直接看或改客户，切到上面的「表格」视图。','Customer lists import into the Customer Hub, matched by name + country. To view or edit clients directly, switch to the Table view above.')+'</div>';
+ h+='<div class="ext-spec">';
+ h+='<div class="ext-spec-t">'+TX('导入格式要求（照着做就不会错）','Import format — what to prepare')+'</div>';
+ h+='<div class="ext-spec-l"><b>'+TX('① 文件格式','1. File format')+'</b>：'+TX('用 <b>.csv</b>（Excel / WPS 打开填，改完「另存为 → CSV UTF-8」最稳）；也可直接导入本工具「导出该类 CSV」生成的文件'+(type==='customer'?'，以及「导出 JSON」的客户备份 <b>.json</b>':'')+'。','Use <b>.csv</b> (open in Excel/WPS, then Save As → CSV UTF-8); the CSV from "Export CSV" also imports directly'+(type==='customer'?', plus the <b>.json</b> client backup from "Export JSON"':'')+'.')+'</div>';
+ h+='<div class="ext-spec-l"><b>'+TX('② 第 1 行是表头','2. Row 1 = header')+'</b>：'+TX('必须保留、不要删；中英文表头都能识别；带 <b>*</b> 的列必填。','Keep it; CN/EN headers are both recognized; <b>*</b> = required.')+'</div>';
+ h+='<div class="ext-spec-l"><b>'+TX('③ 列（顺序随意、多余的列自动忽略）','3. Columns (any order, extras ignored)')+'</b>：'+d.cols.map(function(c){return TX(c.zh,c.en)+(c.req?' <b>*</b>':'');}).join(' · ')+'</div>';
+ h+='<div class="ext-spec-l"><b>'+TX('④ 示例行','4. Sample row')+'</b>：<span class="ext-eg">'+(d.eg||[]).join('  |  ')+'</span> '+TX('· 以 <b>#</b> 开头的行会被自动跳过，不会当成数据导入。','· rows starting with <b>#</b> are skipped automatically.')+'</div>';
+ h+='<div class="ext-spec-l"><b>'+TX('⑤ 没有现成文件？先自己生成','5. No file yet? Generate one')+'</b>：'+TX('点「下载导入模板（CSV）」→ 得到「表头 + 1 行 # 示例」的 CSV，填好再导回来；点「导出该类 CSV」→ 得到与模板列顺序完全一致的 CSV（客户明细为 客户表_日期.csv），改完可直接再导回。','Tap "Download CSV template" → header + one # sample row; tap "Export CSV" → a CSV with exactly the template columns (clients: 客户表_date.csv). Edit and re-import.')+'</div>';
+ h+='<div class="ext-spec-l"><b>'+TX('⑥ 导入会怎么改数据','6. How import merges')+'</b>：'+TX('客户明细按「客户名 + 国家」匹配，其他类型按「名称」匹配；只覆盖有值的字段，不会清空已有内容；重复行自动合并。','Clients match by name + country, other types by name; only non-empty fields overwrite; duplicates merge.')+'</div>';
+ h+='</div>';
+ if(type==='customer')h+='<div class="ext-note">'+TX('导入的客户会进入「客户驾驶舱」，要看或改客户请切到上面的「表格」视图。','Imported clients land in the Customer Hub; switch to the Table view above to view or edit them.')+'</div>';
  else h+='<div class="ext-note">'+TX('这类资料只存在你本机浏览器（随「备份」一起导出），不会上传任何服务器。','This data stays in your browser (included in Backup exports); nothing is uploaded.')+'</div>';
  h+='</div>';
  if(type!=='customer'){
@@ -2846,7 +2863,7 @@ function extPanel(){
   for(j=0;j<d.cols.length;j++)h+='<th>'+TX(d.cols[j].zh,d.cols[j].en)+'</th>';
   h+='<th>'+TX('导入时间','Imported')+'</th><th>'+TX('操作','Ops')+'</th></tr></thead><tbody>';
   if(!rows.length){
-   h+='<tr><td colspan="'+(d.cols.length+3)+'" class="muted" style="padding:14px;text-align:center">'+TX('还没有该类资料 —— 点「一键生成标准表格」，把外部资料填进去，再导入。','No records yet — download the template, fill in your data, then import.')+'</td></tr>';
+   h+='<tr><td colspan="'+(d.cols.length+3)+'" class="muted" style="padding:14px;text-align:center">'+TX('还没有该类资料 —— 点「下载导入模板（CSV）」，把资料填进去，再导回来。','No records yet — download the CSV template, fill in your data, then import.')+'</td></tr>';
   } else {
    for(i=0;i<rows.length;i++){
     var r=rows[i];
@@ -2891,6 +2908,7 @@ function parseCsv(text){
  if(cur!==''||row.length){row.push(cur);rows.push(row);}
  return rows.filter(function(r){return r.some(function(x){return String(x).trim()!=='';});});
 }
+function csvNoCmts(rows){return (rows||[]).filter(function(r){return String(((r&&r[0])===undefined?'':r[0])).trim().charAt(0)!=='#';});}
 function csvMap(head){
  var m={};
  head.forEach(function(h,i){
@@ -2937,8 +2955,8 @@ function onLeadFile(e){
    try{var d=JSON.parse(text);list=(d&&d.leads)?d.leads:(Object.prototype.toString.call(d)==='[object Array]'?d:null);}catch(err){list=null;}
   }
   if(!list){
-   var rows=parseCsv(text);
-   if(rows.length<2){toast(TX('文件为空或格式不对','Empty or bad format'));return;}
+   var rows=csvNoCmts(parseCsv(text));
+   if(rows.length<2){toast(TX('文件为空或格式不对（需要表头 + 至少 1 行数据）','Empty or bad format (need a header row plus at least 1 data row)'));return;}
    var m=csvMap(rows[0]);
    if(m.name===undefined){toast(TX('未识别到「客户名」列，请保留表头','No Name column; keep the header row'));return;}
    list=[];
@@ -4333,7 +4351,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v72</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v73</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
