@@ -218,6 +218,8 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .list-item .ops{display:flex;gap:6px;flex-wrap:wrap}
 #leadBarWrap{position:sticky;top:0;z-index:35;background:var(--bg);padding-top:2px}
 #leadBarWrap .card{box-shadow:0 2px 10px rgba(15,23,42,.06)}
+.lead-editbar{margin-top:7px;padding-top:6px;border-top:1px dashed var(--line)}
+.lead-editbar .chip-edit{font-size:11.5px;padding:2px 8px;background:#f8fbff}
 .lead-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:var(--shadow);margin-bottom:12px}
 .lead-nav .pos{font-size:13px;color:var(--sub);white-space:nowrap}
 .lead-nav .sbtn{padding:6px 10px;font-size:13px;min-height:34px}
@@ -2115,7 +2117,7 @@ h+='<input id="ld_name" placeholder="'+TX('客户名','Name')+'"><input id="ld_c
 h+='<input id="ld_wa" placeholder="WhatsApp / '+TX('手机号','Phone')+'" style="margin-top:6px"><input id="ld_email" placeholder="'+TX('邮箱','Email')+'" style="margin-top:6px">';
  h+='</div><div class="grid g3" style="margin-top:10px"><input id="ld_product" placeholder="'+TX('产品','Product')+'"><select id="ld_market">'+['中东','东南亚','欧美','非洲','混合'].map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><select id="ld_stage">'+PIPE.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select></div>';h+='<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><select id="ld_source">'+SOURCES.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><span class="hint">'+TX('来源渠道：用来复盘哪个渠道最有效','Source: track which channel works best')+'</span></div>';
  h+='<button class="btn" data-action="addLead" style="margin-top:10px">'+TX('添加线索','Add lead')+'</button></div></div>';
-h+='<div class="lead-nav" id="leadNavBar"><span class="muted" style="font-size:12px;font-weight:700">'+TX('列表导航','List nav')+'</span><button class="btn ghost mini sbtn" data-action="ldNavUp">▲ '+TX('上一条','Prev')+'</button><button class="btn ghost mini sbtn" data-action="ldNavDn">▼ '+TX('下一条','Next')+'</button><b class="pos" id="leadNavPos">'+TX('共 0 条','0 items')+'</b><span style="flex:1"></span><button class="btn ghost mini sbtn" data-action="ldNavTop" title="'+TX('回到列表顶部','Back to top of list')+'">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="ldNavBot" title="'+TX('跳到列表底部','Jump to bottom')+'">⤓ '+TX('底部','Bottom')+'</button></div></div>';
+h+='<div class="lead-nav" id="leadNavBar"><span class="muted" style="font-size:12px;font-weight:700">'+TX('列表导航','List nav')+'</span><button class="btn ghost mini sbtn" data-action="ldNavUp">▲ '+TX('上一条','Prev')+'</button><button class="btn ghost mini sbtn" data-action="ldNavDn">▼ '+TX('下一条','Next')+'</button><b class="pos" id="leadNavPos">'+TX('共 0 条','0 items')+'</b><span style="flex:1"></span>'+'<button class="btn ghost mini sbtn" data-action="ldEditBarTgl" title="'+TX('显示/隐藏每张卡片的「编辑栏」','Show/hide the per-card edit bar')+'">✎ '+TX('编辑栏','Edit bar')+'</button><button class="btn ghost mini sbtn" data-action="ldNavTop" title="'+TX('回到列表顶部','Back to top of list')+'">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="ldNavBot" title="'+TX('跳到列表底部','Jump to bottom')+'">⤓ '+TX('底部','Bottom')+'</button></div></div>';
  h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品','Search name/country/product')+'"><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
  h+='<div class="row" style="margin-bottom:10px;justify-content:flex-end"><button class="btn ghost mini" data-action="trashToggle">'+TX('回收站','Trash')+' ('+(S.trash||[]).length+')</button></div>';
 h+='<div id="leadList"></div></div>';
@@ -2155,10 +2157,10 @@ function renderLeads(){
   var mc=mailCount(l.id);
   html+='<div class="list-item" data-li="'+li+'"><div class="main"><div class="t"><button class="linkbtn" data-action="lead360" data-id="'+l.id+'">'+esc(l.name)+'</button> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.source?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.source)+'</span>':'')+' <span class="tag score">'+scoreLead(l)+'</span>'+(mc?' <button class="tag b" data-action="mailOf" data-id="'+l.id+'" style="background:#DBEAFE;color:#1D4ED8;border:none;cursor:pointer" title="'+TX('看这个客户的发送记录','See this client’s sent log')+'">✉ '+mc+'</button>':'')+(follow?' <span class="tag r">'+days+TX('天未跟','d no follow')+'</span>':'')+'</div>';
   html+='<div class="s">'+esc(l.product||'')+(l.amount?(' · $'+esc(l.amount)):'')+'</div>';
-  html+='<div class="s" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px"><span><b>WhatsApp</b>：'+esc(l.wa||'—')+'</span><span><b>'+TX('邮箱','Email')+'</b>：'+esc(l.email||'—')+'</span></div></div>';
+  html+='<div class="s" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px"><span><b>WhatsApp</b>：'+esc(l.wa||'—')+'</span><span><b>'+TX('邮箱','Email')+'</b>：'+esc(l.email||'—')+'</span></div>'+leadEditBar(l)+'</div>';
   var waBtn=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn mini" data-action="leadWa" data-id="'+l.id+'">WhatsApp</button>':'';
   var emailBtn=(l.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email))?'<button class="btn mini" data-action="leadEmail" data-id="'+l.id+'">'+TX('邮件','Email')+'</button>':'';
-  html+='<div class="ops">'+waBtn+emailBtn+'<button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('详情','360')+'</button><button class="btn ghost mini" data-action="leadAdv" data-id="'+l.id+'">'+(next?(TX('→','→')+next):TX('已成交','Closed'))+'</button><button class="btn ghost mini" data-action="leadTouch" data-id="'+l.id+'">'+TX('记录跟进','Log')+'</button><button class="btn ghost mini" data-action="leadEdit" data-id="'+l.id+'">'+TX('改','Edit')+'</button><button class="btn danger mini" data-action="leadDel" data-id="'+l.id+'">'+TX('删','Del')+'</button></div></div>';
+  html+='<div class="ops">'+waBtn+emailBtn+'<button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('详情','360')+'</button><button class="btn ghost mini" data-action="leadAdv" data-id="'+l.id+'">'+(next?(TX('→','→')+next):TX('已成交','Closed'))+'</button><button class="btn ghost mini" data-action="leadTouch" data-id="'+l.id+'">'+TX('记录跟进','Log')+'</button><button class="btn ghost mini" data-action="leadEdit" data-id="'+l.id+'">'+TX('编辑','Edit')+'</button><button class="btn danger mini" data-action="leadDel" data-id="'+l.id+'">'+TX('删','Del')+'</button></div></div>';
  });
  box.innerHTML=html;
  ldNavAfter();
@@ -3271,6 +3273,19 @@ function holidayGreet(cc,h,he,d){
 }
 function greetLead(id){S._activeClient=id||'';S._festCtx={sel:'festival'};S.view='repeat';save('view',S.view);refreshAll();}
 /* === R27 复购转介：两面板「可见即可点 / 可编辑」重写 === */
+/* === R74 找客户卡片「编辑栏」：可见即可点，改错一处不用开大表单 === */
+var _ldEditBar=true;
+function leadEditBar(l){
+ if(!_ldEditBar)return '';
+ var mk=function(f,zh,en){var v=(l[f]==null||l[f]==='')?'—':String(l[f]);return chipEdit(f,l.id,TX(zh,en),TX('当前：','Now: ')+v);};
+ return '<div class="s lead-editbar"><span class="muted" style="font-size:11.5px;margin-right:2px">'+TX('编辑栏：','Edit bar: ')+TX('点下面任意一项即可直接修改','tap any chip to fix it')+'</span>'
+  +mk('name','客户名','Name')+mk('country','国家','Country')+mk('market','市场','Market')+mk('stage','阶段','Stage')
+  +mk('product','产品','Product')+mk('amount','金额','Amount')+mk('wa','WhatsApp','WhatsApp')+mk('email','邮箱','Email')
+  +mk('source','来源','Source')+mk('last','跟进日','Last touch')+mk('note','备注','Note')
+  +'</div>';
+}
+function ldEditBarTgl(){_ldEditBar=!_ldEditBar;refreshAll();}
+
 function pencilIco(){return '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';}
 function chipEdit(field,id,label,tip){return '<span class="chip-edit" data-action="custCellEdit" data-field="'+field+'" data-id="'+id+'" title="'+esc(tip||'')+'">'+pencilIco()+'<span>'+esc(label)+'</span></span>';}
 function leadCardHead(l){return '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><b style="font-size:14.5px">'+esc(l.name||TX('未命名','Untitled'))+'</b>'+(l.market?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.market)+'</span>':'')+'</div>';}
@@ -4351,7 +4366,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v73</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v74</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4547,7 +4562,7 @@ document.addEventListener('click',function(e){
  else if(a==='leadNew'){leadNew();}else if(a==='leadNewRef'){leadNewRef();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
- else if(a==='ldFormToggle'){ldFormToggle();}
+ else if(a==='ldFormToggle'){ldFormToggle();}else if(a==='ldEditBarTgl'){ldEditBarTgl();}
  else if(a==='ldNavUp'){ldNavGo(-1);}
  else if(a==='ldNavDn'){ldNavGo(1);}
  else if(a==='ldNavTop'){ldNavEnd('top');}
