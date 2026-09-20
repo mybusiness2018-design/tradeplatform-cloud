@@ -4394,7 +4394,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v78</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v79</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -5828,7 +5828,17 @@ function viewDocs(){
  if(S._chkShow)h+=docChkPanel(d);
  if(S._defShow)h+=docDefPanel();
  if(S._docIO)h+=docIOPanel(d);
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，27 单继承）','Deal shared info (fill once, inherited by all 27)')+'</h3><div class="grid g3">';
+ var _mlk=(d.leadId)?(S.leads.find(function(x){return x.id===d.leadId;})):null;
+if(_mlk){
+ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('该客户邮件往来','Email thread with this client')+'</h3>';
+ h+='<div class="hint" style="margin:0 0 8px">'+TX('开发信、跟进、报价、PI 邮件都挂在客户 '+esc(_mlk.name)+' 名下，下面是与 TA 的全部往来；从成交台直接发也计入同一份记录。','Every outreach/follow-up/quote/PI email is logged under '+esc(_mlk.name)+' — full thread below; emailing from here joins the same log.')+'</div>';
+ h+=mailList360(d.leadId);
+ h+='<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn mini amber" data-action="leadEmail" data-id="'+esc(d.leadId)+'">'+TX('发邮件给该客户','Email this client')+'</button><button class="btn mini ghost" data-action="leadWa" data-id="'+esc(d.leadId)+'">WhatsApp</button><button class="btn mini ghost" data-action="lead360" data-id="'+esc(d.leadId)+'">'+TX('看客户360','Client 360')+'</button><button class="btn mini ghost" data-action="mailOf" data-id="'+esc(d.leadId)+'">'+TX('全部发送记录','All sent')+'</button></div>';
+ h+='</div>';
+}else{
+ h+='<div class="card muted" style="margin-bottom:14px;padding:14px">'+TX('未关联客户：在「编辑交易」里关联客户后，这里会显示 TA 的全部邮件往来，并能从成交台直接发留痕邮件。','No customer linked: link one in “Edit deal” — then this shows the client full email thread and you can email from here.')+'</div>';
+}
+h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('交易公共信息（填一次，27 单继承）','Deal shared info (fill once, inherited by all 27)')+'</h3><div class="grid g3">';
  [['cnee',TX('买方/Consignee','Buyer')],['no',TX('发票号/No.','Invoice No.')],['date',TX('日期','Date')],['amt',TX('金额 USD','Amount')],['qty',TX('数量 pcs','Qty')],['pkg',TX('件数 CTNS','Packages')],['gross',TX('毛重 KGS','G.W.')],['net',TX('净重 KGS','N.W.')],['vessel',TX('船名航次','Vessel')],['port',TX('目的港','Port')],['eta',TX('到港 ETA','ETA')],['incoterms',TX('贸易术语','Incoterms')]].forEach(function(p){h+='<label style="font-size:12px">'+p[1]+(p[0]==='incoterms'?'<select id="deal_incoterms">'+incotermOpts(d.incoterms)+'</select>':'<input id="deal_'+p[0]+'" value="'+esc(d[p[0]]||'')+'">')+'</label>';});
  h+='</div><div class="grid g2" style="margin-top:8px"><label style="font-size:12px">'+TX('目的国','Dest country')+'<input id="deal_destCountry" value="'+esc(d.destCountry||'')+'" placeholder="如 UAE / Egypt / 加纳"></label><label style="font-size:12px">'+TX('运输方式','Transport')+'<select id="deal_transport">'+transportOpts(d.transport)+'</select></label></div>';
  h+='<div class="row" style="margin-top:8px"><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_woodPkg"'+(d.woodPkg?' checked':'')+'>'+TX('木包装（需熏蒸证）','Wood packing (fumigation)')+'</label><label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="deal_lc"'+(d.lc?' checked':'')+'>'+TX('信用证 L/C（需受益人/船公司证明）','L/C (beneficiary cert)')+'</label></div>';
