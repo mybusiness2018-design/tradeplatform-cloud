@@ -315,6 +315,7 @@ select.chip-sel{padding:3px 8px;border:1px solid var(--main);border-radius:999px
       <span class="top-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center">
         <button class="btn mini" data-action="exportJson" title="一键导出全部数据为一个 JSON 文件（换设备/分享用）">⬇ 备份全部</button>
         <button class="btn ghost mini" data-action="importJson" title="从备份文件一键恢复全部数据">⬆ 恢复</button>
+        <button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）">背景色</button>
       </span>
     </div>
     <div id="today" data-page-node-id="jDTyZHpstIW37k7ODBYKvO"></div>
@@ -592,6 +593,20 @@ function boot(){
  ENC_ON=false;buildState();unlocked();syncInitAuto();
 }
 function unlocked(){if(ENC_ON)persistAll();init();}
+/* ============ R77 护眼背景色切换 ============ */
+var THEMES=[
+ {id:'beige',n:'暖灰米',bg:'#EFEBE3',card:'#FBF9F4',line:'#E4DED3'},
+ {id:'tea',n:'暖米茶',bg:'#F1ECE1',card:'#FAF6EE',line:'#E6DCCB'},
+ {id:'teal',n:'雾青',bg:'#E8EEED',card:'#F4F8F7',line:'#D5E0DD'},
+ {id:'green',n:'淡豆绿',bg:'#E9EFE3',card:'#F5F8F0',line:'#D9E2D0'},
+ {id:'blue',n:'灰蓝',bg:'#E9EDF3',card:'#F5F7FB',line:'#D8E0EA'},
+ {id:'purple',n:'雾紫',bg:'#ECE9F1',card:'#F7F5FA',line:'#DEDAE7'}
+];
+function themeGet(){try{return localStorage.getItem(KEY+'theme')||'beige';}catch(e){return 'beige';}}
+function applyTheme(id){var t=null;for(var i=0;i<THEMES.length;i++){if(THEMES[i].id===id)t=THEMES[i];}if(!t)t=THEMES[0];var de=document.documentElement;if(de&&de.style){if(de.style.setProperty){de.style.setProperty('--bg',t.bg);de.style.setProperty('--card',t.card);de.style.setProperty('--line',t.line);}else{de.style['--bg']=t.bg;de.style['--card']=t.card;de.style['--line']=t.line;}}try{localStorage.setItem(KEY+'theme',t.id);}catch(e){}}
+function themeOutside(e){if(!e.target.closest('#themePop')&&!e.target.closest('[data-action="themeOpen"]')){var p=$('themePop');if(p)p.remove();document.removeEventListener('click',themeOutside);}}
+function themeOpen(){var ex=$('themePop');if(ex){ex.remove();return;}var cur=themeGet();var h='<div id="themePop" style="position:fixed;right:14px;top:56px;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:184px">';h+='<div style="font-size:12px;color:var(--sub);margin-bottom:8px;padding:0 4px">'+TX('背景色（护眼）','Background theme')+'</div>';for(var i=0;i<THEMES.length;i++){var t=THEMES[i];var sel=(t.id===cur);h+='<div data-theme="'+t.id+'" class="themeSwatch" style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;'+(sel?'background:rgba(37,99,235,.10)':'')+'"><span style="width:22px;height:22px;border-radius:6px;border:1px solid '+t.line+';background:'+t.bg+'"></span><span style="font-size:13px;color:var(--text)">'+t.n+'</span>'+(sel?'<span style="margin-left:auto;color:#2563eb;font-size:12px">✓</span>':'')+'</div>';}h+='</div>';var d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d.firstChild);var pop=$('themePop');pop.addEventListener('click',function(e){var s=e.target.closest('.themeSwatch');if(!s)return;applyTheme(s.getAttribute('data-theme'));themeOpen();});setTimeout(function(){document.addEventListener('click',themeOutside);},0);}
+
 /* ============ 外贸全套单据（覆盖合同/货运/清关/保险检验/结汇/通知 6 大类，一套应对各种场景） ============ */
 var DOC_FIELDS={
  cnee:{l:'买方 / Consignee'},buyerAddr:{l:'买方地址 Address'},no:{l:'发票/单证号 No.'},contractNo:{l:'合同号 Contract No.'},poNo:{l:'采购单号 PO No.'},
@@ -4376,7 +4391,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v76</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v77</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4677,6 +4692,7 @@ document.addEventListener('click',function(e){
  else if(a==='saveMe'){saveMe();}
  else if(a==='exportJson'){exportJson();}
  else if(a==='importJson'){importJson();}
+else if(a==='themeOpen'){themeOpen();}
  else if(a==='exportLeadsCsv'){exportLeadsCsv();}
  else if(a==='exportLeadsJson'){exportLeadsJson();}
  else if(a==='importLeads'){importLeads();}
@@ -6496,7 +6512,7 @@ function docDefApply(pid){
  toast(TX('已按【'+p.zh+'】套用：已设置交易条件并预勾所需单证，请逐项核对实际出单后取消未出的勾选','Applied preset: '+p.en+'. Review and uncheck docs not actually issued.'));
 }
 /* ============ 初始化 ============ */
-function init(){hotDailyCheck();hotStartTimer();fetchCloudSeed();refreshAll();}
+function init(){applyTheme(themeGet());hotDailyCheck();hotStartTimer();fetchCloudSeed();refreshAll();}
 
 /* ===== 本地身份门禁（纯前端：账号与数据仅存本机浏览器，非云端账号） ===== */
 function wbHash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(16);}
