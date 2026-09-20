@@ -63,6 +63,8 @@ svg{display:block}
 h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){width:18px;height:18px;display:inline-block;vertical-align:-3px}
 #app{display:flex;min-height:100vh}
 #side{width:212px;flex:0 0 212px;background:var(--card);border-right:1px solid var(--line);padding:4px 10px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side-foot{position:sticky;bottom:0;padding-top:10px;margin-top:10px;border-top:1px solid var(--line);background:var(--card)}
+.side-foot .btn{width:100%}
 #side .logo{width:160px;height:160px;background:#1e3a8a;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;margin:0 auto 12px}
 #side .logo .dt{width:78px;height:62px;background:transparent;border-radius:0;display:flex;align-items:center;justify-content:center;color:#fff}
 #side .logo .lt{white-space:nowrap;letter-spacing:1px;text-align:center;color:#fff;font-weight:800;font-size:19px;line-height:1}
@@ -306,6 +308,7 @@ select.chip-sel{padding:3px 8px;border:1px solid var(--main);border-radius:999px
   <aside id="side" data-page-node-id="vTg2smxCEJ3W0zaaAT4DnA">
     <div class="logo" data-page-node-id="RuCPTDyKNsvcp0dkJChpVd"><span class="dt" data-page-node-id="Ls5fkTwxZItcaTSRymQDAr"><svg width="78" height="62" viewBox="1.5 4 20 16" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="GYX6vjiXDeEaGaoQk0tqRe"><g stroke="#ffffff"><circle cx="9.5" cy="12" r="7" data-page-node-id="ButdhMFXHjDyftIcMvgqO0"/><path d="M2.5 12h14" data-page-node-id="yYEyHmovhzN7nIObWeaGmh"/><path d="M9.5 5c2 2 2 12 0 14" data-page-node-id="qkkKibSvftqvGAySjHNq4D"/><path d="M9.5 5c-2 2-2 12 0 14" data-page-node-id="AulV8cGq77REX6TwWamlHw"/></g><path stroke="#f59e0b" d="M12.5 9l8-4-3 8 3 5-7-4" data-page-node-id="Gd0P1EDyb0P7yQVGoC3cFu"/></svg></span><span class="lt">外贸一体化平台</span></div>
     <div id="nav" data-page-node-id="dPOdZKqPFuVIUZnihx8a0d"></div>
+    <div class="side-foot"><button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）" style="width:100%">背景色</button></div>
   </aside>
   <div id="mask" data-page-node-id="emP0Z9ZwHPwD0aS97fGZ8a"></div>
   <main id="main" data-page-node-id="LvXFfnY4BXprQiaeSUQTtK">
@@ -4391,7 +4394,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v77</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v78</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
