@@ -717,7 +717,7 @@ function scoreLead(l){
  var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);
  if(days<=3)s+=10;else if(days<=7)s+=5;else if(days>=21)s-=8;
  if(l.amount>=2000)s+=8;else if(l.amount>0)s+=4;
- if(['中东','东南亚'].indexOf(l.market)>=0)s+=4;
+ if(isMidEast(l.market)||isSEA(l.market))s+=4;
  var _rf=reconFitOf(l); if(_rf!==null){ s += Math.round((_rf-50)/5); }
  s=Math.max(0,Math.min(100,s));
  return s;
@@ -2075,8 +2075,19 @@ function cpCandAll(){
 }
 /* ============ 找客户 ============ */
 var PIPE=['待开发','已联系','已回复','试样','报价','成交'];
-var MARKETS=['中东','东南亚','欧美','非洲','混合'];
-var MARKET_EN={'中东':'Middle East','东南亚':'Southeast Asia','欧美':'EU & US','非洲':'Africa','混合':'Mixed','阿联酋':'UAE','沙特阿拉伯':'Saudi Arabia','沙特':'Saudi Arabia','土耳其':'Turkey','埃及':'Egypt','卡塔尔':'Qatar','科威特':'Kuwait','阿曼':'Oman','巴林':'Bahrain','约旦':'Jordan','伊拉克':'Iraq','伊朗':'Iran','叙利亚':'Syria','黎巴嫩':'Lebanon','也门':'Yemen','以色列':'Israel','利比亚':'Libya','突尼斯':'Tunisia','阿尔及利亚':'Algeria','摩洛哥':'Morocco','苏丹':'Sudan','马来西亚':'Malaysia','印度尼西亚':'Indonesia','印尼':'Indonesia','新加坡':'Singapore','泰国':'Thailand','越南':'Vietnam','菲律宾':'Philippines','印度':'India','巴基斯坦':'Pakistan','孟加拉国':'Bangladesh','斯里兰卡':'Sri Lanka','尼泊尔':'Nepal','尼日利亚':'Nigeria','南非':'South Africa','肯尼亚':'Kenya','加纳':'Ghana','埃塞俄比亚':'Ethiopia','坦桑尼亚':'Tanzania','美国':'USA','加拿大':'Canada','墨西哥':'Mexico','巴西':'Brazil','阿根廷':'Argentina','智利':'Chile','秘鲁':'Peru','英国':'UK','德国':'Germany','法国':'France','意大利':'Italy','西班牙':'Spain','葡萄牙':'Portugal','荷兰':'Netherlands','比利时':'Belgium','波兰':'Poland','俄罗斯':'Russia','乌克兰':'Ukraine','瑞典':'Sweden','瑞士':'Switzerland','希腊':'Greece','澳大利亚':'Australia','新西兰':'New Zealand','日本':'Japan','韩国':'South Korea','中国':'China'};
+/* R86 市场 / 国家地区：10 个大区 + 常见国家（可选可输；历史录入值自动并入联想） */
+var MK_REGIONS=['中东','东南亚','南亚','中亚','东亚','欧美','非洲','拉美','大洋洲','混合'];
+var MK_COUNTRIES=['沙特阿拉伯','沙特','阿联酋','卡塔尔','科威特','巴林','阿曼','也门','约旦','黎巴嫩','叙利亚','伊拉克','伊朗','以色列','巴勒斯坦','土耳其','埃及','摩洛哥','阿尔及利亚','突尼斯','利比亚','苏丹','印度','巴基斯坦','孟加拉国','斯里兰卡','尼泊尔','阿富汗','马尔代夫','印度尼西亚','印尼','马来西亚','新加坡','泰国','越南','菲律宾','缅甸','柬埔寨','老挝','文莱','日本','韩国','中国','中国香港','中国台湾','中国澳门','英国','德国','法国','意大利','西班牙','葡萄牙','荷兰','比利时','波兰','希腊','瑞典','挪威','丹麦','芬兰','瑞士','奥地利','爱尔兰','捷克','匈牙利','罗马尼亚','俄罗斯','乌克兰','白俄罗斯','美国','加拿大','墨西哥','巴西','阿根廷','智利','秘鲁','哥伦比亚','委内瑞拉','厄瓜多尔','玻利维亚','乌拉圭','巴拉圭','巴拿马','危地马拉','多米尼加','尼日利亚','南非','肯尼亚','加纳','埃塞俄比亚','坦桑尼亚','乌干达','塞内加尔','科特迪瓦','喀麦隆','安哥拉','赞比亚','津巴布韦','莫桑比克','卢旺达','哈萨克斯坦','乌兹别克斯坦','吉尔吉斯斯坦','塔吉克斯坦','土库曼斯坦','阿塞拜疆','格鲁吉亚','亚美尼亚','澳大利亚','新西兰'];
+var MARKETS=MK_REGIONS.concat(MK_COUNTRIES);
+var MIDEAST_MK=['中东','沙特阿拉伯','沙特','阿联酋','卡塔尔','科威特','巴林','阿曼','也门','约旦','黎巴嫩','叙利亚','伊拉克','伊朗','以色列','巴勒斯坦','土耳其','埃及','摩洛哥','阿尔及利亚','突尼斯','利比亚','苏丹'];
+var SEA_MK=['东南亚','南亚','印度尼西亚','印尼','马来西亚','新加坡','泰国','越南','菲律宾','缅甸','柬埔寨','老挝','文莱','印度','巴基斯坦','孟加拉国','斯里兰卡','尼泊尔','马尔代夫'];
+function isMidEast(v){v=String(v==null?'':v);return MIDEAST_MK.indexOf(v)>=0;}
+function isSEA(v){v=String(v==null?'':v);return SEA_MK.indexOf(v)>=0;}
+function mktOpts(){var out=MARKETS.slice();(S.leads||[]).forEach(function(l){var m=l&&l.market;if(m&&out.indexOf(m)<0)out.push(m);});var me=(S.me&&S.me.market)||'';if(me&&out.indexOf(me)<0)out.push(me);return out;}
+function mktUsed(){var c={};(S.leads||[]).forEach(function(l){var m=l&&l.market;if(m)c[m]=(c[m]||0)+1;});var me=(S.me&&S.me.market)||'';if(me&&!c[me])c[me]=1;return Object.keys(c).sort(function(a,b){return c[b]-c[a];});}
+function mktFilterOpts(){var out=MK_REGIONS.slice();mktUsed().forEach(function(m){if(out.indexOf(m)<0)out.push(m);});var cf=((S._leadFilter||{}).market||(S._custFilter||{}).market||'');if(cf&&out.indexOf(cf)<0)out.push(cf);return out;}
+function mktDatalist(){return mktOpts().map(function(x){return '<option value="'+escAttr(x)+'"></option>';}).join('');}
+var MARKET_EN={'中东':'Middle East','东南亚':'Southeast Asia','欧美':'EU & US','非洲':'Africa','混合':'Mixed','阿联酋':'UAE','沙特阿拉伯':'Saudi Arabia','沙特':'Saudi Arabia','土耳其':'Turkey','埃及':'Egypt','卡塔尔':'Qatar','科威特':'Kuwait','阿曼':'Oman','巴林':'Bahrain','约旦':'Jordan','伊拉克':'Iraq','伊朗':'Iran','叙利亚':'Syria','黎巴嫩':'Lebanon','也门':'Yemen','以色列':'Israel','利比亚':'Libya','突尼斯':'Tunisia','阿尔及利亚':'Algeria','摩洛哥':'Morocco','苏丹':'Sudan','马来西亚':'Malaysia','印度尼西亚':'Indonesia','印尼':'Indonesia','新加坡':'Singapore','泰国':'Thailand','越南':'Vietnam','菲律宾':'Philippines','印度':'India','巴基斯坦':'Pakistan','孟加拉国':'Bangladesh','斯里兰卡':'Sri Lanka','尼泊尔':'Nepal','尼日利亚':'Nigeria','南非':'South Africa','肯尼亚':'Kenya','加纳':'Ghana','埃塞俄比亚':'Ethiopia','坦桑尼亚':'Tanzania','美国':'USA','加拿大':'Canada','墨西哥':'Mexico','巴西':'Brazil','阿根廷':'Argentina','智利':'Chile','秘鲁':'Peru','英国':'UK','德国':'Germany','法国':'France','意大利':'Italy','西班牙':'Spain','葡萄牙':'Portugal','荷兰':'Netherlands','比利时':'Belgium','波兰':'Poland','俄罗斯':'Russia','乌克兰':'Ukraine','瑞典':'Sweden','瑞士':'Switzerland','希腊':'Greece','澳大利亚':'Australia','新西兰':'New Zealand','日本':'Japan','韩国':'South Korea','中国':'China','南亚':'South Asia','中亚':'Central Asia','东亚':'East Asia','拉美':'Latin America','大洋洲':'Oceania','中国香港':'Hong Kong, China','香港':'Hong Kong, China','中国台湾':'Taiwan, China','台湾':'Taiwan, China','中国澳门':'Macao, China','澳门':'Macao, China','巴勒斯坦':'Palestine','阿富汗':'Afghanistan','马尔代夫':'Maldives','缅甸':'Myanmar','柬埔寨':'Cambodia','老挝':'Laos','文莱':'Brunei','蒙古':'Mongolia','哈萨克斯坦':'Kazakhstan','乌兹别克斯坦':'Uzbekistan','吉尔吉斯斯坦':'Kyrgyzstan','塔吉克斯坦':'Tajikistan','土库曼斯坦':'Turkmenistan','阿塞拜疆':'Azerbaijan','格鲁吉亚':'Georgia','亚美尼亚':'Armenia','挪威':'Norway','丹麦':'Denmark','芬兰':'Finland','奥地利':'Austria','爱尔兰':'Ireland','捷克':'Czech','匈牙利':'Hungary','罗马尼亚':'Romania','白俄罗斯':'Belarus','哥伦比亚':'Colombia','委内瑞拉':'Venezuela','厄瓜多尔':'Ecuador','玻利维亚':'Bolivia','乌拉圭':'Uruguay','巴拉圭':'Paraguay','巴拿马':'Panama','危地马拉':'Guatemala','多米尼加':'Dominican Rep.','塞内加尔':'Senegal','科特迪瓦':'Ivory Coast','喀麦隆':'Cameroon','安哥拉':'Angola','赞比亚':'Zambia','津巴布韦':'Zimbabwe','莫桑比克':'Mozambique','卢旺达':'Rwanda','乌干达':'Uganda'};
 function enMarket(v){if(!v)return '';return MARKET_EN[v]||v;}
 
 /* R40 邮件英文安全翻译器：外贸术语中英映射 → 去 CJK → 清理悬挂分隔符（保留 {} 占位符） */
@@ -2167,10 +2178,10 @@ if(S._findHelp){
  h+='<div id="leadScope"><div id="leadBarWrap"><div class="card" style="margin-bottom:8px"><div class="row" style="align-items:center;flex-wrap:nowrap;margin-bottom:'+(_ldFormOpen?'10px':'0')+'"><h3 style="margin:0;font-size:15px;white-space:nowrap">'+TX('新增线索','Add lead')+'</h3><span class="muted" style="font-size:12px;white-space:nowrap">'+TX('固定在此，滚动不动','Pinned while scrolling')+'</span><span style="flex:1"></span><button class="btn ghost mini" data-action="ldFormToggle">'+(_ldFormOpen?TX('收起','Collapse'):TX('展开','Expand'))+'</button></div><div id="ldFormBody" style="display:'+(_ldFormOpen?'block':'none')+'"><div class="grid g3">';
 h+='<input id="ld_name" placeholder="'+TX('客户名','Name')+'"><input id="ld_country" placeholder="'+TX('国家','Country')+'">';
 h+='<div class="mrow-box" style="grid-column:1/-1"><div class="mlab">'+TX('手机号 / WhatsApp','Phones / WhatsApp')+'（'+TX('可多个','multiple')+'）</div><div class="mrows" id="ld_wa_rows"><div class="mrow"><input class="mwain" placeholder="WhatsApp / '+TX('手机号','Phone')+'"><button type="button" class="mrm" onclick="rmMRow(this)">×</button></div></div><button type="button" class="btn ghost mini" data-box="ld_wa_rows" data-cls="mwain" data-ph="WhatsApp / 手机号" onclick="addMRow(this)"">+ '+TX('加手机号','Add phone')+'</button></div>';h+='<div class="mrow-box" style="grid-column:1/-1"><div class="mlab">'+TX('邮箱','Email')+'（'+TX('可多个','multiple')+'）</div><div class="mrows" id="ld_email_rows"><div class="mrow"><input class="memin" placeholder="'+TX('邮箱','Email')+'"><button type="button" class="mrm" onclick="rmMRow(this)">×</button></div></div><button type="button" class="btn ghost mini" data-box="ld_email_rows" data-cls="memin" data-ph="邮箱" onclick="addMRow(this)"">+ '+TX('加邮箱','Add email')+'</button></div>';
- h+='</div><div class="grid g3" style="margin-top:10px"><input id="ld_cat" list="ld_cat_list" placeholder="'+TX('产品类目（可选可输）','Category')+'" oninput="prodSug(this,&quot;ld_prod_list&quot;)"><input id="ld_product" list="ld_prod_list" placeholder="'+TX('具体产品','Product')+'"><select id="ld_market">'+['中东','东南亚','欧美','非洲','混合'].map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></div>';h+='<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><select id="ld_stage">'+PIPE.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select><select id="ld_source">'+SOURCES.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><span class="hint">'+TX('来源渠道：用来复盘哪个渠道最有效','Source: track which channel works best')+'</span></div>';h+='<datalist id="ld_cat_list">'+catDatalist()+'</datalist><datalist id="ld_prod_list">'+prodDatalist('')+'</datalist>';
+ h+='</div><div class="grid g3" style="margin-top:10px"><input id="ld_cat" list="ld_cat_list" placeholder="'+TX('产品类目（可选可输）','Category')+'" oninput="prodSug(this,&quot;ld_prod_list&quot;)"><input id="ld_product" list="ld_prod_list" placeholder="'+TX('具体产品','Product')+'"><input id="ld_market" list="ld_mkt_list" value="'+escAttr(MARKETS[0])+'" placeholder="'+TX('市场 / 国家地区（可选可输）','Market / country')+'"></div>';h+='<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><select id="ld_stage">'+PIPE.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select><select id="ld_source">'+SOURCES.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><span class="hint">'+TX('来源渠道：用来复盘哪个渠道最有效','Source: track which channel works best')+'</span></div>';h+='<datalist id="ld_cat_list">'+catDatalist()+'</datalist><datalist id="ld_prod_list">'+prodDatalist('')+'</datalist><datalist id="ld_mkt_list">'+mktDatalist()+'</datalist>';
  h+='<button class="btn" data-action="addLead" style="margin-top:10px">'+TX('添加线索','Add lead')+'</button></div></div>';
 h+='<div class="lead-nav" id="leadNavBar"><span class="muted" style="font-size:12px;font-weight:700">'+TX('列表导航','List nav')+'</span><button class="btn ghost mini sbtn" data-action="ldNavUp">▲ '+TX('上一条','Prev')+'</button><button class="btn ghost mini sbtn" data-action="ldNavDn">▼ '+TX('下一条','Next')+'</button><b class="pos" id="leadNavPos">'+TX('共 0 条','0 items')+'</b><span style="flex:1"></span>'+'<button class="btn ghost mini sbtn" data-action="ldEditBarTgl" title="'+TX('显示/隐藏每张卡片的「编辑栏」','Show/hide the per-card edit bar')+'">✎ '+TX('编辑栏','Edit bar')+'</button><button class="btn ghost mini sbtn" data-action="ldNavTop" title="'+TX('回到列表顶部','Back to top of list')+'">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="ldNavBot" title="'+TX('跳到列表底部','Jump to bottom')+'">⤓ '+TX('底部','Bottom')+'</button></div></div>';
- h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品/类目','Search name/country/product/category')+'"><select id="lf_cat"><option value="">'+TX('全部类目','All categories')+'</option>'+leadCatOpts().map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
+ h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品/类目','Search name/country/product/category')+'"><select id="lf_cat"><option value="">'+TX('全部类目','All categories')+'</option>'+leadCatOpts().map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+mktFilterOpts().map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
  h+='<div class="row" style="margin-bottom:10px;justify-content:flex-end"><button class="btn ghost mini" data-action="trashToggle">'+TX('回收站','Trash')+' ('+(S.trash||[]).length+')</button></div>';
 h+='<div id="leadList"></div></div>';
  h+=reconSection();
@@ -2362,7 +2373,7 @@ function custInsight(){
   else action=TX('维持触达','Keep in touch');
   return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,country:(l.country||''),cat:(l.cat||''),product:(l.product||''),wa:(l.wa||''),email:(l.email||''),source:(l.source||''),note:(l.note||''),dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
  }).sort(function(a,b){return (b.follow?1:0)-(a.follow?1:0)|| b.score-a.score;});
- var midEast=leads.filter(function(l){return l.market==='中东';}).length;
+ var midEast=leads.filter(function(l){return isMidEast(l.market);}).length;
  var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
  var summary=TX('共 ','Total ')+total+TX(' 个客户，',' clients, ')+active+TX(' 个在谈。',' in pipeline. ');
  if(overdue.length)summary+=overdue.length+TX(' 个已逾期跟进（风险最高）：',' overdue (highest risk): ')+overdue.map(function(l){return l.name;}).join('、')+'。';
@@ -2600,7 +2611,7 @@ function custCellEdit(id,field){
  var l=S.leads.find(function(x){return x.id===id;});if(!l)return;
  var T={name:TX('客户名','Name'),market:TX('市场','Market'),stage:TX('阶段','Stage'),amount:TX('金额($)','Amount'),last:TX('最后跟进','Last touch'),country:TX('国家','Country'),product:TX('产品','Product'),cat:TX('产品类目','Category'),wa:TX('WhatsApp','WhatsApp'),email:TX('邮箱','Email'),note:TX('备注','Note'),source:TX('来源','Source'),repeatStatus:TX('返单状态','Reorder status'),repeatNote:TX('返单备注','Reorder note'),referrer:TX('推荐人','Referrer'),referralNote:TX('转介绍备注','Referral note'),referralStatus:TX('转介绍状态','Referral status')};
  var cur=(l[field]==null?'':l[field]);var ed='';
- if(field==='market')ed='<select id="ce_val">'+MARKETS.map(function(m){return '<option'+(m===cur?' selected':'')+'>'+m+'</option>';}).join('')+'</select>';
+ if(field==='market')ed='<input id="ce_val" list="ce_mkt_list" value="'+escAttr(cur)+'">';
  else if(field==='stage')ed='<select id="ce_val">'+PIPE.map(function(p){return '<option'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('')+'</select>';
  else if(field==='source')ed='<select id="ce_val">'+SOURCES.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
  else if(field==='cat')ed='<input id="ce_val" list="ce_cat_list" value="'+esc(cur)+'">';
@@ -2609,7 +2620,7 @@ function custCellEdit(id,field){
  else if(field==='amount')ed='<input id="ce_val" type="number" value="'+esc(cur)+'">';
  else if(field==='last')ed='<input id="ce_val" type="date" value="'+esc(cur)+'">';
  else ed='<input id="ce_val" value="'+esc(cur)+'">';
- var body='<div class="modal-form"><label>'+T[field]+ed+'</label><datalist id="ce_cat_list">'+catDatalist()+'</datalist></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
+ var body='<div class="modal-form"><label>'+T[field]+ed+'</label><datalist id="ce_cat_list">'+catDatalist()+'</datalist><datalist id="ce_mkt_list">'+mktDatalist()+'</datalist></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
  $('modalBody').innerHTML='<h3>'+TX('修改：','Edit: ')+esc(T[field])+'</h3>'+body;
  $('modal').classList.add('show');
  $('ceSave').onclick=function(){
@@ -2646,7 +2657,7 @@ h+='<div class="card" style="margin-top:12px;background:#f0f9ff;border:1px solid
  h+='<div class="view-toggle" style="margin-top:14px"><button class="btn mini '+(mode==='card'?'on':'ghost')+'" data-action="custViewToggle" data-mode="card">'+TX('卡片','Cards')+'</button><button class="btn mini '+(mode==='table'?'on':'ghost')+'" data-action="custViewToggle" data-mode="table">'+TX('表格','Table')+'</button><button class="btn mini '+(mode==='io'?'on':'ghost')+'" data-action="custViewToggle" data-mode="io">'+TX('外部资料导入','Import data')+'</button></div>';
  if(mode==='table'){
   var cf=S._custFilter||{q:'',market:'',stage:''};
-  var mopt='<option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(m){return '<option value="'+m+'"'+(cf.market===m?' selected':'')+'>'+m+'</option>';}).join('');
+  var mopt='<option value="">'+TX('全部市场','All markets')+'</option>'+mktFilterOpts().map(function(m){return '<option value="'+m+'"'+(cf.market===m?' selected':'')+'>'+m+'</option>';}).join('');
   var sopt='<option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(s){return '<option value="'+s+'"'+(cf.stage===s?' selected':'')+'>'+s+'</option>';}).join('');
   h+='<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;align-items:center">'
    +'<input id="custFilterQ" placeholder="'+TX('搜索客户/国家/产品','Search name/country/product')+'" value="'+esc(cf.q||'')+'" oninput="custFilterKey()" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">'
@@ -3368,7 +3379,7 @@ function repeatDealsPanel(){
  if(deals.length){
   h+='<div class="cust-grid">';
   deals.slice(0,12).forEach(function(l){
-   var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var mc=mailCount(l.id);var isME=['中东','东南亚'].indexOf(l.market)>=0;
+   var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var mc=mailCount(l.id);var isME=isMidEast(l.market)||isSEA(l.market);
    h+='<div class="card" style="padding:12px">';
    h+=leadCardHead(l);
    h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'+(l.country||l.market||'')+' · '+(mc?TX('已触达','reached')+' '+mc:TX('未触达','not reached'))+' · '+(days>=0?days+TX('天前','d ago'):(-days)+TX('天后','d later'))+'</div>';
@@ -4242,7 +4253,7 @@ function viewMe(){
  h+='<div class="field"><label>'+TX('公司名','Company')+'</label><input id="me_company" value="'+esc(m.company)+'" placeholder="'+TX('公司','Company')+'"></div>';
  h+='<div class="field"><label>'+TX('从业年限','Years')+'</label><input id="me_years" value="'+esc(m.years)+'" placeholder="'+TX('如 5','e.g. 5')+'"></div>';
  h+='<div class="field"><label>'+TX('主打产品','Main product')+'</label><input id="me_product" value="'+esc(m.product)+'" placeholder="'+TX('如 prayer pillow','e.g. prayer pillow')+'"></div>';
- h+='<div class="field"><label>'+TX('主打市场','Main market')+'</label><input id="me_market" value="'+esc(m.market)+'" placeholder="'+TX('中东/东南亚','Mid-East/SEA')+'"></div>';
+ h+='<div class="field"><label>'+TX('主打市场','Main market')+'</label><input id="me_market" list="me_mkt_list" value="'+escAttr(m.market)+'" placeholder="'+TX('中东/东南亚','Mid-East/SEA')+'"><datalist id="me_mkt_list">'+mktDatalist()+'</datalist></div>';
  h+='<div class="field"><label>WhatsApp</label><input id="me_wa" value="'+esc(m.whatsapp)+'" placeholder="+86..."></div>';
  h+='</div><button class="btn" data-action="saveMe">'+TX('保存资料','Save profile')+'</button><div class="hint">'+TX('填好市场/产品后，"定位选品"也自动带入。','After filling market/product, Positioning auto-imports.')+'</div></div>';
  return h;
@@ -4431,7 +4442,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v85</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v86</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4780,7 +4791,7 @@ var FC_BUYER=['importer','distributor','wholesaler','buyer','procurement company
 var FC_UNIV=['Google','Bing','LinkedIn','Alibaba RFQ'];
 var FC_DIRS=DEC("DEi/ejVP+43hqSOuhTDRZ8qjU6majgkbD5METxU9fYdoiQ0TejEdjmSJ6rjCj3UxvRDI+OngMm6kyhFsPJ2Ofk7MQaph6VZ6Wa7PL8MwahwwMTheKyavokq4hXMusRwWYtWgOxz6sgz2BPF+SbalEh4I+sVK1k0h5cLzs1m7rJTfl+ci0TaKlswAB5SjEdxrqVZStTXOtuwbEIhY/FIcl7jGSseq9NU8vlFUZwqToAs0OlVLjeRZ0hrmUc1Uq5MRq5qJkSJpA4vxkTAoSkQ9rCARWBjZ0KgHHyoSY9MfIJ7JRmKaTjtxCzwYUPBR6Jh2fka/LkeUWB0u6+jgcPpLTChsfC9wlacUvlYNwkhMxbsyH9blilFWQGnjC6DyImH9j49ps/Wg/DfkVwx10TKT9W4tV6F0319U3jg=")
 var FC_GEO={'中东':'UAE','东南亚':'Vietnam','欧美':'USA','非洲':'Nigeria','全球':''};
-function fcGeo(m){return FC_GEO[m]||'';}
+function fcGeo(m){m=String(m==null?'':m);if(!m)return '';if(FC_GEO[m]!==undefined)return FC_GEO[m];var e=enMarket(m);return e||m;}
 function fcUnivUrl(p,q){
  if(p==='Google')return 'https://www.google.com/search?q='+encodeURIComponent(q);
  if(p==='Bing')return 'https://www.bing.com/search?q='+encodeURIComponent(q);
@@ -4852,7 +4863,7 @@ function fcSection(){
  h+='<h3 style="margin:0 0 4px;font-size:16px">'+TX('客户搜索（外贸找客户原理）','Find Customers — foreign-trade method')+'</h3>';
  h+='<div class="hint" style="margin:0 0 8px">'+TX('原理：买家身份词（进口商 / 分销商 / 批发商 / 采购商 / RFQ）+ 产品词 + 目标市场 + 渠道，组合成可点击搜索入口，去平台真实搜买家。一次给你几十条，等于上网搜但帮你批量开好。','Method: buyer-role words + product + market + channel → clickable entries to real buyer lists. Dozens at once.')+'</div>';
  h+='<div class="row" style="flex-wrap:wrap"><input id="fc_q" style="flex:2;min-width:180px" placeholder="'+TX('如 muslim prayer pillow / 移动电源 / power bank','e.g. muslim prayer pillow / power bank')+'" value="'+esc(q)+'">';
- h+='<select id="fc_market" style="flex:1;min-width:120px"><option value="全球"'+((market==='全球')?' selected':'')+'>'+TX('全球','Global')+'</option><option value="中东"'+((market==='中东')?' selected':'')+'>'+TX('中东','Mid-East')+'</option><option value="东南亚"'+((market==='东南亚')?' selected':'')+'>'+TX('东南亚','SEA')+'</option><option value="欧美"'+((market==='欧美')?' selected':'')+'>'+TX('欧美','EU/US')+'</option><option value="非洲"'+((market==='非洲')?' selected':'')+'>'+TX('非洲','Africa')+'</option></select>';
+ h+='<input id="fc_market" list="fc_mkt_list" value="'+escAttr(market)+'" placeholder="'+TX('目标市场 / 国家地区（可选可输）','Target market')+'"><datalist id="fc_mkt_list"><option value="全球"></option>'+mktDatalist()+'</datalist>';
  h+='<button class="btn" data-action="fcSearch">'+TX('生成搜索入口','Generate')+'</button></div>';
  var hist=S._fcHist||[];
  if(hist.length){ h+='<div style="margin:8px 0 0"><span style="font-size:12px;color:var(--sub)">'+TX('最近搜过：','Recent: ')+'</span>';
@@ -4957,7 +4968,12 @@ var RECON_MKT={
  '中东':['uae','阿联酋','沙特','saudi','迪拜','dubai','卡塔尔','qatar','科威特','kuwait','阿曼','oman','巴林','bahrain','约旦','jordan','埃及','egypt','土耳其','turkey','伊拉克','iraq','黎巴嫩','lebanon','也门','yemen','阿尔及利亚','摩洛哥','morocco','突尼斯','tunisia','利比亚','libya'],
  '东南亚':['越南','vietnam','泰国','thailand','印尼','indonesia','马来','malaysia','菲律宾','philippines','新加坡','singapore','缅甸','myanmar','柬埔寨','cambodia'],
  '欧美':['美国','usa','united states','英国','uk','germany','德国','france','法国','italy','意大利','spain','西班牙','netherlands','荷兰','poland','波兰','canada','加拿大','australia','澳大利亚'],
- '非洲':['尼日利亚','nigeria','肯尼亚','kenya','加纳','ghana','南非','south africa','坦桑尼亚','tanzania','埃塞俄比亚','ethiopia','乌干达','uganda','塞内加尔','senegal']
+ '非洲':['尼日利亚','nigeria','肯尼亚','kenya','加纳','ghana','南非','south africa','坦桑尼亚','tanzania','埃塞俄比亚','ethiopia','乌干达','uganda','塞内加尔','senegal'],
+ '南亚':['印度','india','巴基斯坦','pakistan','孟加拉','bangladesh','斯里兰卡','sri lanka','尼泊尔','nepal'],
+ '中亚':['哈萨克','kazakh','乌兹别克','uzbek','吉尔吉斯','kyrgyz','塔吉克','tajik','土库曼','turkmen','阿塞拜疆','azerbaijan','格鲁吉亚','georgia','亚美尼亚','armenia'],
+ '东亚':['日本','japan','韩国','korea','中国香港','hong kong','中国台湾','taiwan','中国澳门','macao','macau','中国','china','蒙古','mongolia'],
+ '拉美':['巴西','brazil','阿根廷','argentina','智利','chile','秘鲁','peru','哥伦比亚','colombia','墨西哥','mexico','巴拿马','panama','厄瓜多尔','ecuador'],
+ '大洋洲':['新西兰','new zealand']
 };
 function reconMarket(l){
  l=l||{}; var m=String(l.market||'');
@@ -5586,7 +5602,7 @@ function mcSave(id){
 }
 function addLead(){
  var name=$('ld_name').value.trim();if(!name){toast(TX('填客户名','Enter name'));return;}
- var l={id:uid(),name:name,country:$('ld_country').value.trim(),market:$('ld_market').value,was:collectM('ld_wa_rows'),wa:(collectM('ld_wa_rows')[0]||''),emails:collectM('ld_email_rows'),email:(collectM('ld_email_rows')[0]||''),cat:($('ld_cat')?$('ld_cat').value.trim():''),product:$('ld_product').value.trim(),stage:$('ld_stage').value,source:($('ld_source')?$('ld_source').value:''),amount:0,last:todayStr(),note:'',logs:[]};
+ var l={id:uid(),name:name,country:$('ld_country').value.trim(),market:(($('ld_market')?$('ld_market').value.trim():'')),was:collectM('ld_wa_rows'),wa:(collectM('ld_wa_rows')[0]||''),emails:collectM('ld_email_rows'),email:(collectM('ld_email_rows')[0]||''),cat:($('ld_cat')?$('ld_cat').value.trim():''),product:$('ld_product').value.trim(),stage:$('ld_stage').value,source:($('ld_source')?$('ld_source').value:''),amount:0,last:todayStr(),note:'',logs:[]};
  S.leads.unshift(l);snapLeads();save('leads',S.leads);refreshAll();toast(TX('已添加','Added'));
 }
 function leadAdv(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=PIPE.indexOf(l.stage);if(i<PIPE.length-1)l.stage=PIPE[i+1];l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
@@ -5808,12 +5824,12 @@ function leadEdit(id){
  var f='<div class="grid g2" style="gap:10px;margin-top:6px">'
   +'<label>'+TX('客户名','Name')+'<input id="ed_name" value="'+esc(l.name)+'"></label>'
   +'<label>'+TX('国家','Country')+'<input id="ed_country" value="'+esc(l.country)+'"></label>'
-  +'<label>'+TX('市场','Market')+'<select id="ed_market">'+MARKETS.map(function(m){return '<option'+(m===l.market?' selected':'')+'>'+m+'</option>';}).join('')+'</select></label>'
+  +'<label>'+TX('市场','Market')+'<input id="ed_market" list="ed_mkt_list" value="'+escAttr(l.market||'')+'"></label>'
   +'<label>'+TX('WhatsApp / 手机号','WhatsApp / Phone')+'<input id="ed_wa" value="'+esc(l.wa||'')+'"></label>'
   +'<label>'+TX('邮箱','Email')+'<input id="ed_email" value="'+esc(l.email||'')+'"></label>'
   +'<label>'+TX('产品类目','Category')+'<input id="ed_cat" list="ed_cat_list" value="'+esc(l.cat||'')+'"></label>'
   +'<label>'+TX('具体产品','Product')+'<input id="ed_product" list="ed_prod_list" value="'+esc(l.product)+'"></label>'
-  +'<datalist id="ed_cat_list">'+catDatalist()+'</datalist><datalist id="ed_prod_list">'+prodDatalist(l.cat||'')+'</datalist>'
+  +'<datalist id="ed_cat_list">'+catDatalist()+'</datalist><datalist id="ed_prod_list">'+prodDatalist(l.cat||'')+'</datalist><datalist id="ed_mkt_list">'+mktDatalist()+'</datalist>'
   +'<label>'+TX('金额($)','Amount($)')+'<input id="ed_amount" type="number" value="'+(l.amount||0)+'"></label>'
   +'<label>'+TX('阶段','Stage')+'<select id="ed_stage">'+PIPE.map(function(p){return '<option'+(p===l.stage?' selected':'')+'>'+p+'</option>';}).join('')+'</select></label>'  +'<label>'+TX('来源渠道','Source')+'<select id="ed_source">'+SOURCES.map(function(s){return '<option'+(s===l.source?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label>'
   +'<label>'+TX('跟进备注','Note')+'<input id="ed_note" value="'+esc(l.note||'')+'"></label>'
@@ -5824,7 +5840,7 @@ function leadEdit(id){
  $('edSave').onclick=function(){
   l.name=$('ed_name').value.trim()||l.name;
   l.country=$('ed_country').value.trim();
-  l.market=$('ed_market').value;
+  l.market=($('ed_market')?$('ed_market').value.trim():'');
   l.wa=$('ed_wa').value.trim();l.email=$('ed_email').value.trim();
   l.cat=($('ed_cat')?$('ed_cat').value.trim():'');
   l.product=$('ed_product').value.trim();
@@ -6443,12 +6459,12 @@ function lead360(id){
  var body='<div class="modal-form">'
   +'<label>'+TX('客户名','Name')+'<input id="v360_name" value="'+esc(l.name)+'"></label>'
   +'<label>'+TX('国家','Country')+'<input id="v360_country" value="'+esc(l.country||'')+'"></label>'
-  +'<label>'+TX('市场','Market')+'<input id="v360_market" value="'+esc(l.market||'')+'"></label>'
+  +'<label>'+TX('市场','Market')+'<input id="v360_market" list="v360_mkt_list" value="'+escAttr(l.market||'')+'"></label>'
   +'<label>'+TX('阶段','Stage')+'<input id="v360_stage" value="'+esc(l.stage)+'"></label>'
   +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>'+TX('联系方式','Contacts')+'</b>：'+waListHTML(l)+emListHTML(l)+'</div><button type="button" class="btn ghost mini" data-action="mcOpen" data-id="'+id+'">'+TX('编辑多号码/邮箱','Edit multi')+'</button></div>'
   +'<label>'+TX('产品类目','Category')+'<input id="v360_cat" list="v360_cat_list" value="'+esc(l.cat||'')+'"></label>'
   +'<label>'+TX('具体产品','Product')+'<input id="v360_product" list="v360_prod_list" value="'+esc(l.product||'')+'"></label>'
-  +'<datalist id="v360_cat_list">'+catDatalist()+'</datalist><datalist id="v360_prod_list">'+prodDatalist(l.cat||'')+'</datalist>'
+  +'<datalist id="v360_cat_list">'+catDatalist()+'</datalist><datalist id="v360_prod_list">'+prodDatalist(l.cat||'')+'</datalist><datalist id="v360_mkt_list">'+mktDatalist()+'</datalist>'
   +'<label>'+TX('金额($)','Amount')+'<input id="v360_amount" value="'+esc(l.amount||0)+'"></label>'
   +'<label>'+TX('来源','Source')+'<input id="v360_source" value="'+esc(l.source||'')+'"></label>'
   +'<label>'+TX('备注','Note')+'<input id="v360_note" value="'+esc(l.note||'')+'"></label>'
