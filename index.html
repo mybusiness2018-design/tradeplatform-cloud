@@ -402,7 +402,7 @@ var S={
  deals:load('deals',[]),
  ext:load('ext',[]),_extType:load('_extType','customer'),
  _dealId:load('_dealId',''),
- _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
+ _leadFilter:{q:'',cat:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
  _custView:load('_custView','card'),
  _custSheet:load('_custSheet','cust'),
  _recShow:false,_chkShow:false,
@@ -514,7 +514,7 @@ function buildState(){
   deals:load('deals',[]),
   ext:load('ext',[]),_extType:load('_extType','customer'),
   _dealId:load('_dealId',''),
-  _leadFilter:{q:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
+  _leadFilter:{q:'',cat:'',market:'',stage:'',source:'',since:'',stages:[],overdue:false,reorder:false,nomail:false},_holFilter:{year:0,region:'',country:'',q:''},_festCtx:'',_trashShow:false,rvDraft:load('rvDraft',{next:'',act:''}),rvLog:load('rvLog',[]),_coachStep:load('_coachStep',0),_coachAns:load('_coachAns',{}),_coachDone:load('_coachDone',null),_findHelp:load('_findHelp',false),
   _custView:load('_custView','card'),
   _custSheet:load('_custSheet','cust'),
   _recShow:false,_chkShow:false,
@@ -2100,6 +2100,25 @@ function enText(s){
  return t.trim();
 }
 var SOURCES=['展会','Google','阿里巴巴','中国制造网','社媒','转介绍','其他'];
+/* ===== R85 产品类目：口径 = 工具现有行业(IND_NAME) + 主营自定义；具体产品按类目级联联想（产品池 + 历史，联动选品/热销模块）===== */
+var CAT_DEFAULTS=['3C电子','家居礼品','户外露营','美妆个护','母婴玩具','穆斯林礼品','移动电源','3C电子配件','其他'];
+var CAT_POOL_FILTER={
+ '穆斯林礼品':function(it){return /礼拜|祈祷|斋月|朝角|椰枣|穆斯|eid|ramadan|hajj|muslim|prayer|dates/i.test(it.n+' '+(it.cn||'')+' '+it.kw);},
+ '移动电源':function(it){return /充电宝|移动电源|无线充|充电器|power\s*bank|charger/i.test(it.n+' '+(it.cn||'')+' '+it.kw);},
+ '3C电子配件':function(it){return it.ind==='3c';}
+};
+function catKeyOf(cat){var k='';Object.keys(IND_NAME).forEach(function(x){if(x!=='all'&&IND_NAME[x]===cat)k=x;});return k;}
+function escAttr(s){return esc(s).replace(/"/g,'&quot;');}
+function leadCatOpts(){var out=CAT_DEFAULTS.slice();(S.leads||[]).forEach(function(l){var c=l&&l.cat;if(c&&out.indexOf(c)<0)out.push(c);});return out;}
+function catDatalist(){return leadCatOpts().map(function(c){return '<option value="'+escAttr(c)+'"></option>';}).join('');}
+function prodDatalist(cat){
+ var out=[],f=cat?CAT_POOL_FILTER[cat]:null,k=(cat&&!f)?catKeyOf(cat):'';
+ if(cat)HOT_DB.forEach(function(it){var hit=f?f(it):(k?it.ind===k:false);if(hit){var nm=it.cn||it.n;if(nm&&out.indexOf(nm)<0)out.push(nm);}});
+ else HOT_DB.forEach(function(it){var nm=it.cn||it.n;if(nm&&out.indexOf(nm)<0)out.push(nm);});
+ (S.leads||[]).forEach(function(l){if(!l)return;if(cat&&(l.cat||'')!==cat)return;if(l.product&&out.indexOf(l.product)<0)out.push(l.product);});
+ return out.slice(0,80).map(function(x){return '<option value="'+escAttr(x)+'"></option>';}).join('');
+}
+function prodSug(el,id){var b=document.getElementById(id);if(b)b.innerHTML=prodDatalist(el?(el.value||'').trim():'');}
 var REPEAT_STATUS=['待跟进','已报价','已返单','放弃'];
 var REFERRAL_STATUS=['待开口','已开口','已加样','已成交','无回应'];
 /* R70 find-leads: pinned add-form + up/down list nav (module-level vars) */
@@ -2140,15 +2159,18 @@ if(S._findHelp){
  var sc={};SOURCES.forEach(function(s){sc[s]=0;});S.leads.forEach(function(l){if(l.source)sc[l.source]=(sc[l.source]||0)+1;});
  var scc=SOURCES.filter(function(s){return sc[s]>0;}).map(function(s){return '<span class="pchip" style="background:#EDE9FE;color:#5B21B6">'+s+' <b>'+sc[s]+'</b></span>';}).join('');
  h+= scc?('<div style="margin-top:8px;font-size:12px;color:var(--sub)">'+TX('渠道分布','Channel spread')+'：'+scc+'</div>'):'';
+ var cc={};(S.leads||[]).forEach(function(l){if(l&&l.cat)cc[l.cat]=(cc[l.cat]||0)+1;});
+ var ccl=Object.keys(cc).sort(function(a,b){return cc[b]-cc[a];}).map(function(c){return '<span class="pchip" style="background:#CCFBF1;color:#115E59">'+esc(c)+' <b>'+cc[c]+'</b></span>';}).join('');
+ h+= ccl?('<div style="margin-top:6px;font-size:12px;color:var(--sub)">'+TX('类目分布','Category spread')+'：'+ccl+'</div>'):'';
  h+='</div></div>';
  h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><h3 style="margin:0 0 8px;font-size:15px">'+TX('今日优先（AI 评分）','Today’s Priority (AI score)')+'</h3><div id="prioBox"></div></div>';
  h+='<div id="leadScope"><div id="leadBarWrap"><div class="card" style="margin-bottom:8px"><div class="row" style="align-items:center;flex-wrap:nowrap;margin-bottom:'+(_ldFormOpen?'10px':'0')+'"><h3 style="margin:0;font-size:15px;white-space:nowrap">'+TX('新增线索','Add lead')+'</h3><span class="muted" style="font-size:12px;white-space:nowrap">'+TX('固定在此，滚动不动','Pinned while scrolling')+'</span><span style="flex:1"></span><button class="btn ghost mini" data-action="ldFormToggle">'+(_ldFormOpen?TX('收起','Collapse'):TX('展开','Expand'))+'</button></div><div id="ldFormBody" style="display:'+(_ldFormOpen?'block':'none')+'"><div class="grid g3">';
 h+='<input id="ld_name" placeholder="'+TX('客户名','Name')+'"><input id="ld_country" placeholder="'+TX('国家','Country')+'">';
 h+='<div class="mrow-box" style="grid-column:1/-1"><div class="mlab">'+TX('手机号 / WhatsApp','Phones / WhatsApp')+'（'+TX('可多个','multiple')+'）</div><div class="mrows" id="ld_wa_rows"><div class="mrow"><input class="mwain" placeholder="WhatsApp / '+TX('手机号','Phone')+'"><button type="button" class="mrm" onclick="rmMRow(this)">×</button></div></div><button type="button" class="btn ghost mini" data-box="ld_wa_rows" data-cls="mwain" data-ph="WhatsApp / 手机号" onclick="addMRow(this)"">+ '+TX('加手机号','Add phone')+'</button></div>';h+='<div class="mrow-box" style="grid-column:1/-1"><div class="mlab">'+TX('邮箱','Email')+'（'+TX('可多个','multiple')+'）</div><div class="mrows" id="ld_email_rows"><div class="mrow"><input class="memin" placeholder="'+TX('邮箱','Email')+'"><button type="button" class="mrm" onclick="rmMRow(this)">×</button></div></div><button type="button" class="btn ghost mini" data-box="ld_email_rows" data-cls="memin" data-ph="邮箱" onclick="addMRow(this)"">+ '+TX('加邮箱','Add email')+'</button></div>';
- h+='</div><div class="grid g3" style="margin-top:10px"><input id="ld_product" placeholder="'+TX('产品','Product')+'"><select id="ld_market">'+['中东','东南亚','欧美','非洲','混合'].map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><select id="ld_stage">'+PIPE.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select></div>';h+='<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><select id="ld_source">'+SOURCES.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><span class="hint">'+TX('来源渠道：用来复盘哪个渠道最有效','Source: track which channel works best')+'</span></div>';
+ h+='</div><div class="grid g3" style="margin-top:10px"><input id="ld_cat" list="ld_cat_list" placeholder="'+TX('产品类目（可选可输）','Category')+'" oninput="prodSug(this,&quot;ld_prod_list&quot;)"><input id="ld_product" list="ld_prod_list" placeholder="'+TX('具体产品','Product')+'"><select id="ld_market">'+['中东','东南亚','欧美','非洲','混合'].map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></div>';h+='<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><select id="ld_stage">'+PIPE.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select><select id="ld_source">'+SOURCES.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><span class="hint">'+TX('来源渠道：用来复盘哪个渠道最有效','Source: track which channel works best')+'</span></div>';h+='<datalist id="ld_cat_list">'+catDatalist()+'</datalist><datalist id="ld_prod_list">'+prodDatalist('')+'</datalist>';
  h+='<button class="btn" data-action="addLead" style="margin-top:10px">'+TX('添加线索','Add lead')+'</button></div></div>';
 h+='<div class="lead-nav" id="leadNavBar"><span class="muted" style="font-size:12px;font-weight:700">'+TX('列表导航','List nav')+'</span><button class="btn ghost mini sbtn" data-action="ldNavUp">▲ '+TX('上一条','Prev')+'</button><button class="btn ghost mini sbtn" data-action="ldNavDn">▼ '+TX('下一条','Next')+'</button><b class="pos" id="leadNavPos">'+TX('共 0 条','0 items')+'</b><span style="flex:1"></span>'+'<button class="btn ghost mini sbtn" data-action="ldEditBarTgl" title="'+TX('显示/隐藏每张卡片的「编辑栏」','Show/hide the per-card edit bar')+'">✎ '+TX('编辑栏','Edit bar')+'</button><button class="btn ghost mini sbtn" data-action="ldNavTop" title="'+TX('回到列表顶部','Back to top of list')+'">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="ldNavBot" title="'+TX('跳到列表底部','Jump to bottom')+'">⤓ '+TX('底部','Bottom')+'</button></div></div>';
- h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品','Search name/country/product')+'"><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
+ h+='<div class="card" style="margin-bottom:14px;background:#f8fafc"><div class="grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr 1fr"><input id="lf_q" placeholder="'+TX('搜索客户/国家/产品/类目','Search name/country/product/category')+'"><select id="lf_cat"><option value="">'+TX('全部类目','All categories')+'</option>'+leadCatOpts().map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_market"><option value="">'+TX('全部市场','All markets')+'</option>'+MARKETS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_stage"><option value="">'+TX('全部阶段','All stages')+'</option>'+PIPE.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select><select id="lf_source"><option value="">'+TX('全部来源','All sources')+'</option>'+SOURCES.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('')+'</select></div></div>';
  h+='<div class="row" style="margin-bottom:10px;justify-content:flex-end"><button class="btn ghost mini" data-action="trashToggle">'+TX('回收站','Trash')+' ('+(S.trash||[]).length+')</button></div>';
 h+='<div id="leadList"></div></div>';
  h+=reconSection();
@@ -2168,7 +2190,8 @@ function renderLeads(){
  if(S._trashShow){box.innerHTML=renderTrash();_ldNavIdx=-1;var _np=$('leadNavPos');if(_np)_np.textContent=TX('回收站视图','Trash view');return;}
  var f=S._leadFilter||{};
  var hs=S.leads.slice().sort(function(a,b){return scoreLead(b)-scoreLead(a);});
- if(f.q){var q=f.q.toLowerCase();hs=hs.filter(function(l){return ((l.name+' '+(l.country||'')+' '+(l.product||'')).toLowerCase().indexOf(q)>=0);});}
+ if(f.q){var q=f.q.toLowerCase();hs=hs.filter(function(l){return ((l.name+' '+(l.country||'')+' '+(l.product||'')+' '+(l.cat||'')).toLowerCase().indexOf(q)>=0);});}
+ if(f.cat)hs=hs.filter(function(l){return (l.cat||'')===f.cat;});
  if(f.market)hs=hs.filter(function(l){return l.market===f.market;});
  if(f.stage)hs=hs.filter(function(l){return l.stage===f.stage;});
  if(f.source)hs=hs.filter(function(l){return l.source===f.source;});
@@ -2187,7 +2210,7 @@ function renderLeads(){
   var follow=days>=14&&l.stage!=='成交';
   var mc=mailCount(l.id);
   html+='<div class="list-item" data-li="'+li+'"><div class="main"><div class="t"><button class="linkbtn" data-action="lead360" data-id="'+l.id+'">'+esc(l.name)+'</button> <span class="tag b">'+esc(l.market||l.country||'')+'</span> <span class="tag">'+esc(l.stage)+'</span>'+(l.source?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.source)+'</span>':'')+' <span class="tag score">'+scoreLead(l)+'</span>'+(mc?' <button class="tag b" data-action="mailOf" data-id="'+l.id+'" style="background:#DBEAFE;color:#1D4ED8;border:none;cursor:pointer" title="'+TX('看这个客户的发送记录','See this client’s sent log')+'">✉ '+mc+'</button>':'')+(follow?' <span class="tag r">'+days+TX('天未跟','d no follow')+'</span>':'')+'</div>';
-  html+='<div class="s">'+esc(l.product||'')+(l.amount?(' · $'+esc(l.amount)):'')+'</div>';
+  html+='<div class="s">'+(l.cat?('<b style="color:#0f766e">'+esc(l.cat)+'</b> · '):'')+esc(l.product||'')+(l.amount?(' · $'+esc(l.amount)):'')+'</div>';
   html+='<div class="s" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px">'+waListHTML(l)+emListHTML(l)+'</div>'+leadEditBar(l)+'</div>';
   var waBtn=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn mini" data-action="leadWa" data-id="'+l.id+'">WhatsApp</button>':'';
   var emailBtn=(l.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email))?'<button class="btn mini" data-action="leadEmail" data-id="'+l.id+'">'+TX('邮件','Email')+'</button>':'';
@@ -2337,7 +2360,7 @@ function custInsight(){
   else if(l.stage==='报价')action=TX('出报价 PI','Send quote PI');
   else if(l.stage==='成交')action=TX('走交付 SOP','Run delivery SOP');
   else action=TX('维持触达','Keep in touch');
-  return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,country:(l.country||''),product:(l.product||''),wa:(l.wa||''),email:(l.email||''),source:(l.source||''),note:(l.note||''),dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
+  return {id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,amount:(l.amount||''),last:l.last,country:(l.country||''),cat:(l.cat||''),product:(l.product||''),wa:(l.wa||''),email:(l.email||''),source:(l.source||''),note:(l.note||''),dealNo:dl?dl.no:'',docPct:dl?Math.round(docDone/DOC_DEF.length*100):null,tasksO:tasksO,action:action};
  }).sort(function(a,b){return (b.follow?1:0)-(a.follow?1:0)|| b.score-a.score;});
  var midEast=leads.filter(function(l){return l.market==='中东';}).length;
  var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
@@ -2371,7 +2394,7 @@ function custJump(where,id,mkt){
  if(sceneMods.indexOf(where)>=0){S._activeClient=id||'';}
  else{S._activeClient='';}
  S.view=where;save('view',S.view);
- if(where==='find'&&mkt){S._leadFilter={q:'',market:mkt,stage:''};}
+ if(where==='find'&&mkt){S._leadFilter={q:'',cat:'',market:mkt,stage:''};}
  refreshAll();
  if(where==='find'&&mkt&&$('lf_market')){$('lf_market').value=mkt;}
 }
@@ -2563,7 +2586,7 @@ function custCard(x){
  var taskCls=x.tasksO>0?'r':'g';
  var border=x.follow?' style="border-color:#fecaca;background:#fff7f7"':'';
  return '<div class="ccard"'+border+' data-action="custJump" data-where="cust360" data-id="'+x.id+'">'
-  +'<div class="cc-head"><b class="cc-name">'+esc(x.name)+'</b><span class="tag b">'+esc(x.market||'—')+'</span><span class="tag">'+esc(x.stage)+'</span><span class="tag score">'+x.score+'</span>'+(x.follow?' <span class="tag r">'+x.days+TX('天','d')+'</span>':'')+'</div>'
+  +'<div class="cc-head"><b class="cc-name">'+esc(x.name)+'</b>'+(x.cat?'<span class="tag" style="background:#CCFBF1;color:#115E59">'+esc(x.cat)+'</span>':'')+'<span class="tag b">'+esc(x.market||'—')+'</span><span class="tag">'+esc(x.stage)+'</span><span class="tag score">'+x.score+'</span>'+(x.follow?' <span class="tag r">'+x.days+TX('天','d')+'</span>':'')+'</div>'
   +'<div class="cc-bar"><span class="muted" style="font-size:12px">'+TX('阶段','Stage')+'</span><span class="bar"><i style="width:'+stagePct+'%"></i></span></div>'
   +'<div class="cc-status">'
     +'<span class="dot '+followCls+'">'+TX('跟进','F/U')+(x.follow?TX('逾期','late'):TX('正常','ok'))+'</span>'
@@ -2575,17 +2598,18 @@ function custCard(x){
 }
 function custCellEdit(id,field){
  var l=S.leads.find(function(x){return x.id===id;});if(!l)return;
- var T={name:TX('客户名','Name'),market:TX('市场','Market'),stage:TX('阶段','Stage'),amount:TX('金额($)','Amount'),last:TX('最后跟进','Last touch'),country:TX('国家','Country'),product:TX('产品','Product'),wa:TX('WhatsApp','WhatsApp'),email:TX('邮箱','Email'),note:TX('备注','Note'),source:TX('来源','Source'),repeatStatus:TX('返单状态','Reorder status'),repeatNote:TX('返单备注','Reorder note'),referrer:TX('推荐人','Referrer'),referralNote:TX('转介绍备注','Referral note'),referralStatus:TX('转介绍状态','Referral status')};
+ var T={name:TX('客户名','Name'),market:TX('市场','Market'),stage:TX('阶段','Stage'),amount:TX('金额($)','Amount'),last:TX('最后跟进','Last touch'),country:TX('国家','Country'),product:TX('产品','Product'),cat:TX('产品类目','Category'),wa:TX('WhatsApp','WhatsApp'),email:TX('邮箱','Email'),note:TX('备注','Note'),source:TX('来源','Source'),repeatStatus:TX('返单状态','Reorder status'),repeatNote:TX('返单备注','Reorder note'),referrer:TX('推荐人','Referrer'),referralNote:TX('转介绍备注','Referral note'),referralStatus:TX('转介绍状态','Referral status')};
  var cur=(l[field]==null?'':l[field]);var ed='';
  if(field==='market')ed='<select id="ce_val">'+MARKETS.map(function(m){return '<option'+(m===cur?' selected':'')+'>'+m+'</option>';}).join('')+'</select>';
  else if(field==='stage')ed='<select id="ce_val">'+PIPE.map(function(p){return '<option'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('')+'</select>';
  else if(field==='source')ed='<select id="ce_val">'+SOURCES.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
+ else if(field==='cat')ed='<input id="ce_val" list="ce_cat_list" value="'+esc(cur)+'">';
  else if(field==='repeatStatus')ed='<select id="ce_val">'+REPEAT_STATUS.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
  else if(field==='referralStatus')ed='<select id="ce_val">'+REFERRAL_STATUS.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
  else if(field==='amount')ed='<input id="ce_val" type="number" value="'+esc(cur)+'">';
  else if(field==='last')ed='<input id="ce_val" type="date" value="'+esc(cur)+'">';
  else ed='<input id="ce_val" value="'+esc(cur)+'">';
- var body='<div class="modal-form"><label>'+T[field]+ed+'</label></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
+ var body='<div class="modal-form"><label>'+T[field]+ed+'</label><datalist id="ce_cat_list">'+catDatalist()+'</datalist></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
  $('modalBody').innerHTML='<h3>'+TX('修改：','Edit: ')+esc(T[field])+'</h3>'+body;
  $('modal').classList.add('show');
  $('ceSave').onclick=function(){
@@ -2596,8 +2620,8 @@ function custCellEdit(id,field){
   snapLeads();save('leads',S.leads);refreshAll();closeModal();toast(TX('已更新','Updated'));
  };
 }
-function leadNew(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',product:'',stage:PIPE[0],source:SOURCES[0],amount:0,last:todayStr(),note:'',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
-function leadNewRef(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',product:'',stage:PIPE[0],source:'转介绍',amount:0,last:todayStr(),note:'',referrer:'',referralNote:'',referralStatus:'待开口',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
+function leadNew(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',cat:'',product:'',stage:PIPE[0],source:SOURCES[0],amount:0,last:todayStr(),note:'',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
+function leadNewRef(){var l={id:uid(),name:'',country:'',market:MARKETS[0],wa:'',email:'',cat:'',product:'',stage:PIPE[0],source:'转介绍',amount:0,last:todayStr(),note:'',referrer:'',referralNote:'',referralStatus:'待开口',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
 function viewCust(){
  var ins=custInsight();
  var mode=S._custView||'card';
@@ -2951,6 +2975,7 @@ function csvMap(head){
   else if(/^(市场|market|region|area)$/.test(k))m.market=i;
   else if(/^(whatsapp|wa|手机|手机号|电话|phone|tel|mobile)$/.test(k))m.wa=i;
   else if(/^(邮箱|邮件|email|mail|e-mail)$/.test(k))m.email=i;
+  else if(/^(产品类目|类目|类别|category|cat)$/.test(k))m.cat=i;
   else if(/^(产品|product|item|goods)$/.test(k))m.product=i;
   else if(/^(阶段|stage|status|pipe)$/.test(k))m.stage=i;
   else if(/^(金额|amount|value|price|usd)$/.test(k))m.amount=i;
@@ -2962,10 +2987,10 @@ function csvMap(head){
 }
 function exportLeadsCsv(){
  if(!S.leads.length){toast(TX('暂无客户可导出','No clients to export'));return;}
- var head=[TX('客户名','Name'),TX('国家','Country'),TX('市场','Market'),TX('来源','Source'),TX('WhatsApp','WhatsApp'),TX('邮箱','Email'),TX('产品','Product'),TX('阶段','Stage'),TX('金额','Amount'),TX('最近跟进','Last touch'),TX('备注','Note')];
+ var head=[TX('客户名','Name'),TX('国家','Country'),TX('市场','Market'),TX('来源','Source'),TX('WhatsApp','WhatsApp'),TX('邮箱','Email'),TX('产品类目','Category'),TX('产品','Product'),TX('阶段','Stage'),TX('金额','Amount'),TX('最近跟进','Last touch'),TX('备注','Note')];
  var lines=[head.map(csvCell).join(',')];
  S.leads.forEach(function(l){
-  lines.push([l.name,l.country,l.market,l.source,waArr(l).join('; '),emArr(l).join('; '),l.product,l.stage,l.amount,l.last,l.note].map(csvCell).join(','));
+  lines.push([l.name,l.country,l.market,l.source,waArr(l).join('; '),emArr(l).join('; '),l.cat,l.product,l.stage,l.amount,l.last,l.note].map(csvCell).join(','));
  });
  dlFile('﻿'+lines.join('\r\n'),'客户表_'+todayStr()+'.csv','text/csv;charset=utf-8');
  toast(TX('已导出 CSV，可用 Excel 打开编辑','CSV exported, editable in Excel'));
@@ -2995,7 +3020,7 @@ function onLeadFile(e){
    for(var i=1;i<rows.length;i++){
     var rr=rows[i];
     var nv=(rr[m.name]||'').trim();if(!nv)continue;
-    list.push({name:nv,country:(m.country!==undefined?(rr[m.country]||'').trim():''),market:(m.market!==undefined?(rr[m.market]||'').trim():''),was:((m.wa!==undefined)?(rr[m.wa]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean):[]),wa:((m.wa!==undefined)?((rr[m.wa]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''),emails:((m.email!==undefined)?(rr[m.email]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean):[]),email:((m.email!==undefined)?((rr[m.email]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''),product:(m.product!==undefined?(rr[m.product]||'').trim():''),stage:(m.stage!==undefined?(rr[m.stage]||'').trim():''),amount:(m.amount!==undefined?(rr[m.amount]||'').trim():''),last:(m.last!==undefined?(rr[m.last]||'').trim():''),note:(m.note!==undefined?(rr[m.note]||'').trim():''),source:(m.source!==undefined?(rr[m.source]||'').trim():'')});
+    list.push({name:nv,country:(m.country!==undefined?(rr[m.country]||'').trim():''),market:(m.market!==undefined?(rr[m.market]||'').trim():''),was:((m.wa!==undefined)?(rr[m.wa]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean):[]),wa:((m.wa!==undefined)?((rr[m.wa]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''),emails:((m.email!==undefined)?(rr[m.email]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean):[]),email:((m.email!==undefined)?((rr[m.email]||'').split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''),cat:(m.cat!==undefined?(rr[m.cat]||'').trim():''),product:(m.product!==undefined?(rr[m.product]||'').trim():''),stage:(m.stage!==undefined?(rr[m.stage]||'').trim():''),amount:(m.amount!==undefined?(rr[m.amount]||'').trim():''),last:(m.last!==undefined?(rr[m.last]||'').trim():''),note:(m.note!==undefined?(rr[m.note]||'').trim():''),source:(m.source!==undefined?(rr[m.source]||'').trim():'')});
    }
   }
   if(!list||!list.length){toast(TX('没有可导入的客户','No clients found'));return;}
@@ -3017,7 +3042,7 @@ function doImportLeads(){
   var hit=null;
   for(var j=0;j<S.leads.length;j++){var l=S.leads[j];if(String(l.name||'').trim()===String(x.name||'').trim()&&String(l.country||'').trim()===String(x.country||'').trim()){hit=l;break;}}
   if(hit){
-   ['market','product','stage','amount','last','note'].forEach(function(k){
+   ['market','cat','product','stage','amount','last','note'].forEach(function(k){
     if(x[k]!==undefined&&String(x[k]).trim()!==''){
      if(k==='stage'){if(PIPE.indexOf(x.stage)>=0)hit.stage=x.stage;}
      else if(k==='amount'){var n=Number(String(x.amount).replace(/[^0-9.\-]/g,''));if(!isNaN(n))hit.amount=n;}
@@ -3032,7 +3057,7 @@ function doImportLeads(){
   } else {
    var st=(PIPE.indexOf(x.stage)>=0)?x.stage:'待开发';
    var am=Number(String(x.amount||'').replace(/[^0-9.\-]/g,''));if(isNaN(am))am=0;
-   S.leads.push({id:uid(),name:x.name,country:x.country||'',market:x.market||'',was:((x.was&&x.was.length)?x.was:(x.wa?(x.wa.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)):[])),wa:(((x.was&&x.was.length)?x.was[0]:(x.wa?(x.wa.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''))),emails:((x.emails&&x.emails.length)?x.emails:(x.email?(x.email.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)):[])),email:(((x.emails&&x.emails.length)?x.emails[0]:(x.email?(x.email.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''))),product:x.product||'',stage:st,amount:am,last:x.last||todayStr(),note:x.note||'',source:x.source||'',logs:[]});
+   S.leads.push({id:uid(),name:x.name,country:x.country||'',market:x.market||'',was:((x.was&&x.was.length)?x.was:(x.wa?(x.wa.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)):[])),wa:(((x.was&&x.was.length)?x.was[0]:(x.wa?(x.wa.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''))),emails:((x.emails&&x.emails.length)?x.emails:(x.email?(x.email.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)):[])),email:(((x.emails&&x.emails.length)?x.emails[0]:(x.email?(x.email.split(/[,;|]/).map(function(s){return s.trim();}).filter(Boolean)[0]||''):''))),cat:x.cat||'',product:x.product||'',stage:st,amount:am,last:x.last||todayStr(),note:x.note||'',source:x.source||'',logs:[]});
    add++;
   }
  });
@@ -3311,7 +3336,7 @@ function leadEditBar(l){
  var mk=function(f,zh,en){var v=(l[f]==null||l[f]==='')?'—':String(l[f]);return chipEdit(f,l.id,TX(zh,en),TX('当前：','Now: ')+v);};
  return '<div class="s lead-editbar"><span class="muted" style="font-size:11.5px;margin-right:2px">'+TX('编辑栏：','Edit bar: ')+TX('点下面任意一项即可直接修改','tap any chip to fix it')+'</span>'
   +mk('name','客户名','Name')+mk('country','国家','Country')+mk('market','市场','Market')+mk('stage','阶段','Stage')
-  +mk('product','产品','Product')+mk('amount','金额','Amount')+chipMC(l.id,'WhatsApp','WhatsApp')+chipMC(l.id,'邮箱','Email')
+  +mk('cat','类目','Category')+mk('product','产品','Product')+mk('amount','金额','Amount')+chipMC(l.id,'WhatsApp','WhatsApp')+chipMC(l.id,'邮箱','Email')
   +mk('source','来源','Source')+mk('last','跟进日','Last touch')+mk('note','备注','Note')
   +'</div>';
 }
@@ -4406,7 +4431,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v84</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v85</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4734,7 +4759,7 @@ $('modal').addEventListener('click',function(e){if(e.target===this)closeModal();
 /* 场景切换时重渲染输入框并清空旧输出 */
 document.addEventListener('change',function(e){
  if(e.target&&e.target.id==='sc_sel'){renderSceneFields();var en=$('sc_en'),zh=$('sc_zh');if(en)en.textContent=TX('选择场景并填变量后生成。','Pick a scene and fill vars.');if(zh)zh.textContent='';}
- if(e.target&&(e.target.id==='lf_q'||e.target.id==='lf_market'||e.target.id==='lf_stage'||e.target.id==='lf_source')){S._leadFilter={q:($('lf_q')?$('lf_q').value.trim().toLowerCase():''),market:($('lf_market')?$('lf_market').value:''),stage:($('lf_stage')?$('lf_stage').value:''),source:($('lf_source')?$('lf_source').value:''),since:'',stages:[],overdue:false,reorder:false,nomail:false};renderLeads();}
+ if(e.target&&(e.target.id==='lf_q'||e.target.id==='lf_cat'||e.target.id==='lf_market'||e.target.id==='lf_stage'||e.target.id==='lf_source')){S._leadFilter={q:($('lf_q')?$('lf_q').value.trim().toLowerCase():''),cat:($('lf_cat')?$('lf_cat').value:''),market:($('lf_market')?$('lf_market').value:''),stage:($('lf_stage')?$('lf_stage').value:''),source:($('lf_source')?$('lf_source').value:''),since:'',stages:[],overdue:false,reorder:false,nomail:false};renderLeads();}
  if(e.target&&e.target.id==='dealSel'){dealSel();}
  if(e.target&&e.target.id==='hf_region'){S._holFilter=S._holFilter||{};S._holFilter.region=($('hf_region')?$('hf_region').value:'');S._holFilter.country='';save('_holFilter',S._holFilter);refreshAll();}
  else if(e.target&&(e.target.id==='hf_country'||e.target.id==='hf_q')){holidayFilterFromDom();}
@@ -5561,7 +5586,7 @@ function mcSave(id){
 }
 function addLead(){
  var name=$('ld_name').value.trim();if(!name){toast(TX('填客户名','Enter name'));return;}
- var l={id:uid(),name:name,country:$('ld_country').value.trim(),market:$('ld_market').value,was:collectM('ld_wa_rows'),wa:(collectM('ld_wa_rows')[0]||''),emails:collectM('ld_email_rows'),email:(collectM('ld_email_rows')[0]||''),product:$('ld_product').value.trim(),stage:$('ld_stage').value,source:($('ld_source')?$('ld_source').value:''),amount:0,last:todayStr(),note:'',logs:[]};
+ var l={id:uid(),name:name,country:$('ld_country').value.trim(),market:$('ld_market').value,was:collectM('ld_wa_rows'),wa:(collectM('ld_wa_rows')[0]||''),emails:collectM('ld_email_rows'),email:(collectM('ld_email_rows')[0]||''),cat:($('ld_cat')?$('ld_cat').value.trim():''),product:$('ld_product').value.trim(),stage:$('ld_stage').value,source:($('ld_source')?$('ld_source').value:''),amount:0,last:todayStr(),note:'',logs:[]};
  S.leads.unshift(l);snapLeads();save('leads',S.leads);refreshAll();toast(TX('已添加','Added'));
 }
 function leadAdv(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=PIPE.indexOf(l.stage);if(i<PIPE.length-1)l.stage=PIPE[i+1];l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
@@ -5786,7 +5811,9 @@ function leadEdit(id){
   +'<label>'+TX('市场','Market')+'<select id="ed_market">'+MARKETS.map(function(m){return '<option'+(m===l.market?' selected':'')+'>'+m+'</option>';}).join('')+'</select></label>'
   +'<label>'+TX('WhatsApp / 手机号','WhatsApp / Phone')+'<input id="ed_wa" value="'+esc(l.wa||'')+'"></label>'
   +'<label>'+TX('邮箱','Email')+'<input id="ed_email" value="'+esc(l.email||'')+'"></label>'
-  +'<label>'+TX('产品','Product')+'<input id="ed_product" value="'+esc(l.product)+'"></label>'
+  +'<label>'+TX('产品类目','Category')+'<input id="ed_cat" list="ed_cat_list" value="'+esc(l.cat||'')+'"></label>'
+  +'<label>'+TX('具体产品','Product')+'<input id="ed_product" list="ed_prod_list" value="'+esc(l.product)+'"></label>'
+  +'<datalist id="ed_cat_list">'+catDatalist()+'</datalist><datalist id="ed_prod_list">'+prodDatalist(l.cat||'')+'</datalist>'
   +'<label>'+TX('金额($)','Amount($)')+'<input id="ed_amount" type="number" value="'+(l.amount||0)+'"></label>'
   +'<label>'+TX('阶段','Stage')+'<select id="ed_stage">'+PIPE.map(function(p){return '<option'+(p===l.stage?' selected':'')+'>'+p+'</option>';}).join('')+'</select></label>'  +'<label>'+TX('来源渠道','Source')+'<select id="ed_source">'+SOURCES.map(function(s){return '<option'+(s===l.source?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label>'
   +'<label>'+TX('跟进备注','Note')+'<input id="ed_note" value="'+esc(l.note||'')+'"></label>'
@@ -5799,6 +5826,7 @@ function leadEdit(id){
   l.country=$('ed_country').value.trim();
   l.market=$('ed_market').value;
   l.wa=$('ed_wa').value.trim();l.email=$('ed_email').value.trim();
+  l.cat=($('ed_cat')?$('ed_cat').value.trim():'');
   l.product=$('ed_product').value.trim();
   l.amount=parseFloat($('ed_amount').value)||0;
   l.stage=$('ed_stage').value;
@@ -6418,7 +6446,9 @@ function lead360(id){
   +'<label>'+TX('市场','Market')+'<input id="v360_market" value="'+esc(l.market||'')+'"></label>'
   +'<label>'+TX('阶段','Stage')+'<input id="v360_stage" value="'+esc(l.stage)+'"></label>'
   +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>'+TX('联系方式','Contacts')+'</b>：'+waListHTML(l)+emListHTML(l)+'</div><button type="button" class="btn ghost mini" data-action="mcOpen" data-id="'+id+'">'+TX('编辑多号码/邮箱','Edit multi')+'</button></div>'
-  +'<label>'+TX('产品','Product')+'<input id="v360_product" value="'+esc(l.product||'')+'"></label>'
+  +'<label>'+TX('产品类目','Category')+'<input id="v360_cat" list="v360_cat_list" value="'+esc(l.cat||'')+'"></label>'
+  +'<label>'+TX('具体产品','Product')+'<input id="v360_product" list="v360_prod_list" value="'+esc(l.product||'')+'"></label>'
+  +'<datalist id="v360_cat_list">'+catDatalist()+'</datalist><datalist id="v360_prod_list">'+prodDatalist(l.cat||'')+'</datalist>'
   +'<label>'+TX('金额($)','Amount')+'<input id="v360_amount" value="'+esc(l.amount||0)+'"></label>'
   +'<label>'+TX('来源','Source')+'<input id="v360_source" value="'+esc(l.source||'')+'"></label>'
   +'<label>'+TX('备注','Note')+'<input id="v360_note" value="'+esc(l.note||'')+'"></label>'
@@ -6447,7 +6477,7 @@ function lead360(id){
  $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3><div class="muted" style="margin:-2px 0 10px;font-size:12.5px">'+TX('统一客户档案：下方字段与「复购转介」面板、邮件记录、复盘共用同一份数据，改一处处处同步。','Unified profile — shared with the Reorder/Referral board, email log and review; edit once, synced everywhere.')+'</div>'+body;
  $('modal').classList.add('show');
 }
-function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');/* contacts edited via mcOpen */l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.source=g('v360_source');l.note=g('v360_note');var rsEl=document.getElementById('v360_repeatStatus');if(rsEl)l.repeatStatus=rsEl.value;var rfEl=document.getElementById('v360_referralStatus');if(rfEl)l.referralStatus=rfEl.value;var rbEl=document.getElementById('v360_referrer');if(rbEl)l.referrer=rbEl.value;var rnbEl=document.getElementById('v360_referralNote');if(rnbEl)l.referralNote=rnbEl.value;snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
+function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');/* contacts edited via mcOpen */l.cat=g('v360_cat');l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.source=g('v360_source');l.note=g('v360_note');var rsEl=document.getElementById('v360_repeatStatus');if(rsEl)l.repeatStatus=rsEl.value;var rfEl=document.getElementById('v360_referralStatus');if(rfEl)l.referralStatus=rfEl.value;var rbEl=document.getElementById('v360_referrer');if(rbEl)l.referrer=rbEl.value;var rnbEl=document.getElementById('v360_referralNote');if(rnbEl)l.referralNote=rnbEl.value;snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
 /* Incoterms 2020 十一种贸易术语（下拉补全；保留历史自定义值，不丢数据） */
 var INCOTERMS=['EXW','FCA','FAS','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP'];
 var INCOTERMS_ZH={EXW:'工厂交货（买方提货）',FCA:'货交承运人',FAS:'装运港船边交货',FOB:'装运港船上交货（买方付海运费）',CFR:'成本加运费',CIF:'成本保险费加运费',CPT:'运费付至目的地',CIP:'运费保险费付至目的地',DAP:'目的地交货（不缴税）',DPU:'目的地卸货交货',DDP:'完税后交货'};
