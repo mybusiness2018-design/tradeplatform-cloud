@@ -2540,7 +2540,7 @@ function custKpi(kind){
     h+='<td>'+esc(m.channel==='wa'?'WhatsApp':TX('邮件','Email'))+'</td>';
     h+='<td'+(ld?' class="cell" data-action="kpiJump" data-where="cust360" data-id="'+esc(String(ld.id))+'" title="'+TX('点击查看客户360','Open 360')+'"':'')+'>'+(ld?esc(ld.name):('<span class="muted">'+TX('未关联客户','Not linked')+'</span>'))+'</td>';
     h+='<td>'+esc(m.subject||TX('（无主题）','(no subject)'))+'</td>';
-    h+='<td><button class="btn amber mini" data-action="resendMail" data-id="'+esc(String(m.id))+'">'+TX('重发','Re-send')+'</button></td>';
+    h+='<td><button class="btn amber mini" data-action="resendMail" data-id="'+esc(String(m.id))+'">'+TX('重发','Re-send')+'</button> <button class="btn ghost mini" data-action="mailEdit" data-id="'+esc(String(m.id))+'">'+TX('编辑','Edit')+'</button></td>';
     h+='</tr>';
    });
    h+='</tbody></table>';
@@ -4394,7 +4394,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v79</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v80</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4628,7 +4628,7 @@ document.addEventListener('click',function(e){
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
- else if(a==='saveScene'){saveScene();}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='mailOf'){mailOf(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
+ else if(a==='saveScene'){saveScene();}else if(a==='mailEdit'){mailEdit(el.dataset.id);}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='mailOf'){mailOf(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
  else if(a==='taskDone'){taskDone(el.dataset.id);}
  else if(a==='todayDel'){todayDel(el.dataset.type, el.dataset.id);}
  else if(a==='todayEdit'){todayEdit(el.dataset.type, el.dataset.id);}
@@ -5588,7 +5588,7 @@ function mailListHTML(src){
   var ld=m.leadId?((S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);})):null;
   html+='<div class="muted" style="font-size:12.5px;margin-bottom:4px">'+TX('收件','To')+': '+esc(m.toName||'')+' &lt;'+esc(m.to||'')+'&gt; · '+esc(m.date||'')+(ld?'':' · <span class="tagmini">'+TX('未关联客户','Not linked')+'</span>')+'</div>';
   if(sn)html+='<div class="out" style="margin-bottom:8px">'+esc(sn)+(sn.length>=80?'…':'')+'</div>';
-  html+='<div style="margin-top:6px">'+(ld?'<button class="btn mini" data-action="lead360" data-id="'+esc(String(m.leadId))+'">'+TX('客户360','Client 360')+'</button>':'')+'<button class="btn amber mini" data-action="resendMail" data-id="'+m.id+'">'+TX('重发','Re-send')+'</button>'+(ld?'<button class="btn ghost mini" data-action="leadTouch" data-id="'+esc(String(m.leadId))+'" style="margin-left:6px">'+TX('记录跟进','Log')+'</button>':'')+'<button class="btn ghost mini" data-action="mailDel" data-id="'+m.id+'" style="margin-left:6px;color:var(--red)">'+TX('删除','Delete')+'</button></div>';
+  html+='<div style="margin-top:6px">'+(ld?'<button class="btn mini" data-action="lead360" data-id="'+esc(String(m.leadId))+'">'+TX('客户360','Client 360')+'</button>':'')+'<button class="btn amber mini" data-action="resendMail" data-id="'+m.id+'">'+TX('重发','Re-send')+'</button><button class="btn ghost mini" data-action="mailEdit" data-id="'+m.id+'" style="margin-left:6px">'+TX('编辑','Edit')+'</button>'+(ld?'<button class="btn ghost mini" data-action="leadTouch" data-id="'+esc(String(m.leadId))+'" style="margin-left:6px">'+TX('记录跟进','Log')+'</button>':'')+'<button class="btn ghost mini" data-action="mailDel" data-id="'+m.id+'" style="margin-left:6px;color:var(--red)">'+TX('删除','Delete')+'</button></div>';
   html+='</div>';
  });
  return html;
@@ -5600,7 +5600,7 @@ function mailList360(id){
  list.forEach(function(m){
   var sub=enText(m.subject)||TX('（无主题）','（no subject）');
   var sn=enText(m.body||'').replace(/\s+/g,' ').trim().slice(0,60);
-  html+='<div style="padding:6px 0;border-top:1px dashed var(--line);font-size:13px"><span class="tag b">'+esc(m.date||'')+'</span> '+esc(sub)+(sn?' <span class="muted">'+esc(sn)+'…</span>':'')+' <button class="btn ghost mini" data-action="resendMail" data-id="'+m.id+'" style="margin-left:6px">'+TX('重发','Re')+'</button></div>';
+  html+='<div style="padding:6px 0;border-top:1px dashed var(--line);font-size:13px"><span class="tag b">'+esc(m.date||'')+'</span> '+esc(sub)+(sn?' <span class="muted">'+esc(sn)+'…</span>':'')+' <button class="btn ghost mini" data-action="resendMail" data-id="'+m.id+'" style="margin-left:6px">'+TX('重发','Re')+'</button><button class="btn ghost mini" data-action="mailEdit" data-id="'+m.id+'" style="margin-left:6px">'+TX('编辑','Edit')+'</button></div>';
  });
  return html;
 }
@@ -5609,6 +5609,49 @@ function resendMail(id){
  var l=(S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);});
  if(!l){l={name:m.toName||'',email:m.to||''};}
  openEmailModal(l,m.subject||'',m.body||'');
+}
+function mailEdit(id){
+ var m=(S.mails||[]).find(function(x){return String(x.id)===String(id);});
+ if(!m){toast(TX('记录不存在','Record missing'));return;}
+ var ld=(S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);});
+ var who=(m.toName||(ld&&ld.name)||'')||TX('未关联客户','Not linked');
+ var ch=(m.channel==='wa')?'wa':'email';
+ var h='<h3>'+TX('编辑发送记录','Edit sent record')+'</h3>';
+ h+='<div class="muted" style="margin-bottom:8px">'+TX('改完可只保存留痕，也可「保存并重发」把新内容再发一次。','Save the edit, or save & re-send the updated content.')+'</div>';
+ h+='<div class="modal-form">';
+ h+='<label>'+TX('客户','Client')+'<input value="'+esc(who)+'" disabled></label>';
+ h+='<label>'+TX('收件人 / 号码','To')+'<input id="me_to" value="'+esc(m.to||'')+'"></label>';
+ h+='<label>'+TX('渠道','Channel')+'<select id="me_ch"><option value="email"'+(ch==='email'?' selected':'')+'>'+TX('邮件','Email')+'</option><option value="wa"'+(ch==='wa'?' selected':'')+'>WhatsApp</option></select></label>';
+ h+='<label>'+TX('日期','Date')+'<input id="me_date" type="date" value="'+esc(m.date||'')+'"></label>';
+ h+='<label>'+TX('主题','Subject')+'<input id="me_sub" value="'+esc(m.subject||'')+'"></label>';
+ h+='<label>'+TX('正文 / 内容','Body')+'<textarea id="me_body" rows="9">'+esc(m.body||'')+'</textarea></label>';
+ h+='</div>';
+ h+='<div class="row" style="flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px">'
+  +'<button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button>'
+  +'<button class="btn amber" id="meResend">'+TX('保存并重发','Save & re-send')+'</button>'
+  +'<button class="btn" id="meSave">'+TX('保存修改','Save')+'</button>'
+  +'</div>';
+ $('modalBody').innerHTML=h;$('modal').classList.add('show');
+ var _grab=function(){
+  m.to=$('me_to').value.trim();
+  m.channel=$('me_ch').value;
+  m.date=$('me_date').value||m.date;
+  m.subject=$('me_sub').value;
+  m.body=$('me_body').value;
+ };
+ $('meSave').onclick=function(){_grab();save('mails',S.mails);refreshAll();closeModal();toast(TX('已保存修改','Saved'));};
+ $('meResend').onclick=function(){
+  _grab();save('mails',S.mails);refreshAll();closeModal();
+  if(m.channel==='wa'&&m.to){
+   var num=String(m.to).replace(/[^\d+]/g,'');if(num.charAt(0)!=='+')num='+'+num;
+   var wu='https://wa.me/'+num+'?text='+encodeURIComponent(m.body||'');
+   var w=((typeof window!=='undefined')&&window.open)?window.open(wu,'_blank'):null;
+   if(!w){copyText(wu);toast(TX('已复制 WhatsApp 链接，粘贴到浏览器打开','WhatsApp link copied'));}else{toast(TX('已拉起 WhatsApp，按发送即可','WhatsApp opened, tap send'));}
+   if(m.leadId){logSend(m.leadId,'wa',m.body||'');}
+  }else{
+   openEmailModal({id:m.leadId||'',name:who,email:m.to||''},m.subject||'',m.body||'');
+  }
+ };
 }
 function mailDel(id){
  var arr=S.mails||[];var i=arr.findIndex(function(x){return x.id===id;});
@@ -5817,7 +5860,7 @@ function viewDocs(){
   h+='<button class="btn" data-action="dealNew">'+TX('新建交易','New deal')+'</button>';
   return h;
  }
- var done=DOC_DEF.filter(function(x){return d.docs[x.id]==='done';}).length;
+ var done=DOC_DEF.filter(function(x){return (d.docs||{})[x.id]==='done';}).length;
  var total=DOC_DEF.length;var pct=total?Math.round(done/total*100):0;
  var linked=(S.leads&&d.leadId)?S.leads.find(function(x){return x.id===d.leadId;}):null;var lnk=dealLinked(d);
  h+='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>'+TX('备单进度','Doc readiness')+'</b><span class="tag score">'+done+' / '+total+'</span></div><div style="height:8px;background:var(--line);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:6px"></div></div><div class="hint" style="margin-top:8px">'+TX('核心类 7 张每票必出（发票 / 箱单 / 重量单 / 提单 / 空运单 / 保险单 / 产地证）；其余按交易条件（木包装 / 信用证 / 目的国 / 运输方式）出具。共 27 张，分 6 类。','Core 7 every shipment (Invoice/Packing/Weight/BL/AWB/Insurance/C.O.); rest by condition (wood/LC/dest/transport). 27 docs in 6 groups.')+'</div></div>';
@@ -5872,7 +5915,7 @@ h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-
  return h;
 }
 function docStatus(id){var d=activeDeal();return (d&&d.docs&&d.docs[id])?d.docs[id]:'todo';}
-function docToggle(id){var d=activeDeal();if(!d)return;d.docs[id]=(d.docs[id]==='done'?'todo':'done');save('deals',S.deals);refreshAll();toast(d.docs[id]==='done'?TX('已标记已出','Marked done'):TX('已撤销','Undone'));}
+function docToggle(id){var d=activeDeal();if(!d)return;if(!d.docs)d.docs={};d.docs[id]=(d.docs[id]==='done'?'todo':'done');save('deals',S.deals);refreshAll();toast(d.docs[id]==='done'?TX('已标记已出','Marked done'):TX('已撤销','Undone'));}
 function docOpen(id){S._docOpen=id;S._docVals={};S._docTpl=null;refreshAll();}
 function docReadForm(id){
  var dd=DOC_DEF.find(function(x){return x.id===id;});if(!dd)return null;
@@ -6334,7 +6377,7 @@ function lead360(id){
  var deals=(S.deals||[]).filter(function(d){return d.leadId===id;});
  var docDone=0,docPct=null;if(deals.length){var d0=deals[0];DOC_DEF.forEach(function(x){if(d0.docs&&d0.docs[x.id]==='done')docDone++;});docPct=Math.round(docDone/DOC_DEF.length*100);}
  var logs=((l.logs||[]).map(function(g){return '<div style="padding:4px 0;border-top:1px dashed var(--line);font-size:13px"><span class="tag b">'+esc(g.date)+'</span> '+esc(g.text)+'</div>';}).join(''))||'<div class="muted">'+TX('暂无跟进记录','No logs yet')+'</div>';
- var dlist=deals.length?deals.map(function(d){var dn=DOC_DEF.filter(function(x){return d.docs[x.id]==='done';}).length;var _lk=dealLinked(d);var _extra=[];if(_lk.supplier)_extra.push(TX('供应商','Sup')+':'+esc(_lk.supplier.name));if(_lk.product)_extra.push(TX('产品','Prod')+':'+esc(_lk.product.name));var _supp=_extra.length?(' · '+_extra.join(' · ')):'';return '<div style="padding:4px 0;border-top:1px dashed var(--line);font-size:13px">'+TX('交易','Deal')+'：'+(d.cnee||'—')+' · '+TX('单证','Docs')+' '+dn+'/'+DOC_DEF.length+_supp+'</div>';}).join(''):'<div class="muted">'+TX('暂无关联交易','No linked deal')+'</div>';
+ var dlist=deals.length?deals.map(function(d){var dn=DOC_DEF.filter(function(x){return (d.docs||{})[x.id]==='done';}).length;var _lk=dealLinked(d);var _extra=[];if(_lk.supplier)_extra.push(TX('供应商','Sup')+':'+esc(_lk.supplier.name));if(_lk.product)_extra.push(TX('产品','Prod')+':'+esc(_lk.product.name));var _supp=_extra.length?(' · '+_extra.join(' · ')):'';return '<div style="padding:4px 0;border-top:1px dashed var(--line);font-size:13px">'+TX('交易','Deal')+'：'+(d.cnee||'—')+' · '+TX('单证','Docs')+' '+dn+'/'+DOC_DEF.length+_supp+'</div>';}).join(''):'<div class="muted">'+TX('暂无关联交易','No linked deal')+'</div>';
  var x={id:l.id,name:l.name,stage:l.stage,score:scoreLead(l),days:days,follow:follow,market:l.market,docPct:docPct,action:''};
  var w=custNextWhere(x);
  var waBtn360=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn ghost" data-action="leadWa" data-id="'+id+'">WhatsApp</button>':'';
