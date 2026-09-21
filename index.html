@@ -483,7 +483,7 @@ function syncStatusText(){var c=syncLoadCfg();if(!c.url||!c.key||!c.syncKey)retu
 function syncStampText(){return SYNC_LAST_SEEN?new Date(SYNC_LAST_SEEN).toLocaleString():TX('—','—');}
 function syncStatus(s){SYNC_STATUS=s;var e=document.getElementById('syncStat');if(e)e.textContent=syncStatusText();}
 /* === R75 云同步采纳：合并而非覆盖，本地数据永不因云端旧快照丢失 === */
-function syncMergeArr(a,b){a=a||[];b=b||[];var map={},order=[];a.forEach(function(x){if(x&&x.id!==undefined){var id=String(x.id);if(!(id in map)){map[id]=x;order.push(id);}}});b.forEach(function(x){if(!x||x.id===undefined)return;var id=String(x.id);if(!(id in map)){map[id]=x;order.push(id);}else{var o=map[id];if((x._u||0)>(o._u||0))map[id]=x;}});return order.map(function(id){return map[id];});}
+function syncMergeArr(a,b){a=a||[];b=b||[];var map={},order=[];a.forEach(function(x){if(x&&x.id!==undefined){var id=String(x.id);if(!(id in map)){map[id]=x;order.push(id);}}});b.forEach(function(x){if(!x||x.id===undefined)return;var id=String(x.id);if(!(id in map)){map[id]=x;order.push(id);}else{var o=map[id];var xu=(x._u||0),ou=(o._u||0);if(xu>ou)map[id]=x;else if(xu===ou&&JSON.stringify(x).length>JSON.stringify(o).length)map[id]=x;}});return order.map(function(id){return map[id];});}
 function syncUnionArr(a,b){a=a||[];b=b||[];var seen={},out=[];a.concat(b).forEach(function(x){var k=JSON.stringify(x);if(!seen[k]){seen[k]=1;out.push(x);}});return out;}
 var SYNC_MERGE=['leads','trash','tasks','mails','coach','scripts','docs','deals','ext','comp','cpq'];
 var SYNC_UNION=['hotFav','_hotUser','_wsHist','_fcHist'];
@@ -5556,7 +5556,7 @@ function multiContactEdit(id){
 function mcSave(id){
  var l=(S.leads||[]).find(function(x){return x.id===id;});if(!l)return;
  var was=collectM('mc_wa_rows'),ems=collectM('mc_email_rows');
- l.was=was;l.wa=was[0]||'';l.emails=ems;l.email=ems[0]||'';
+ l.was=was;l.wa=was[0]||'';l.emails=ems;l.email=ems[0]||'';l._u=Date.now();
  snapLeads();save('leads',S.leads);closeModal();refreshAll();toast(TX('已保存联系方式','Saved'));
 }
 function addLead(){
