@@ -316,7 +316,7 @@ select.chip-sel{padding:3px 8px;border:1px solid var(--main);border-radius:999px
   <aside id="side" data-page-node-id="vTg2smxCEJ3W0zaaAT4DnA">
     <div class="logo" data-page-node-id="RuCPTDyKNsvcp0dkJChpVd"><span class="dt" data-page-node-id="Ls5fkTwxZItcaTSRymQDAr"><svg width="78" height="62" viewBox="1.5 4 20 16" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="GYX6vjiXDeEaGaoQk0tqRe"><g stroke="#ffffff"><circle cx="9.5" cy="12" r="7" data-page-node-id="ButdhMFXHjDyftIcMvgqO0"/><path d="M2.5 12h14" data-page-node-id="yYEyHmovhzN7nIObWeaGmh"/><path d="M9.5 5c2 2 2 12 0 14" data-page-node-id="qkkKibSvftqvGAySjHNq4D"/><path d="M9.5 5c-2 2-2 12 0 14" data-page-node-id="AulV8cGq77REX6TwWamlHw"/></g><path stroke="#f59e0b" d="M12.5 9l8-4-3 8 3 5-7-4" data-page-node-id="Gd0P1EDyb0P7yQVGoC3cFu"/></svg></span><span class="lt">外贸一体化平台</span></div>
     <div id="nav" data-page-node-id="dPOdZKqPFuVIUZnihx8a0d"></div>
-    <div class="side-foot"><button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）" style="width:100%">背景色</button></div>
+    <div class="side-foot"><button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）" style="width:100%">背景色</button><button class="btn ghost mini" data-action="bigOpen" title="调整大客户判定门槛（数量/金额）" style="width:100%;margin-top:6px">大客户口径</button></div>
   </aside>
   <div id="mask" data-page-node-id="emP0Z9ZwHPwD0aS97fGZ8a"></div>
   <main id="main" data-page-node-id="LvXFfnY4BXprQiaeSUQTtK">
@@ -326,7 +326,7 @@ select.chip-sel{padding:3px 8px;border:1px solid var(--main);border-radius:999px
       <span class="top-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center">
         <button class="btn mini" data-action="exportJson" title="一键导出全部数据为一个 JSON 文件（换设备/分享用）">⬇ 备份全部</button>
         <button class="btn ghost mini" data-action="importJson" title="从备份文件一键恢复全部数据">⬆ 恢复</button>
-        <button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）">背景色</button>
+        <button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）">背景色</button><button class="btn ghost mini" data-action="bigOpen" title="调整大客户判定门槛（数量/金额）">大客户口径</button>
       </span>
     </div>
     <div id="today" data-page-node-id="jDTyZHpstIW37k7ODBYKvO"></div>
@@ -614,6 +614,10 @@ function applyTheme(id){var t=null;for(var i=0;i<THEMES.length;i++){if(THEMES[i]
 function themeOutside(e){if(!e.target.closest('#themePop')&&!e.target.closest('[data-action="themeOpen"]')){var p=$('themePop');if(p)p.remove();document.removeEventListener('click',themeOutside);}}
 function themeOpen(){var ex=$('themePop');if(ex){ex.remove();return;}var cur=themeGet();var h='<div id="themePop" style="position:fixed;right:14px;top:56px;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:184px">';h+='<div style="font-size:12px;color:var(--sub);margin-bottom:8px;padding:0 4px">'+TX('背景色（护眼）','Background theme')+'</div>';for(var i=0;i<THEMES.length;i++){var t=THEMES[i];var sel=(t.id===cur);h+='<div data-theme="'+t.id+'" class="themeSwatch" style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;'+(sel?'background:rgba(37,99,235,.10)':'')+'"><span style="width:22px;height:22px;border-radius:6px;border:1px solid '+t.line+';background:'+t.bg+'"></span><span style="font-size:13px;color:var(--text)">'+t.n+'</span>'+(sel?'<span style="margin-left:auto;color:#2563eb;font-size:12px">✓</span>':'')+'</div>';}h+='</div>';var d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d.firstChild);var pop=$('themePop');pop.addEventListener('click',function(e){var s=e.target.closest('.themeSwatch');if(!s)return;applyTheme(s.getAttribute('data-theme'));themeOpen();});setTimeout(function(){document.addEventListener('click',themeOutside);},0);}
 
+/* ============ R87b 大客户门槛可调 ============ */
+function bigOutside(e){if(!e.target.closest('#bigPop')&&!e.target.closest('[data-action="bigOpen"]')){var p=$('bigPop');if(p)p.remove();document.removeEventListener('click',bigOutside);}}
+function bigOpen(){var ex=$('bigPop');if(ex){ex.remove();return;}var c=bigCfg();var h='<div id="bigPop" style="position:fixed;right:14px;top:56px;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:12px;width:248px">';h+='<div style="font-size:12px;color:var(--sub);margin-bottom:8px">'+TX('大客户口径（可调）','Key-account thresholds')+'</div>';h+='<label style="display:block;font-size:13px;color:var(--text);margin-bottom:4px">'+TX('数量门槛（件）','Qty threshold (pcs)')+'</label>';h+='<input id="big_qty" type="number" min="0" value="'+c.qty+'" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:16px;margin-bottom:10px">';h+='<label style="display:block;font-size:13px;color:var(--text);margin-bottom:4px">'+TX('金额门槛（美元）','Amount threshold (USD)')+'</label>';h+='<input id="big_amt" type="number" min="0" value="'+c.amt+'" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:16px;margin-bottom:10px">';h+='<div style="font-size:12px;color:var(--sub);margin-bottom:10px">'+TX('数量≥门槛 或 金额≥门槛 即标记为大客户','Qty>=threshold OR amount>=threshold = key account')+'</div>';h+='<div class="row" style="gap:8px">';h+='<button class="btn green" data-big="save" style="flex:1">'+TX('保存','Save')+'</button>';h+='<button class="btn ghost" data-big="reset">'+TX('恢复默认','Reset')+'</button>';h+='</div></div>';var d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d.firstChild);var pop=$('bigPop');pop.addEventListener('click',function(e){var b=e.target.closest('[data-big]');if(!b)return;if(b.getAttribute('data-big')==='save'){var q=parseFloat($('big_qty').value);var a=parseFloat($('big_amt').value);if(isNaN(q)||q<0)q=BIG_QTY;if(isNaN(a)||a<0)a=BIG_AMT;try{localStorage.setItem(KEY+'big',JSON.stringify({qty:q,amt:a}));}catch(e){}if(pop)pop.remove();document.removeEventListener('click',bigOutside);toast(TX('已更新大客户口径','Key-account thresholds updated'));refreshAll();}else{try{localStorage.removeItem(KEY+'big');}catch(e){}if(pop)pop.remove();document.removeEventListener('click',bigOutside);toast(TX('已恢复默认 500 件 / $2000','Reset to default 500 pcs / $2000'));refreshAll();}});setTimeout(function(){document.addEventListener('click',bigOutside);},0);}
+
 /* ============ 外贸全套单据（覆盖合同/货运/清关/保险检验/结汇/通知 6 大类，一套应对各种场景） ============ */
 var DOC_FIELDS={
  cnee:{l:'买方 / Consignee'},buyerAddr:{l:'买方地址 Address'},no:{l:'发票/单证号 No.'},contractNo:{l:'合同号 Contract No.'},poNo:{l:'采购单号 PO No.'},
@@ -726,7 +730,8 @@ function scoreLead(l){
 /* ============ R87 大客户识别（按订单数量 / 金额阈值） ============ */
 var BIG_QTY=500;   /* 数量阈值：订单数量 >= 此值视为大客户（单位：件/箱，按你实际填写口径） */
 var BIG_AMT=2000;  /* 金额阈值：金额 >= 此值也视为大客户（美元） */
-function isBigCust(l){if(!l)return false;var q=parseFloat(l.qty)||0;var a=parseFloat(l.amount)||0;return q>=BIG_QTY||a>=BIG_AMT;}
+function bigCfg(){try{var s=JSON.parse(localStorage.getItem(KEY+'big')||'null');if(s&&typeof s.qty==='number'&&typeof s.amt==='number'&&s.qty>=0&&s.amt>=0)return {qty:s.qty,amt:s.amt};}catch(e){}return {qty:BIG_QTY,amt:BIG_AMT};}
+function isBigCust(l){if(!l)return false;var c=bigCfg();var q=parseFloat(l.qty)||0;var a=parseFloat(l.amount)||0;return q>=c.qty||a>=c.amt;}
 /* ============ 视图：外贸增长飞轮 ============ */
 var STAGE_META={
  home:{t:'外贸增长飞轮',te:'Growth Flywheel',d:'先看清全链，再进任意一段',de:'See the whole loop, then enter any stage'},
@@ -2385,7 +2390,7 @@ var bigCnt=leads.filter(isBigCust).length;
  if(overdue.length)summary+=overdue.length+TX(' 个已逾期跟进（风险最高）：',' overdue (highest risk): ')+overdue.map(function(l){return l.name;}).join('、')+'。';
  else summary+=TX('暂无逾期，跟进节奏良好。','No overdue — rhythm is good. ');
  if(midEast)summary+=TX('其中 ','Of these ')+midEast+TX(' 个中东客户，距下次斋月约 ',' Mid-East clients; ~')+d8+TX(' 天，是试样/返单黄金窗口。',' days to next Ramadan — prime sample/reorder window. ');
-if(bigCnt)summary+=TX('其中 ','Of these ')+bigCnt+TX(' 家为大客户（数量≥'+BIG_QTY+' 或金额≥'+BIG_AMT+'），建议优先重点跟进。',' key accounts — prioritize. ');
+var _bc=bigCfg();if(bigCnt)summary+=TX('其中 ','Of these ')+bigCnt+TX(' 家为大客户（数量≥'+_bc.qty+' 或金额≥'+_bc.amt+'），建议优先重点跟进。',' key accounts — prioritize. ');
  if(lines.length){var top=lines[0];summary+=TX('AI 建议今日优先：','AI suggests today’s priority: ')+top.name+'（'+top.action+'）。';}
  var openTasks=(S.tasks||[]).filter(function(t){return !t.done;}).length;
  return {total:total,active:active,overdue:overdue.length,bigCnt:bigCnt,stageCnt:stageCnt,mktCnt:mktCnt,lines:lines,summary:summary,docAvg:docAvgCal(lines),tasksTotal:openTasks};
@@ -4756,7 +4761,7 @@ document.addEventListener('click',function(e){
  else if(a==='saveMe'){saveMe();}
  else if(a==='exportJson'){exportJson();}
  else if(a==='importJson'){importJson();}
-else if(a==='themeOpen'){themeOpen();}
+else if(a==='themeOpen'){themeOpen();}else if(a==='bigOpen'){bigOpen();}
  else if(a==='exportLeadsCsv'){exportLeadsCsv();}
  else if(a==='exportLeadsJson'){exportLeadsJson();}
  else if(a==='importLeads'){importLeads();}
