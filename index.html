@@ -2195,7 +2195,7 @@ h+='<div class="lead-nav" id="leadNavBar"><span class="muted" style="font-size:1
  h+='<div class="row" style="margin-top:8px;gap:10px;align-items:center;flex-wrap:wrap"><label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="lf_big"'+(S._leadFilter&&S._leadFilter.big?' checked':'')+' onchange="leadFilterBig(this.checked)"> '+TX('只看大客户','Key accounts only')+' <span class="muted" style="font-size:11px">('+TX('数量≥'+bigCfg().qty+' 或金额≥'+bigCfg().amt,'qty≥'+bigCfg().qty+' / $≥'+bigCfg().amt)+')</span></label></div>';h+='<div class="row" style="margin-bottom:10px;justify-content:flex-end"><button class="btn ghost mini" data-action="trashToggle">'+TX('回收站','Trash')+' ('+(S.trash||[]).length+')</button></div>';
 h+='<div id="leadList"></div></div>';
  h+=reconSection();
- h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('AI 跟进序列（自动排程）','AI Follow-up Cadence')+'</h3><div class="grid g2"><select id="cad_lead">'+S.leads.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+' · '+esc(l.stage)+'</option>';}).join('')+'</select><button class="btn" data-action="genCadence">'+TX('生成5触点序列','Generate 5-touch')+'</button></div><div class="out" id="cadOut" style="margin-top:10px">'+TX('选择线索后生成：首触→寄样→报价→节期→返单。','Pick a lead to generate: first touch → sample → quote → festival → reorder.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="cadOut" style="margin-top:8px">'+TX('复制序列','Copy cadence')+'</button></div>';
+ h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('AI 跟进序列（自动排程）','AI Follow-up Cadence')+'</h3><div class="grid g2"><select id="cad_lead">'+S.leads.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+' · '+esc(l.stage)+'</option>';}).join('')+'</select><button class="btn" data-action="genCadence">'+TX('生成5触点序列','Generate 5-touch')+'</button></div><div class="out" id="cadOut" style="margin-top:10px">'+TX('选择线索后生成：首触→寄样→报价→节期→返单。','Pick a lead to generate: first touch → sample → quote → festival → reorder.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="cadOut" style="margin-top:8px">'+TX('复制序列','Copy cadence')+'</button><button class="btn amber mini" data-action="cadToTasks" style="margin-top:8px;margin-left:8px">'+TX('转入待办','To to-dos')+'</button></div>';
  return h;
 }
 function renderPrio(){
@@ -2236,7 +2236,7 @@ function renderLeads(){
   html+='<div class="s" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:2px">'+waListHTML(l)+emListHTML(l)+webListHTML(l)+'</div>'+leadEditBar(l)+'</div>';
   var waBtn=(l.wa&&/^\+?\d[\d\s\-]{5,}$/.test(l.wa))?'<button class="btn mini" data-action="leadWa" data-id="'+l.id+'">WhatsApp</button>':'';
   var emailBtn=(l.email&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email))?'<button class="btn mini" data-action="leadEmail" data-id="'+l.id+'">'+TX('邮件','Email')+'</button>':'';var webBtn=(webHref(l))?'<button class="btn mini" data-action="leadSite" data-id="'+l.id+'">'+TX('网站','Website')+'</button>':'';
-  html+='<div class="ops">'+waBtn+emailBtn+webBtn+'<button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('详情','360')+'</button><button class="btn ghost mini" data-action="leadAdv" data-id="'+l.id+'">'+(next?(TX('→','→')+next):TX('已成交','Closed'))+'</button><button class="btn ghost mini" data-action="leadTouch" data-id="'+l.id+'">'+TX('记录跟进','Log')+'</button><button class="btn ghost mini" data-action="leadEdit" data-id="'+l.id+'">'+TX('编辑','Edit')+'</button><button class="btn danger mini" data-action="leadDel" data-id="'+l.id+'">'+TX('删','Del')+'</button></div></div>';
+  html+='<div class="ops">'+waBtn+emailBtn+webBtn+'<button class="btn ghost mini" data-action="lead360" data-id="'+l.id+'">'+TX('详情','360')+'</button><button class="btn ghost mini" data-action="leadAdv" data-id="'+l.id+'">'+(next?(TX('→','→')+next):TX('已成交','Closed'))+'</button><button class="btn ghost mini" data-action="leadTouch" data-id="'+l.id+'">'+TX('记录跟进','Log')+'</button><button class="btn ghost mini" data-action="callLog" data-id="'+l.id+'">'+TX('记录通话','Call')+'</button><button class="btn ghost mini" data-action="leadEdit" data-id="'+l.id+'">'+TX('编辑','Edit')+'</button><button class="btn danger mini" data-action="leadDel" data-id="'+l.id+'">'+TX('删','Del')+'</button></div></div>';
  });
  box.innerHTML=html;
  ldNavAfter();
@@ -3805,6 +3805,30 @@ function rvCtx(){
  }catch(e){hol=[];}
  return {ls:_l,total:total,contacted:contacted,talking:talking,adv:adv,deal:deal,warn:warn,dev:dev,bot:bot,max:max,w:w,sumDeal:sumDeal,mst:mst,dWithMail:dWithMail,rr:rr,conv:conv,dR:dR,reached:reached,nomail:nomail,hol:hol};
 }
+function custFunnel(c){
+ c=c||rvCtx();
+ var h='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('客户漏斗 / 转化率','Funnel & Conversion')+' <span class="muted" style="font-size:12px;font-weight:400">'+TX('各阶段数量与转化率，标红=该环节流失严重','counts & conversion per stage; red = heavy drop-off')+'</span></h3>';
+ var counts=PIPE.map(function(st){return c.ls.filter(function(l){return l.stage===st;}).length;});
+ var maxc=Math.max.apply(null,counts.concat([1]));
+ var rows='';
+ PIPE.forEach(function(st,i){
+  var n=counts[i];var pct=Math.round(n/maxc*100);
+  var convPrev = i===0?100:(counts[i-1]?Math.round(n/counts[i-1]*100):0);
+  var dropWarn = (i>0 && counts[i-1]>=3 && (n/counts[i-1])<0.3);
+  var convTxt = i===0?(''):(' · '+TX('转化','conv')+' '+convPrev+'%');
+  var dropMark = dropWarn?(' '+TX('流失','drop')):'';
+  var col = dropWarn?' style="color:var(--red);font-weight:700"':'';
+  rows+='<div style="margin:7px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>'+st+dropMark+'</span><span'+col+'>'+n+convTxt+'</span></div><div style="height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:3px"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:6px"></div></div></div>';
+ });
+ h+=rows;
+ var overall=c.total?Math.round(c.deal/c.total*100):0;
+ h+='<div class="hint" style="margin-top:8px">'+TX('整体转化率','Overall')+'：'+c.total+' -> '+c.deal+' = <b>'+overall+'%</b>';
+ var warns=[];
+ for(var i=1;i<PIPE.length;i++){if(counts[i-1]>=3 && (counts[i]/counts[i-1])<0.3){warns.push(PIPE[i-1]+'->'+PIPE[i]);}}
+ if(warns.length){h+=' · <span style="color:var(--red)">'+TX('停滞预警','Stall alert')+'：'+warns.join('、')+'</span>';}
+ h+='</div></div>';
+ return h;
+}
 function rvDrillBtn(lab,kind,cls){return '<button class="btn '+(cls||'ghost')+' mini" data-action="reviewDrill" data-kind="'+kind+'">'+lab+'</button>';}
 function rvNavBtn(lab,view,cls){return '<button class="btn '+(cls||'ghost')+' mini" data-action="nav" data-view="'+view+'">'+lab+'</button>';}
 /* 周复盘：自动数据段（只读）+ 手写段（可编辑） */
@@ -3897,7 +3921,8 @@ function viewReview(){
  h+=stat('mails',c.mst.cli,TX('已触达客户','Clients'),false);
  h+=stat('reorder',c.rr+'%',TX('复购率','Reorder'),false);
  h+='</div><div class="hint">'+TX('转化率=成交/线索；复购率=已成交客户中，有后续邮件/WA 触达记录的比例；「从未触达」=在谈但一封邮件/WA 都没发过。点任意格可跳到「找客户」或「邮件发送记录」看明细。','Conv=deals/leads; Reorder=deals with follow-up on record; “Never contacted”=in pipeline but zero email/WA. Click any cell to drill in.')+'</div></div>';
- h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">AI '+TX('复盘洞察','Insights')+' <span class="muted" style="font-size:12px;font-weight:400">'+TX('（每条都可点开行动）','every line is clickable')+'</span></h3><div id="insBox"></div></div>';
+ h+=custFunnel(c);
+h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">AI '+TX('复盘洞察','Insights')+' <span class="muted" style="font-size:12px;font-weight:400">'+TX('（每条都可点开行动）','every line is clickable')+'</span></h3><div id="insBox"></div></div>';
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('周复盘模板（已按真实数据预填）','Weekly review (auto-filled)')+'</h3>';
  var d0=S.rvDraft||{};
  h+='<div class="muted" style="font-size:12.5px;margin-bottom:8px">'+TX('上半部分按你本机真实数据自动生成；下面两条可以直接在这里写，自动保存在本机。写完点「存档本期复盘」，下周打开就能对比。','The top is auto-filled from your local data. Write the last two in place — saved on this machine. Hit “Archive” to compare next week.')+'</div>';
@@ -4464,7 +4489,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v90</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v91</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4653,7 +4678,7 @@ document.addEventListener('click',function(e){
  else if(a==='addLead'){addLead();}
  else if(a==='demoAddLead'){demoAddLead();}
  else if(a==='leadAdv'){leadAdv(el.dataset.id);}
- else if(a==='leadTouch'){leadTouch(el.dataset.id);}
+ else if(a==='leadTouch'){leadTouch(el.dataset.id);}else if(a==='callLog'){callLog(el.dataset.id);}else if(a==='callLogSave'){callLogSave(el.dataset.id);}
  else if(a==='leadDel'){leadDel(el.dataset.id);}
  else if(a==='leadEdit'){leadEdit(el.dataset.id);}
  else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}else if(a==='mcOpen'){multiContactEdit(el.dataset.id);}else if(a==='mcSave'){mcSave(el.dataset.id);}
@@ -4679,7 +4704,7 @@ document.addEventListener('click',function(e){
  else if(a==='emOutlook'){var _to2=el.dataset.to||'';var _su2=dU(el.dataset.su||'');var _bd2=dU(el.dataset.bd||'');var _full2='To: '+_to2+'\nSubject: '+_su2+'\n\n'+_bd2;copySilent(_full2);var ou='https://outlook.live.com/mail/0/compose?to='+encodeURIComponent(_to2)+'&subject='+encodeURIComponent(_su2)+'&body='+encodeURIComponent(_bd2);if(openUrl(ou)){toast(TX('已打开 Outlook 网页版撰写页；邮件全文已复制备用，若未自动填入请粘贴。','Outlook web compose opened; full email copied, paste if not auto-filled.'));}else{toast(TX('Outlook 网页版未能自动打开（浏览器拦截），邮件全文已复制，请打开 outlook.live.com 并粘贴发送。','Could not auto-open Outlook; full email copied, open outlook.live.com and paste.'));}recordMail(el.dataset.id,_to2,_su2,_bd2,'email');logSend(el.dataset.id,'email',_bd2);}
  else if(a==='emClient'){var mt=el.dataset.mailto||'';var _to=dU(mt.replace(/^mailto:/,'').split('?')[0]);var _su=dU((/[?&]subject=([^&]*)/.exec(mt)||[])[1]||'');var _bd=dU((/[?&]body=([^&]*)/.exec(mt)||[])[1]||'');var _full='To: '+_to+'\nSubject: '+_su+'\n\n'+_bd;copySilent(_full);var _g='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(_to)+'&su='+encodeURIComponent(_su)+'&body='+encodeURIComponent(_bd);try{openMailto(mt);}catch(e){}toast(TX('正在尝试调用本机邮件客户端…','Trying to open your mail app…'));var _la=false;var _bf=function(){_la=true;};if(typeof window!=='undefined'){try{window.addEventListener('blur',_bf,{once:true});}catch(e){}}setTimeout(function(){try{if(typeof window!=='undefined'){window.removeEventListener('blur',_bf);}}catch(e){}if(!_la&&(typeof document==='undefined'||document.hasFocus())){if(openUrl(_g)){toast(TX('本机未设置默认邮件程序，已自动为你打开 Gmail 网页撰写窗口（收件人/主题/正文已填好），登录点发送即可；邮件全文也已复制备用。','No default mail app — opened Gmail web compose (pre-filled). Full email copied too.'));}else{toast(TX('本机未设置默认邮件程序且网页窗口被拦截；邮件全文已复制，请打开 mail.google.com 粘贴发送。','No default mail app and web blocked; full email copied, open Gmail to paste.'));}}},1000);recordMail(el.dataset.id,_to,_su,_bd,'email');logSend(el.dataset.id,'email',_bd);}
  else if(a==='emCopy'){var full='To: '+(el.dataset.to||'')+'\nSubject: '+dU(el.dataset.su)+'\n\n'+dU(el.dataset.bd);copyText(full);recordMail(el.dataset.id,el.dataset.to,dU(el.dataset.su),dU(el.dataset.bd),'email');logSend(el.dataset.id,'email',dU(el.dataset.bd));}
- else if(a==='genCadence'){genCadence();}
+ else if(a==='genCadence'){genCadence();}else if(a==='cadToTasks'){cadToTasks();}
  else if(a==='quickCadence'){
   if(!(S.leads&&S.leads.length)){toast(TX('还没有客户，先去「找客户」加一个','No clients yet — add one in Find Leads'));S.view='find';save('view',S.view);S._activeClient='';refreshAll();return;}
   var ranked=S.leads.slice().sort(function(a,b){return scoreLead(b)-scoreLead(a);});
@@ -5629,6 +5654,26 @@ function addLead(){
 }
 function leadAdv(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=PIPE.indexOf(l.stage);if(i<PIPE.length-1)l.stage=PIPE[i+1];l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
 function leadTouch(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var note=prompt(TX('记录本次跟进（如：发了绣金样品质检）：','Log this follow-up (e.g. sent embroidered sample QC):'),l.note||'');if(note!==null){l.logs=l.logs||[];l.logs.unshift({date:todayStr(),text:note});l.note=note;l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();toast(TX('已记录','Logged'));}}
+function callLog(id){
+ var l=S.leads.find(function(x){return x.id===id;});if(!l)return;
+ var body='<div class="modal-form">'+
+  '<label>'+TX('客户意向','Intent')+'<select id="cl_intent">'+['','有明确需求','考虑中','暂不需要','已成交'].map(function(v){return '<option'+(v===(l.intent||'')?' selected':'')+'>'+v+'</option>';}).join('')+'</select></label>'
+  +'<label>'+TX('主要异议','Main objection')+'<textarea id="cl_obj" rows="2" placeholder="'+TX('客户为什么犹豫？价格/信任/竞品…','Why hesitating? price/trust/competitor…')+'">'+esc(l.objection||'')+'</textarea></label>'
+  +'<label>'+TX('下一步动作','Next step')+'<input id="cl_next" value="'+esc(l.nextStep||'')+'" placeholder="'+TX('例：发报价单 / 寄样','e.g. send quote / sample')+'"></label>'
+  +'<label>'+TX('约定时间（可选）','Appointment (optional)')+'<input id="cl_app" type="date" value="'+esc(l.followUpDate||'')+'"></label>'
+  +'</div><div class="row" style="justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="clSave" data-action="callLogSave" data-id="'+id+'">'+TX('保存记录','Save')+'</button></div>';
+ $('modalBody').innerHTML='<h3>'+TX('通话结果记录','Call log')+'：'+esc(l.name)+'</h3>'+body;
+ $('modal').classList.add('show');
+}
+function callLogSave(id){
+ var l=S.leads.find(function(x){return x.id===id;});if(!l)return;
+ var gi=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};
+ var intent=gi('cl_intent');var obj=gi('cl_obj');var next=gi('cl_next');var app=gi('cl_app');
+ if(intent)l.intent=intent;l.objection=obj;l.nextStep=next;l.followUpDate=app;
+ l.last=todayStr();l.logs=l.logs||[];
+ l.logs.unshift({date:todayStr(),text:TX('【通话】','[Call]')+' '+TX('意向','Intent')+':'+(intent||'—')+' · '+TX('异议','Objection')+':'+(obj||'—')+' · '+TX('下一步','Next')+':'+(next||'—')+(app?(' · '+TX('约定','Appt')+':'+app):'')});
+ snapLeads();save('leads',S.leads);closeModal();refreshAll();toast(TX('已记录通话','Call logged'));
+}
 function logSend(id,channel,text){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;l.logs=l.logs||[];var sn=(text||'').replace(/\s+/g,' ').trim().slice(0,40);var ch=channel==='wa'?TX('WhatsApp','WhatsApp'):TX('邮件','Email');l.logs.unshift({date:todayStr(),text:ch+'：'+(sn||TX('(已发起联系)','contact initiated'))});l.last=todayStr();snapLeads();save('leads',S.leads);refreshAll();}
 function recordMail(leadId,to,subject,body,channel){try{S.mails=S.mails||[];var lead=(S.leads||[]).find(function(x){return x.id===leadId;});S.mails.unshift({id:uid(),leadId:leadId||'',toName:(lead&&lead.name)?lead.name:(to||''),to:to||'',subject:subject||'',body:body||'',channel:channel||'email',date:todayStr()});save('mails',S.mails);}catch(e){}}
 function mailCount(leadId){if(!leadId)return 0;var n=0;(S.mails||[]).forEach(function(m){if(m.leadId&&String(m.leadId)===String(leadId))n++;});return n;}
@@ -5944,8 +5989,15 @@ function genCadence(){
  }
  var out='【AI '+TX('跟进序列','Follow-up Cadence')+' · '+l.name+'（'+(l.market||l.country||'—')+'）】\n'+TX('当前阶段','Stage')+'：'+stage+' · '+TX('共','')+steps.length+TX('个触点',' touches')+'\n';
  steps.forEach(function(s){out+='\n▶ '+TX('触点','Touch')+s[0]+' · '+s[1]+'（'+s[2]+'）\n'+s[3].en+'\n';});
- S._cadText=out;save('_cadText',out);
+ S._cadText=out;S._cadSteps=steps;S._cadLead=(l?l.id:'');save('_cadText',out);save('_cadSteps',steps);save('_cadLead',S._cadLead);
  $('cadOut').textContent=out;toast(TX('已生成序列（按','Cadence ready (by')+' '+stage+'）');
+}
+function cadToTasks(){
+ var steps=S._cadSteps;var id=S._cadLead||(($('cad_lead')?$('cad_lead').value:''));var l=S.leads.find(function(x){return x.id===id;});
+ if(!steps||!steps.length){toast(TX('请先生成序列','Generate first'));return;}
+ if(!S.tasks)S.tasks=[];
+ var n=0;steps.forEach(function(s){S.tasks.push({id:uid(),title:(l?l.name+' · ':'')+s[2],due:s[1],done:false,clientId:id||''});n++;});
+ save('tasks',S.tasks);refreshAll();toast(TX('已转入 ','Added ')+n+TX(' 条待办到「待办」',' to-dos'));
 }
 /* ============ 语言切换 ============ */
 function langToggle(){S.lang=(S.lang==='en'?'zh':'en');save('lang',S.lang);refreshAll();}
@@ -6514,7 +6566,7 @@ function lead360(id){
   +'<label>'+TX('推荐人','Referrer')+'<input id="v360_referrer" value="'+esc(l.referrer||'')+'"></label>'
   +'<label>'+TX('转介绍备注','Referral note')+'<input id="v360_referralNote" value="'+esc(l.referralNote||'')+'"></label>'
   +'</div>'
-  +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+webBtn360+'<button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="lead360Save" data-id="'+id+'">'+TX('保存修改','Save')+'</button></div></div>';
+  +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+webBtn360+'<button class="btn ghost" data-action="callLog" data-id="'+id+'">'+TX('记录通话','Call log')+'</button><button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="lead360Save" data-id="'+id+'">'+TX('保存修改','Save')+'</button></div></div>';
  $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3><div class="muted" style="margin:-2px 0 10px;font-size:12.5px">'+TX('统一客户档案：下方字段与「复购转介」面板、邮件记录、复盘共用同一份数据，改一处处处同步。','Unified profile — shared with the Reorder/Referral board, email log and review; edit once, synced everywhere.')+'</div>'+body;
  $('modal').classList.add('show');
 }
