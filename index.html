@@ -168,6 +168,31 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .client-banner b{color:#1e3a8a}
 .client-banner .btn{margin-left:auto}
 @media(max-width:560px){.hub-grid{grid-template-columns:repeat(2,1fr)}}
+#ctxbar{display:none;border:1px solid var(--line);border-left:3px solid var(--main);border-radius:12px;background:var(--card);padding:8px 10px;margin:0 0 12px}
+#ctxbar .ctxrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#ctxbar .ctxrow2{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.ctxwho{font-size:12.5px;color:var(--sub)}
+.ctxwho b{color:var(--ink);font-size:13.5px}
+.ctxpos{font-size:12.5px;color:var(--sub)}
+.ctxstate{font-size:12px;color:var(--sub);margin-left:8px}
+.ctxdot{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#f1f3f5;color:var(--sub);font-size:11px;margin-right:3px;cursor:pointer;border:1px solid var(--line)}
+.ctxdot.on{background:var(--main);color:#fff;border-color:var(--main);font-weight:700}
+.ctxdot.done{background:#dcfce7;color:#15803d;border-color:#bbf7d0}
+.ctxtodo{margin:5px 0 0;padding-left:18px;font-size:12.5px;color:var(--sub);line-height:1.7}
+.chaincard{border:1px solid var(--line);border-left:3px solid var(--main);border-radius:12px;background:var(--card);padding:10px 12px;margin-bottom:12px}
+.chaincard-h{font-size:13px}
+.chaincard-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:7px 0;font-size:12px}
+.ctxcrumb{padding:2px 8px;border-radius:999px;background:#f1f3f5;color:var(--sub);cursor:pointer;white-space:nowrap}
+.ctxcrumb.on{background:var(--main);color:#fff;font-weight:600}
+.ctxcrumb.done{background:#dcfce7;color:#15803d}
+.ctxsep{color:var(--sub);font-size:11px}
+.chaincard-b{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.chaincard-ops{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start}
+.ctxmini{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin:0 0 10px}
+.hub-cell.on{border-color:var(--main);box-shadow:0 0 0 2px rgba(37,99,235,.12)}
+.hub-cell.done{background:#f0fdf4;border-color:#bbf7d0}
+.hubstep{float:right;font-size:10px;color:var(--sub);background:#f1f3f5;border-radius:999px;padding:0 5px}
+@media(max-width:560px){.chaincard-ops{width:100%}}
 .g2{grid-template-columns:1fr 1fr}
 .g3{grid-template-columns:repeat(3,1fr)}
 .g4{grid-template-columns:repeat(4,1fr)}
@@ -329,6 +354,7 @@ select.chip-sel{padding:3px 8px;border:1px solid var(--main);border-radius:999px
         <button class="btn ghost mini" data-action="themeOpen" title="更换护眼背景色（随时切换）">背景色</button><button class="btn ghost mini" data-action="bigOpen" title="调整大客户判定门槛（数量/金额）">大客户口径</button>
       </span>
     </div>
+    <div id="ctxbar" data-page-node-id="ctxbar97"></div>
     <div id="today" data-page-node-id="jDTyZHpstIW37k7ODBYKvO"></div>
     <div id="view" data-page-node-id="cOj4DK3EuWProjgOJTL9RX"></div>
   </main>
@@ -2411,15 +2437,16 @@ function custJump(where,id,mkt){
  if(where==='cust360'){lead360(id);return;}
  if(where==='docs'){
   var d=(S.deals||[]).find(function(x){return x.leadId===id;});
-  if(d){S._dealId=d.id;save('_dealId',S._dealId);}
-  S.view='docs';save('view',S.view);S._activeClient='';refreshAll();return;
+  if(d){S._dealId=d.id;save('_dealId',S._dealId);}else{S._dealId='';save('_dealId','');}
+  S.view='docs';save('view',S.view);if(id){S._activeClient=id;save('_activeClient',S._activeClient);}refreshAll();return;
  }
- if(where==='today'){S.view='home';save('view',S.view);S._activeClient='';refreshAll();return;}
- if(where==='recon'){S.view='find';save('view',S.view);S._activeClient=id||'';S._reconLead=id||'';save('_reconLead',S._reconLead);refreshAll();return;}
+ if(where==='today'){S.view='home';save('view',S.view);if(id){S._activeClient=id;save('_activeClient',S._activeClient);}refreshAll();return;}
+ if(where==='recon'){S.view='find';save('view',S.view);if(id){S._activeClient=id;}save('_activeClient',S._activeClient);S._reconLead=id||'';save('_reconLead',S._reconLead);refreshAll();return;}
  // 场景类模块锁定该客户，便于生成"针对此人"的话术
+ if(where==='mails'){S.view='mails';save('view',S.view);S._mailFilter=id||'all';save('_mailFilter',S._mailFilter);if(id){S._activeClient=id;save('_activeClient',S._activeClient);}refreshAll();return;}
  var sceneMods=['reach','trust','deal','deliver','repeat'];
  if(sceneMods.indexOf(where)>=0){S._activeClient=id||'';}
- else{S._activeClient='';}
+ else if(!id){S._activeClient='';save('_activeClient','');}else{S._activeClient=id;save('_activeClient',S._activeClient);}
  S.view=where;save('view',S.view);
  if(where==='find'&&mkt){S._leadFilter={q:'',cat:'',market:mkt,stage:''};}
  refreshAll();
@@ -4492,7 +4519,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v96</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v97</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4522,7 +4549,7 @@ function renderView(){
  else if(v==='me')h=viewMe();
  else if(v==='backup')h=viewBackup();
  else if(v==='tasks')h=viewTasks();
- $('view').innerHTML=h;
+ $('view').innerHTML=chainCard()+h;
 }
 /* ============ 术语悬浮卡（新手友好） ============ */
 var _tipReady=false,_GLOSS=null,_GLOSS_RE=null;
@@ -4591,7 +4618,7 @@ function applyGlossary(){
 
 
 function refreshAll(){
- var _rf=[renderNav,renderView,renderToday];
+ var _rf=[renderNav,renderCtx,renderView,renderToday];
  for(var _i=0;_i<_rf.length;_i++){try{_rf[_i]();}catch(e){try{console.error('[render]',e);}catch(_e){}}}
  try{if(S.view==='find'){renderLeads();renderPrio();rcNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='repeat'){renderFest();renderHolidays();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
@@ -4614,7 +4641,7 @@ document.addEventListener('click',function(e){
  var el=e.target.closest('[data-action]');if(!el)return;
  e.preventDefault();
  var a=el.dataset.action;
- if(a==='nav'){S.view=el.dataset.view;save('view',S.view);S._activeClient='';if(window.innerWidth<=860)toggleNav(true);refreshAll();}
+ if(a==='nav'){S.view=el.dataset.view;save('view',S.view);if(window.innerWidth<=860)toggleNav(true);refreshAll();}
  else if(a==='navHide'){var hk=el.dataset.view;if(S.hidden.indexOf(hk)<0){S.hidden.push(hk);save('hidden',S.hidden);}if(S.view===hk)S.view='home';refreshAll();}
  else if(a==='navShowAll'){S.hidden=[];save('hidden',S.hidden);refreshAll();}
  else if(a==='toggleNav'){toggleNav();}
@@ -4744,6 +4771,7 @@ document.addEventListener('click',function(e){
  else if(a==='extDel'){extDel(el.dataset.id);}
  else if(a==='extEdit'){extEdit(el.dataset.id);}
  else if(a==='extClear'){extClear();}else if(a==='extExportJson'){exportLeadsJson();}
+ else if(a==='ctxGo'){closeModal();chainGo(el.dataset.k,el.dataset.id);}else if(a==='ctxExit'){ctxExit();}else if(a==='ctx360'){closeModal();lead360(el.dataset.id);}else if(a==='chainNext'){chainNext(el.dataset.id);}else if(a==='chainPrev'){chainPrev(el.dataset.id);}else if(a==='chainFocus'){closeModal();chainFocus(el.dataset.id);}else if(a==='chainLog'){chainLog(el.dataset.k,el.dataset.id);}
  else if(a==='custJump'){closeModal();custJump(el.dataset.where, el.dataset.id, el.dataset.mkt);}
  else if(a==='custKpi'){custKpi(el.dataset.kind);}else if(a==='reviewDrill'){reviewDrill(el.dataset.kind);}else if(a==='holidayGreet'){holidayGreet(el.dataset.cc,el.dataset.h,el.dataset.he,el.dataset.d);}else if(a==='holYear'){holYear(el.dataset.y);}else if(a==='holClear'){holClear();}else if(a==='greetLead'){greetLead(el.dataset.id);}
  else if(a==='rvSave'){rvSave();}
@@ -5931,6 +5959,37 @@ var USP_ZH={'工厂直供':'Factory-direct supply','厂家直供':'Factory-direc
 function siteInsight(l){if(!l)return null;var w=(l.webs&&l.webs.length)?l.webs[0]:(l.website||'');w=String(w||'').trim().toLowerCase();var d=w.replace(/^https?:\/\//,'').replace(/^www\./,'').split(/[\/?#]/)[0];if(d.indexOf('.')<0)d='';var parts=d?d.split('.'):[];var tld=parts.length>1?parts[parts.length-1]:'';var two=parts.length>2?(parts[parts.length-2]+'.'+parts[parts.length-1]):'';var country=WS_TLD[two]||WS_TLD[tld]||'';var hayD=d;var hayO=((l.cat||'')+' '+(l.product||'')+' '+(l.company||'')).toLowerCase();var kind='',kindZh='';var src=[hayD,hayO];for(var pass=0;pass<2;pass++){for(var i=0;i<SITE_KINDS.length;i++){if(src[pass]&&SITE_KINDS[i].re.test(src[pass])){kind=SITE_KINDS[i].en;kindZh=SITE_KINDS[i].zh;break;}}if(kind)break;}return {domain:d,tld:tld,country:country,kind:kind,kindZh:kindZh};}
 function ourUSP(me,l,si){var out=[];var custom=((me&&me.usp)||'').trim();if(custom){var ks=Object.keys(USP_ZH).sort(function(a,b){return b.length-a.length;});var items=custom.split(/[,，;；、\/\n]+/);for(var i=0;i<items.length;i++){var v=items[i].trim();if(!v)continue;for(var k=0;k<ks.length;k++){if(v.indexOf(ks[k])>=0)v=v.split(ks[k]).join(USP_ZH[ks[k]]);}v=enText(v).replace(/\s+/g,' ').trim();if(v)out.push(v);}out=out.slice(0,4);}if(!out.length){var kd=((si&&si.kind)||'')+' '+String((l&&(l.cat||l.product))||'').toLowerCase();if(/gift|promo|souvenir|礼品|促销/.test(kd)){out=['Custom logo & gift-box packaging','Ramadan / Eid ready stock, no peak-season gap','OEM & private label from 300 pcs','Free pre-production sample'];}else if(/electronic|power|charging|电子|电源/.test(kd)){out=['CE / RoHS certified, 12-month warranty','Factory-direct pricing, no middleman','OEM / ODM & custom branding','15-day sampling, 20-day mass production'];}else if(/retail|store|shop|零售|连锁/.test(kd)){out=['Low MOQ from 300 pcs, assorted colors','Mixed-container loading supported','Fast 20-day lead time','Free pre-production sample'];}else if(/wholesale|distribut|bulk|批发|分销/.test(kd)){out=['Factory-direct pricing for volume orders','OEM / ODM & private label available','Stable stock, no out-of-stock in peak season','FOB Ningbo, flexible payment terms'];}else{out=['Factory-direct pricing, no middleman','OEM / ODM & private label available','Stable stock all year round','Free sample before order'];}}var yr=String((me&&me.years)||'').replace(/[^0-9]/g,'');if(yr)out.push(yr+' years of manufacturing experience');return out.slice(0,5);}
 function sitChip(l){var si=siteInsight(l);if(!si||!si.domain)return '';var bits=[];if(si.country)bits.push(si.country);if(si.kindZh)bits.push(si.kindZh);var line=si.domain+(bits.length?(' — '+bits.join(' · ')):'');return '<div style="font-size:12px;color:var(--sub);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-bottom:8px">'+TX('网站分析','Site read')+'：'+esc(line)+'</div>';}
+var CHAIN=[{k:'pos',view:'pos',t:'定位选品',te:'Positioning'},{k:'find',view:'find',t:'找客户',te:'Find clients'},{k:'recon',view:'find',t:'背调',te:'Background check'},{k:'reach',view:'reach',t:'触达建联',te:'Outreach'},{k:'trust',view:'trust',t:'建立信任',te:'Trust'},{k:'deal',view:'deal',t:'报价成交',te:'Quote & close'},{k:'deliver',view:'deliver',t:'交付履约',te:'Delivery'},{k:'docs',view:'docs',t:'外贸单据',te:'Documents'},{k:'repeat',view:'repeat',t:'复购转介',te:'Reorder / referral'},{k:'review',view:'review',t:'复盘增长',te:'Review'}];
+var CHAIN_TODO={
+pos:[['按这位客户的品类，先定 1 个引流款 + 2 个利润款','Lock 1 drain + 2 profit SKUs for this category'],['把「一句话定位」写成买家能听懂的价值','Write the one-line positioning in buyer language'],['定位卡会自动带入该客户的市场与类目','The card auto-imports the client market & category']],
+find:[['核对该客户资料是否完整：公司 / 职位 / 网站 / 联系方式','Complete the profile: company / title / website / contacts'],['看 AI 评分定优先级，决定今天先跟谁','Use the AI score to set today priority'],['缺字段直接在客户360里改，改完即存','Missing fields? Edit right inside Client 360']],
+recon:[['六个必查项：实体、经营范围、信用、采购信号、关键人、合规','Six checks: entity, scope, credit, buying signals, decision maker, compliance'],['每查一项就填证据，得出「值不值得开发」的结论','Add evidence per check to reach a go / no-go verdict'],['结论与首封话术会自动同步回该客户的客户360','Verdict & opener sync back to its Client 360']],
+reach:[['选场景 → 填变量 → 生成中英对照话术','Pick a scene, fill variables, generate bilingual scripts'],['首封自动带「网站观察 + 我方卖点」','The 1st mail auto-includes site insight + your selling points'],['发送后自动记入该客户的邮件记录，不串号','Sending auto-logs to this client only']],
+trust:[['先给具体价值：目录 / 样品 / MOQ / 交期','Lead with value: catalog / sample / MOQ / lead time'],['用背调发现做二次触达，别只问「考虑得怎样」','Re-engage with a research finding, not a bare nudge'],['每次通话用「记录通话」留痕，信任靠累积','Log every call - trust is cumulative']],
+deal:[['按该客户市场出 FOB / CIF 报价 + 有效期','Quote FOB / CIF for this market with validity'],['48 小时内跟进一次，带截止日或成本理由','Follow up within 48h with a deadline or cost reason'],['谈成后把阶段推进到「成交」','Push the stage to Won when closed']],
+deliver:[['建交易单，锁定该客户的供应商与产品','Create the deal and lock supplier & product'],['回填下单 / 生产 / 订舱 / 出货节点','Fill order, production, booking, shipping nodes'],['出货前把单证清单备齐，再进下一步','Complete the doc checklist before shipping']],
+docs:[['PI / 报关 / 提单 / 原产地证 / 装箱单逐项确认','Confirm PI / customs / B/L / CO / packing list'],['每完成一项就标 done，进度实时回传','Mark each done - progress syncs back live'],['单证齐了再收款放单，别提前放货','Collect payment before releasing docs']],
+repeat:[['成交满 30 天问使用体验，顺手要返单','Ask for feedback 30 days after delivery, then reorder'],['给转介绍钩子：老客带新客有小礼或折扣','Offer a referral hook: gift or discount'],['设置返单状态，别让老客沉底','Set reorder status so clients never go stale']],
+review:[['看这位客户的转化贡献与卡点','Review this client conversion and blockers'],['定下一步动作，写进今日待办','Set the next action and add it to today tasks'],['月底按市场汇总，找可复制的打法','At month-end group by market to find repeatable plays']]
+};
+var CHAIN_CTA={pos:['去定位选品','Go to Positioning'],find:['在列表中定位该客户','Locate in list'],recon:['开始 / 继续背调','Start / continue check'],reach:['去生成触达话术','Write outreach'],trust:['去建立信任','Build trust'],deal:['去报价成交','Quote now'],deliver:['去交付履约','Deliver now'],docs:['去填外贸单据','Fill documents'],repeat:['去复购转介','Reorder / referral'],review:['去看复盘增长','Open review']};
+function ctxLead(){if(!S._activeClient)return null;return S.leads.find(function(x){return x.id===S._activeClient;})||null;}
+function chainIdxOf(k){for(var i=0;i<CHAIN.length;i++){if(CHAIN[i].k===k)return i;}return -1;}
+function chainStepOfView(v){for(var i=0;i<CHAIN.length;i++){if(CHAIN[i].view===v)return i;}return -1;}
+function chainMeta(l){var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var follow=days>=14&&l.stage!=='成交';var docPct=null;var ds=(S.deals||[]).filter(function(d){return d.leadId===l.id;});if(ds.length){var d0=ds[0],c=0;DOC_DEF.forEach(function(x){if(d0.docs&&d0.docs[x.id]==='done')c++;});docPct=Math.round(c/DOC_DEF.length*100);}return {days:days,follow:follow,docPct:docPct};}
+function chainPos(l){if(!l)return 1;var st=l.stage;if(st==='成交'){return (l.repeatStatus==='已返单')?9:7;}if(st==='报价')return 6;if(st==='试样'||st==='已回复')return 5;if(st==='已联系')return 4;var r=reconStatus(l);if(r&&(r.c||String(r.s).indexOf('/')>=0))return 3;return 2;}
+function chainCurIdx(l){if(!l)return 0;if(S.view==='find'&&S._reconLead&&S._reconLead===l.id)return 2;var i=chainStepOfView(S.view);if(i>=0)return i;return chainPos(l)-1;}
+function chainDots(l,cur){return CHAIN.map(function(c,i){var cls=(i===cur)?' on':(i<chainPos(l)-1?' done':'');return '<span class="ctxdot'+cls+'" data-action="ctxGo" data-k="'+c.k+'" data-id="'+l.id+'" title="'+esc(TX((i+1)+'. '+c.t,(''+(i+1)+'. '+c.te)))+'">'+(i+1)+'</span>';}).join('');}
+function chainRow(l,cur){var st=hubStatus(CHAIN[cur].k,l,chainMeta(l).follow,chainMeta(l).days,chainMeta(l).docPct);var todo=(CHAIN_TODO[CHAIN[cur].k]||[]).map(function(x){return '<li>'+esc(TX(x[0],x[1]))+'</li>';}).join('');var cta=CHAIN_CTA[CHAIN[cur].k]||['去处理','Open'];return {st:st,todo:todo,cta:cta};}
+function chainGo(k,id){id=id||S._activeClient||'';var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=chainIdxOf(k);if(i<0)return;closeModal();S._activeClient=id;save('_activeClient',S._activeClient);if(k==='recon'){S._reconLead=id;save('_reconLead',id);S.view='find';}else if(k==='find'){S._reconLead='';save('_reconLead','');S.view='find';}else if(k==='docs'){S._reconLead='';save('_reconLead','');var d=(S.deals||[]).find(function(x){return x.leadId===id;});if(d){S._dealId=d.id;save('_dealId',S._dealId);}else{S._dealId='';save('_dealId','');toast(TX('该客户还没有交易单——先去「交付履约」建单，再回来填单证','No deal for this client yet - create one in Delivery first'));}S.view='docs';}else{S._reconLead='';save('_reconLead','');S.view=CHAIN[i].view;}save('view',S.view);refreshAll();}
+function chainNext(id){var l=S.leads.find(function(x){return x.id===(id||S._activeClient);});if(!l)return;var i=chainCurIdx(l);chainGo(CHAIN[Math.min(i+1,CHAIN.length-1)].k,l.id);}
+function chainPrev(id){var l=S.leads.find(function(x){return x.id===(id||S._activeClient);});if(!l)return;var i=chainCurIdx(l);chainGo(CHAIN[Math.max(i-1,0)].k,l.id);}
+function chainFocus(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;S._activeClient=id;save('_activeClient',id);S._custFilter={q:l.name,market:'',stage:''};S._reconLead='';save('_reconLead','');S.view='find';save('view','find');refreshAll();toast(TX('已在客户列表中定位：','Located in list: ')+l.name);}
+function chainLog(k,id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var i=chainIdxOf(k);if(i<0)return;var nx=CHAIN[Math.min(i+1,CHAIN.length-1)];var dft=TX('已完成「'+CHAIN[i].t+'」：','Completed '+CHAIN[i].te+': ');var txt=prompt(TX('记录本步成果（会写进这位客户的跟进时间线）','Log this step result (saved to this client timeline)'),dft);if(txt===null)return;l.logs=l.logs||[];l.logs.unshift({date:todayStr(),text:txt||dft});l.last=todayStr();snapLeads();save('leads',S.leads);toast(TX('已记录，进入下一步：','Logged. Next: ')+TX(nx.t,nx.te));chainGo(nx.k,id);}
+function ctxExit(){S._activeClient='';save('_activeClient','');S._reconLead='';save('_reconLead','');refreshAll();toast(TX('已退出客户上下文（数据没丢，只是不再锁定这位客户）','Client context cleared - nothing lost, just unlocked'));}
+function renderCtx(){var el=document.getElementById('ctxbar');if(!el)return;var l=ctxLead();if(!l){if(S._activeClient){S._activeClient='';save('_activeClient','');}el.style.display='none';el.innerHTML='';return;}el.style.display='';var cur=chainCurIdx(l);if(!CHAIN[cur])cur=0;var step=CHAIN[cur];var r=chainRow(l,cur);el.innerHTML='<div class="ctxrow"><span class="ctxwho">'+(S.lang==='en'?'Now serving':'正在跟进')+'：<b>'+esc(l.name)+'</b>'+(l.company?(' · '+esc(l.company)):'')+'</span><span class="ctxpos">'+TX('第 '+(cur+1)+'/'+CHAIN.length+' 步','Step '+(cur+1)+'/'+CHAIN.length)+' · <b>'+esc(TX(step.t,step.te))+'</b></span>'+chainDots(l,cur)+'<span style="flex:1"></span><button class="btn ghost mini" data-action="chainPrev" data-id="'+l.id+'">◀ '+TX('上一步','Prev')+'</button><button class="btn ghost mini" data-action="ctx360" data-id="'+l.id+'">'+TX('客户360','Client 360')+'</button><button class="btn mini" data-action="chainNext" data-id="'+l.id+'">'+TX('下一步','Next')+' ▶</button><button class="btn ghost mini" data-action="ctxExit">✕ '+TX('退出','Exit')+'</button></div><div class="ctxrow2"><span class="ctxstate">'+TX('本步状态','status')+'：<b>'+esc(r.st.s)+'</b></span><ul class="ctxtodo">'+r.todo+'</ul><span style="flex:1"></span><button class="btn amber mini" data-action="ctxGo" data-k="'+step.k+'" data-id="'+l.id+'">▶ '+esc(TX(r.cta[0],r.cta[1]))+'</button><button class="btn green mini" data-action="chainLog" data-k="'+step.k+'" data-id="'+l.id+'">✓ '+TX('记录成果并进入下一步','Log &amp; advance')+'</button></div>';}
+function chainCard(){var l=ctxLead();if(!l)return '';var cur=chainCurIdx(l);if(!CHAIN[cur])cur=0;var step=CHAIN[cur];var r=chainRow(l,cur);var crumb=CHAIN.map(function(c,i){var cls=(i===cur)?' on':(i<chainPos(l)-1?' done':'');return '<span class="ctxcrumb'+cls+'" data-action="ctxGo" data-k="'+c.k+'" data-id="'+l.id+'">'+(i+1)+'.'+esc(TX(c.t,c.te))+'</span>';}).join('<span class="ctxsep">›</span>');return '<div class="chaincard"><div class="chaincard-h"><b>'+TX('客户闭环链条','Client loop chain')+'</b> · '+esc(l.name)+' <span class="muted" style="font-size:12px">'+TX('（每一格都锁在这位客户身上，切换模块不会丢）','(every step stays locked to this client)')+'</span></div><div class="chaincard-crumb">'+crumb+'</div><div class="chaincard-b"><div style="flex:1;min-width:260px"><b>'+TX('第 '+(cur+1)+' 步：','Step '+(cur+1)+': ')+esc(TX(step.t,step.te))+'</b><span class="ctxstate">'+TX('当前状态','status')+' <b>'+esc(r.st.s)+'</b></span><ul class="ctxtodo">'+r.todo+'</ul></div><div class="chaincard-ops"><button class="btn amber mini" data-action="ctxGo" data-k="'+step.k+'" data-id="'+l.id+'">▶ '+esc(TX(r.cta[0],r.cta[1]))+'</button><button class="btn green mini" data-action="chainLog" data-k="'+step.k+'" data-id="'+l.id+'">✓ '+TX('记录成果并进入下一步','Log &amp; advance')+'</button><button class="btn ghost mini" data-action="chainPrev" data-id="'+l.id+'">◀ '+TX('上一步','Prev')+'</button><button class="btn ghost mini" data-action="chainNext" data-id="'+l.id+'">'+TX('下一步','Next')+' ▶</button><button class="btn ghost mini" data-action="ctxExit">✕ '+TX('退出','Exit')+'</button></div></div></div>';}
+function chainMini(l){var pos=chainPos(l);var step=CHAIN[pos-1]||CHAIN[0];var r=chainRow(l,pos-1);return '<div class="ctxmini"><span>'+TX('链条位置','Chain position')+'：<b>'+TX('第 '+pos+'/'+CHAIN.length+' 步','Step '+pos+'/'+CHAIN.length)+'</b> · '+esc(TX(step.t,step.te))+'</span>'+chainDots(l,pos-1)+'<span style="flex:1"></span><button class="btn mini" data-action="ctxGo" data-k="'+step.k+'" data-id="'+l.id+'">▶ '+esc(TX(r.cta[0],r.cta[1]))+'</button></div>';}
 function leadEmail(id){var l=S.leads.find(function(x){return x.id===id;});if(!l||!l.email){toast(TX('未填写邮箱，无法发送邮件','No email filled, cannot send'));return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.email)){toast(TX('邮箱格式不正确，无法发送邮件','Invalid email, cannot send'));return;}var gm=genColdMail(l,S.me);openEmailModal(l,gm.subject,gm.body,true);}
 function openEmailModal(l,subject,body,raw){if(!raw){subject=enText(subject);body=enText(body);}subject=purgeCJK(subject);body=purgeCJK(body);S._emLead=l;var to=l.email;var su=encodeURIComponent(subject),bd=encodeURIComponent(body);var tplOpts='<option value="">'+TX('套用模版…','Apply template…')+'</option>';(S.scripts||[]).forEach(function(s){tplOpts+='<option value="s_'+s.id+'">'+TX('话术库','Lib')+': '+esc(s.title||'')+'</option>';});(EMAIL_TPLS||[]).forEach(function(t,i){tplOpts+='<option value="t_'+i+'">'+TX('模版库','TPL')+': '+esc(t.title||t.stage||'')+'</option>';});var html='<div style="font-weight:600;margin-bottom:6px">'+TX('发邮件给','Send email to')+' '+esc(l.name)+'</div>'+sitChip(l)+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('收件人（可修改）','To (editable)')+'</div>'+'<input id="emTo" value="'+esc(to)+'" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:8px" oninput="emSync()">'+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('主题（可修改）','Subject (editable)')+'</div>'+'<textarea id="emSub" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:8px" oninput="emSync()">'+esc(subject)+'</textarea>'+'<div style="font-size:12px;color:var(--sub);margin-bottom:2px">'+TX('正文（可修改）','Body (editable)')+'</div>'+'<textarea id="emBody" rows="12" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;line-height:1.55;margin-bottom:8px" oninput="emSync()">'+esc(body)+'</textarea>'+'<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:4px"><select id="emTplSel" onchange="emTplPick(this.value)" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">'+tplOpts+'</select>'+'<button class="btn ghost" data-action="emRegen">'+TX('换一封','Another version')+'</button></div>'+'<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:10px">'+'<button class="btn amber" data-action="emGmail" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('用 Gmail 网页发送','Send via Gmail')+'</button>'+'<button class="btn" data-action="emOutlook" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('用 Outlook 网页发送','Send via Outlook')+'</button>'+'<button class="btn" data-action="emClient" data-mailto="mailto:'+esc(to)+'?subject='+su+'&body='+bd+'" data-id="'+l.id+'">'+TX('用本机邮件客户端','Desktop mail app')+'</button>'+'<button class="btn ghost" data-action="emCopy" data-to="'+esc(to)+'" data-su="'+su+'" data-bd="'+bd+'" data-id="'+l.id+'">'+TX('复制全文','Copy all')+'</button>'+'<button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button>'+'</div>'+'<div class="muted" style="margin-top:8px">'+TX('内容可直接修改；发送按钮会读取你改后的内容。没有本机客户端？用 Gmail/Outlook 网页，或复制全文粘贴。','You can edit the content; send buttons use your edited text. No mail app? Use Gmail/Outlook web, or copy all.')+'</div>';$('modalBody').innerHTML='<h3>'+TX('邮件','Email')+'：'+esc(l.name)+'</h3>'+html;$('modal').classList.add('show');}
 var _emVer=0;
@@ -6570,7 +6629,8 @@ function lead360(id){
   +['pos','find','reach','trust','deal','deliver','docs','repeat','today','recon','review'].map(function(k){
      var st=hubStatus(k,l,follow,days,docPct);
      var col=(st.c==='r')?' style="color:#dc2626"':(st.c==='g')?' style="color:#15803d"':(st.c==='y')?' style="color:#b45309"':'';
-     return '<div class="hub-cell" data-action="custJump" data-where="'+k+'" data-id="'+id+'">'+st.t+'<b'+col+'>'+esc(st.s)+'</b></div>';
+     var _ci=chainIdxOf(k);var _cp=chainPos(l)-1;var _cls=(_ci===_cp)?' on':((_ci>=0&&_ci<_cp)?' done':'');
+     return '<div class="hub-cell'+_cls+'" data-action="custJump" data-where="'+k+'" data-id="'+id+'">'+(_ci>=0?('<span class="hubstep">'+(_ci+1)+'</span>'):'')+st.t+'<b'+col+'>'+esc(st.s)+'</b></div>';
    }).join('')
   +'</div>'
   +'<h4 style="margin:12px 0 4px">'+TX('AI 背调结论','AI background check')+'</h4>'
@@ -6586,7 +6646,7 @@ function lead360(id){
   +'<label>'+TX('转介绍备注','Referral note')+'<input id="v360_referralNote" value="'+esc(l.referralNote||'')+'"></label>'
   +'</div>'
   +'<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn amber" data-action="custJump" data-where="'+w+'" data-id="'+id+'">'+TX('AI 下一步：','AI next: ')+esc(x.action)+'</button>'+waBtn360+emailBtn360+webBtn360+'<button class="btn ghost" data-action="callLog" data-id="'+id+'">'+TX('记录通话','Call log')+'</button><button class="btn ghost" data-action="leadAdv" data-id="'+id+'">'+TX('推进','Advance')+'</button><button class="btn" data-action="lead360Save" data-id="'+id+'">'+TX('保存修改','Save')+'</button></div></div>';
- $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3><div class="muted" style="margin:-2px 0 10px;font-size:12.5px">'+TX('统一客户档案：下方字段与「复购转介」面板、邮件记录、复盘共用同一份数据，改一处处处同步。','Unified profile — shared with the Reorder/Referral board, email log and review; edit once, synced everywhere.')+'</div>'+body;
+ $('modalBody').innerHTML='<h3>'+TX('客户360','Customer 360')+'：'+esc(l.name)+'</h3>'+chainMini(l)+'<div class="muted" style="margin:-2px 0 10px;font-size:12.5px">'+TX('统一客户档案：下方字段与「复购转介」面板、邮件记录、复盘共用同一份数据，改一处处处同步。','Unified profile — shared with the Reorder/Referral board, email log and review; edit once, synced everywhere.')+'</div>'+body;
  $('modal').classList.add('show');
 }
 function lead360Save(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};l.name=g('v360_name')||l.name;l.company=g('v360_company');l.position=g('v360_position');l.country=g('v360_country');l.market=g('v360_market');l.stage=g('v360_stage');/* contacts edited via mcOpen */l.cat=g('v360_cat');l.product=g('v360_product');l.amount=g('v360_amount')||l.amount;l.qty=Number(g('v360_qty'))||l.qty;l.source=g('v360_source');l.note=g('v360_note');var rsEl=document.getElementById('v360_repeatStatus');if(rsEl)l.repeatStatus=rsEl.value;var rfEl=document.getElementById('v360_referralStatus');if(rfEl)l.referralStatus=rfEl.value;var rbEl=document.getElementById('v360_referrer');if(rbEl)l.referrer=rbEl.value;var rnbEl=document.getElementById('v360_referralNote');if(rnbEl)l.referralNote=rnbEl.value;snapLeads();save('leads',S.leads);refreshAll();lead360(id);toast(TX('已保存修改','Saved'));}
