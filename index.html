@@ -2422,6 +2422,7 @@ function custInsight(){
  }).sort(function(a,b){return (b.follow?1:0)-(a.follow?1:0)|| b.score-a.score;});
  var midEast=leads.filter(function(l){return isMidEast(l.market);}).length;
 var bigCnt=leads.filter(isBigCust).length;
+var keyCnt=leads.filter(function(l){return !!l.key;}).length;var normalCnt=total-keyCnt;
  var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
  var summary=TX('共 ','Total ')+total+TX(' 个客户，',' clients, ')+active+TX(' 个在谈。',' in pipeline. ');
  if(overdue.length)summary+=overdue.length+TX(' 个已逾期跟进（风险最高）：',' overdue (highest risk): ')+overdue.map(function(l){return l.name;}).join('、')+'。';
@@ -2430,7 +2431,7 @@ var bigCnt=leads.filter(isBigCust).length;
 var _bc=bigCfg();if(bigCnt)summary+=TX('其中 ','Of these ')+bigCnt+TX(' 家为大客户（数量≥'+_bc.qty+' 或金额≥'+_bc.amt+'），建议优先重点跟进。',' key accounts — prioritize. ');
  if(lines.length){var top=lines[0];summary+=TX('AI 建议今日优先：','AI suggests today’s priority: ')+top.name+'（'+top.action+'）。';}
  var openTasks=(S.tasks||[]).filter(function(t){return !t.done;}).length;
- return {total:total,active:active,overdue:overdue.length,bigCnt:bigCnt,stageCnt:stageCnt,mktCnt:mktCnt,lines:lines,summary:summary,docAvg:docAvgCal(lines),tasksTotal:openTasks};
+ return {total:total,active:active,overdue:overdue.length,bigCnt:bigCnt,keyCnt:keyCnt,normalCnt:normalCnt,stageCnt:stageCnt,mktCnt:mktCnt,lines:lines,summary:summary,docAvg:docAvgCal(lines),tasksTotal:openTasks};
 }
 function custNextWhere(x){
  if(x.follow)return 'today';
@@ -2555,7 +2556,7 @@ function kpiEditClient(id){leadEdit(id);}
 function custKpi(kind){
  S._kpiKind=kind;
  var ins=custInsight();
- var titles={total:TX('客户总数 · 全部客户明细','All clients'),active:TX('在谈 · 未成交客户','In pipeline (not closed)'),overdue:TX('逾期 · 超 14 天未跟进','Overdue — 14+ days no follow-up'),docs:TX('单证均进度 · 各笔交易','Doc progress by deal'),task:TX('待办 · 未完成','Open tasks'),big:TX('大客户 · 优先重点跟进','Key accounts — prioritize'),mails:TX('邮件发送记录 · 已发出全部留痕','Sent log — everything sent')};
+ var titles={total:TX('客户总数 · 全部客户明细','All clients'),active:TX('在谈 · 未成交客户','In pipeline (not closed)'),overdue:TX('逾期 · 超 14 天未跟进','Overdue — 14+ days no follow-up'),docs:TX('单证均进度 · 各笔交易','Doc progress by deal'),task:TX('待办 · 未完成','Open tasks'),big:TX('大客户 · 优先重点跟进','Key accounts — prioritize'),key:TX('重点开发客户 · 优先推进','Key prospects — push first'),mails:TX('邮件发送记录 · 已发出全部留痕','Sent log — everything sent')};
  var h='<h3>'+titles[kind]+'</h3>';
  if(kind==='task'){
   var ts=(S.tasks||[]).filter(function(t){return !t.done;}).sort(function(a,b){return String(a.due||'9999').localeCompare(String(b.due||'9999'));});
@@ -2595,6 +2596,7 @@ function custKpi(kind){
    if(kind==='active')return x.stage!=='成交';
    if(kind==='overdue')return x.follow;
    if(kind==='big')return x.big;
+   if(kind==='key')return !!x.key;
    return true;
   });
   if(!rows.length){h+='<div class="muted" style="padding:14px;text-align:center">'+TX('暂无记录。','No records.')+'</div>';}
@@ -2693,7 +2695,7 @@ function viewCust(){
  var h=shead('cust',TX('以客户为中心的总驾驶舱：一眼看清每个客户在「找客户 / 今天要处理 / 外贸单据 / 复盘」的状态，点卡片或「去办」即跳到对应板块（AI 联动）。','Customer-centric command center: every client’s status across modules at a glance; tap a card or "Do it" to jump (AI-linked).'));
  h+='<div class="kpis">';
  h+='<div class="kpi" data-action="custKpi" data-kind="total" title="'+TX('点开看客户明细，可编辑或进入客户360','Open client list — edit or open 360')+'"><div class="n">'+ins.total+'</div><div class="l">'+TX('客户总数','Clients')+' <i>›</i></div></div>';
- h+='<div class="kpi" data-action="custKpi" data-kind="active" title="'+TX('点开看未成交客户明细','Open pipeline clients')+'"><div class="n">'+ins.active+'</div><div class="l">'+TX('在谈','In pipeline')+' <i>›</i></div></div>';h+='<div class="kpi" data-action="custKpi" data-kind="big" style="'+(ins.bigCnt?'background:#FEF3C7;border-color:#FDE68A':'')+'" title="'+TX('点开只看大客户明细，优先重点跟进','Open key-account list — prioritize')+'"><div class="n" style="'+(ins.bigCnt?'color:#92400E':'')+'">'+ins.bigCnt+'</div><div class="l">'+TX('大客户','Key accts')+' <i>›</i></div></div>';
+ h+='<div class="kpi" data-action="custKpi" data-kind="active" title="'+TX('点开看未成交客户明细','Open pipeline clients')+'"><div class="n">'+ins.active+'</div><div class="l">'+TX('在谈','In pipeline')+' <i>›</i></div></div>';h+='<div class="kpi" data-action="custKpi" data-kind="big" style="'+(ins.bigCnt?'background:#FEF3C7;border-color:#FDE68A':'')+'" title="'+TX('点开只看大客户明细，优先重点跟进','Open key-account list — prioritize')+'"><div class="n" style="'+(ins.bigCnt?'color:#92400E':'')+'">'+ins.bigCnt+'</div><div class="l">'+TX('大客户','Key accts')+' <i>›</i></div></div>'+'<div class="kpi" data-action="custKpi" data-kind="key" style="'+(ins.keyCnt?'background:#FFF7ED;border-color:#FED7AA':'')+'" title="'+TX('点开只看重点开发客户明细，优先推进','Open key-prospect list — push first')+'"><div class="n" style="'+(ins.keyCnt?'color:#C2410C':'')+'">'+ins.keyCnt+'</div><div class="l">'+TX('重点客户','Key prospects')+' <small style="opacity:.72">'+TX('普通','Normal')+' '+ins.normalCnt+'</small> <i>›</i></div></div>';
  h+='<div class="kpi" data-action="custKpi" data-kind="overdue" style="'+(ins.overdue?'background:#fef2f2;border-color:#fecaca':'')+'" title="'+TX('点开看逾期客户，立即跟进','Open overdue clients')+'"><div class="n" style="'+(ins.overdue?'color:#dc2626':'')+'">'+ins.overdue+'</div><div class="l">'+TX('逾期','Overdue')+' <i>›</i></div></div>';
  h+='<div class="kpi" data-action="custKpi" data-kind="docs" title="'+TX('点开看每笔交易的单证进度并去处理','Open doc progress per deal')+'"><div class="n">'+ins.docAvg+'%</div><div class="l">'+TX('单证均进度','Docs')+' <i>›</i></div></div>';
  h+='<div class="kpi" data-action="custKpi" data-kind="task" title="'+TX('点开看未完成待办，可完成/编辑','Open tasks — complete or edit')+'"><div class="n">'+ins.tasksTotal+'</div><div class="l">'+TX('待办','Tasks')+' <i>›</i></div></div>';
@@ -4529,7 +4531,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v103</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v104</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
