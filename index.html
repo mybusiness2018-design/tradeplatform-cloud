@@ -3512,6 +3512,7 @@ function repeatDealsPanel(){
  }
  h+='</div>';return h;
 }
+var _refOpen=true;
 function referralPanel(){
  var refs=(S.leads||[]).filter(function(l){return (l.source||'')==='转介绍';});
  var closed=refs.filter(function(l){return l.stage==='成交';}).length;
@@ -3520,6 +3521,11 @@ function referralPanel(){
  h+='<div class="hint" style="margin:0 0 10px">'+TX('点蓝色虚线胶囊可直接改「状态 / 推荐人 / 备注」；点按钮可打开「客户360」或「编辑」。','Tap dashed chips to edit status / referrer / note; buttons open 360 or Edit.')+'</div>';
  h+='<div class="grid g4" style="gap:10px;margin:0 0 10px"><div class="stat"><div class="v">'+refs.length+'</div><div class="k">'+TX('转介绍来源客户','Referred clients')+'</div></div><div class="stat"><div class="v">'+closed+'</div><div class="k">'+TX('其中已成交','Closed')+'</div></div></div>';
  if(refs.length){
+  h+='<details id="referralBox"'+(_refOpen?' open':'')+' ontoggle="_refOpen=this.open"><summary class="fold-sum">'
++'<span class="tag '+(closed?'g':'a')+'">'+(closed?TX('已成交','Closed')+' '+closed:TX('转介绍来源','Referred')+' '+refs.length)+'</span>'
++'<b>'+refs.length+TX(' 位转介绍客户，',' referral clients, ')+Math.min(12,refs.length)+TX(' 张卡',' cards')+'</b>'
++'<span class="muted" style="font-size:12px">'+TX('点此展开/收起','tap to expand')+'</span>'
++'</summary><div class="fold-body">';
   h+='<div class="cust-grid">';
   refs.slice(0,12).forEach(function(l){
    h+='<div class="card" style="padding:12px">';
@@ -3536,7 +3542,14 @@ function referralPanel(){
    h+='</div>';
   });
   h+='</div>';
+  if(refs.length>Math.min(12,refs.length))h+='<div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost mini" data-action="reviewDrill" data-kind="ref">'+TX('查看全部 '+refs.length+' 位转介绍客户','See all '+refs.length+' referral clients')+'</button></div>';
+  h+='</div></div></details>';
  } else if(deals.length){
+  h+='<details id="referralBox"'+(_refOpen?' open':'')+' ontoggle="_refOpen=this.open"><summary class="fold-sum">'
++'<span class="tag a">'+TX('待转介绍 ','Ask intro ')+deals.length+'</span>'
++'<b>'+TX('下面是成交老客，点「要转介绍」即可入池','Closed clients below — tap Ask intro')+'</b>'
++'<span class="muted" style="font-size:12px">'+TX('点此展开/收起','tap to expand')+'</span>'
++'</summary><div class="fold-body">';
   h+='<div class="hint" style="margin-bottom:8px">'+TX('还没有转介绍客户 —— 下面是你的成交老客。点「要转介绍」即可把他标为转介绍来源，并跳到「转介绍话术」自动预填，趁信任最高时开口。','No referral clients yet — below are your closed clients. Tap “Ask intro” to flag and jump to the referral script, pre-filled.')+'</div>';
   h+='<div class="cust-grid">';
   deals.slice(0,12).forEach(function(l){
@@ -3546,7 +3559,7 @@ function referralPanel(){
    h+=leadCardBtns(l,'<button class="btn amber mini" data-action="askReferral" data-id="'+l.id+'">'+TX('要转介绍','Ask intro')+'</button>');
    h+='</div>';
   });
-  h+='</div>';
+  h+='</div></div></details>';
  } else {
   h+='<div class="hint">'+TX('还没有可用的客户。点「＋ 新增转介绍客户」直接录入，或先把线索推进到成交，这里会自动列出适合要转介绍的老客。','Nothing yet. Tap “＋ Add referral”, or close a deal first — closed clients will show up here.')+'</div>';
  }
@@ -3860,12 +3873,14 @@ function reviewDrill(kind){
  if(kind==='new'){f.since=iso(new Date(),-30);}
  else if(kind==='talk'){f.stages=['已联系','已回复','试样','报价'];}
  else if(kind==='deal'){f.stage='成交';}
+ else if(kind==='ref'){f.source='转介绍';}
  else if(kind==='warn'){f.overdue=true;}
  else if(kind==='reorder'){f.reorder=true;}
  else if(kind==='nomail'){f.nomail=true;}
  else if(kind==='mails'||kind==='mails30'){S._mailFilter='all';save('_mailFilter',S._mailFilter);S.view='mails';save('view',S.view);S._activeClient='';refreshAll();return;}
  S._leadFilter=f;save('_leadFilter',f);S.view='find';save('view',S.view);S._activeClient='';refreshAll();
  if($('lf_stage')&&f.stage)$('lf_stage').value=f.stage;
+ if($('lf_source')&&f.source)$('lf_source').value=f.source;
 }
 /* ---- 复盘：统一数据上下文（指标 / 洞察 / 模板共用同一份数字，避免板块内数据打架） ---- */
 function rvCtx(){
@@ -4580,7 +4595,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v106</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v107</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
