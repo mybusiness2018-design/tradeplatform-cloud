@@ -82,6 +82,16 @@ details#festCalBox:not([open])>.fest-sum::after{content:'\25B8'}
 .fest-dd.r{color:var(--red)}
 .fest-t{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fest-x{font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fold-sum{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;list-style:none;padding:2px 0;font-size:13px}
+.fold-sum::-webkit-details-marker{display:none}
+.fold-sum::after{content:'\25BE';color:var(--sub);font-size:11px}
+.fold-sum:hover::after{color:var(--main)}
+details:not([open])>.fold-sum::after{content:'\25B8'}
+.fold-body{max-height:378px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:2px 6px 4px 0;margin-top:9px}
+.fold-body>.cust-grid{margin-top:2px}
+.fold-body::-webkit-scrollbar{width:8px}
+.fold-body::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
+.fold-body::-webkit-scrollbar-track{background:transparent}
 svg{display:block}
 h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){width:18px;height:18px;display:inline-block;vertical-align:-3px}
 #app{display:flex;min-height:100vh}
@@ -3441,6 +3451,7 @@ function leadCardBtns(l,extra){
  h+=(extra||'');
  h+='</div>';return h;
 }
+var _repDealsOpen=true;
 function repeatDealsPanel(){
  var all=(S.leads||[]);
  var deals=all.filter(function(l){return l.stage==='成交';});
@@ -3455,6 +3466,11 @@ function repeatDealsPanel(){
  h+='<div class="stat"><div class="v" style="color:var(--red)">'+todo+'</div><div class="k">'+TX('待触达','To reach')+'</div></div>';
  h+='<div class="stat"><div class="v">'+d8+'</div><div class="k">'+TX('距下次斋月(天)','Days to Ramadan')+'</div></div></div>';
  if(deals.length){
+  h+='<details id="repDealsBox"'+(_repDealsOpen?' open':'')+' ontoggle="_repDealsOpen=this.open"><summary class="fold-sum">'
++'<span class="tag '+(todo?'r':'g')+'">'+(todo?TX('待触达','To reach')+' '+todo:TX('全部已触达','All reached'))+'</span>'
++'<b>'+deals.length+TX(' 位老客，',' old clients, ')+Math.min(12,deals.length)+TX(' 张返单卡',' cards')+'</b>'
++'<span class="muted" style="font-size:12px">'+TX('点此展开/收起','tap to expand')+'</span>'
++'</summary><div class="fold-body">';
   h+='<div class="cust-grid">';
   deals.slice(0,12).forEach(function(l){
    var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var mc=mailCount(l.id);var isME=isMidEast(l.market)||isSEA(l.market);
@@ -3470,7 +3486,14 @@ function repeatDealsPanel(){
    h+='</div>';
   });
   h+='</div>';
+  if(deals.length>Math.min(12,deals.length))h+='<div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost mini" data-action="reviewDrill" data-kind="deal">'+TX('查看全部 '+deals.length+' 位成交老客','See all '+deals.length+' closed clients')+'</button></div>';
+  h+='</div></div></details>';
  } else if(cands.length){
+  h+='<details id="repDealsBox"'+(_repDealsOpen?' open':'')+' ontoggle="_repDealsOpen=this.open"><summary class="fold-sum">'
++'<span class="tag a">'+TX('准返单客户','Near-deal')+' '+cands.length+'</span>'
++'<b>'+TX('点卡片「标为成交」即可转入返单池','Tap Mark closed to move into the reorder pool')+'</b>'
++'<span class="muted" style="font-size:12px">'+TX('点此展开/收起','tap to expand')+'</span>'
++'</summary><div class="fold-body">';
   h+='<div class="hint" style="margin-bottom:8px">'+TX('还没有成交客户 —— 下面是「准返单客户」（报价/试样/已联系）。点「标为成交」，他们就会进入上面的老客返单池，这里立刻出现可编辑的返单卡片。','No closed deals yet — below are near-deal clients. Tap “Mark closed” and they move into the reorder pool with editable cards.')+'</div>';
   h+='<div class="cust-grid">';
   cands.slice(0,12).forEach(function(l){
@@ -3483,7 +3506,7 @@ function repeatDealsPanel(){
    h+=leadCardBtns(l,'<button class="btn amber mini" data-action="leadToDeal" data-id="'+l.id+'">'+TX('标为成交','Mark closed')+'</button>');
    h+='</div>';
   });
-  h+='</div>';
+  h+='</div></div></details>';
  } else {
   h+='<div class="hint">'+TX('你的线索里还没有可返单的客户。先去「找客户」建线索并推进到报价/成交，或到「客户驾驶舱」导入老客户，这里就会列出返单机会。','No candidates yet. Create leads in Find Leads and push to 报价/成交, or import clients in the Hub.')+'</div>';
  }
@@ -4557,7 +4580,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v105</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v106</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
