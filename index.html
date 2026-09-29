@@ -296,6 +296,18 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .stat{text-align:center;padding:10px}
 .stat .v{font-size:22px;font-weight:800;color:var(--main)}
 .stat .k{font-size:12px;color:var(--sub)}
+.stat.tap{cursor:pointer;position:relative;border-radius:10px;transition:background .15s,box-shadow .15s}
+.stat.tap:hover{background:rgba(148,163,184,.14);box-shadow:inset 0 0 0 1px rgba(148,163,184,.35)}
+.stat.tap:active{transform:scale(.985)}
+.stat.tap .tap-pen{position:absolute;top:5px;right:7px;color:var(--sub);opacity:.45;display:inline-flex}
+.stat.tap:hover .tap-pen{opacity:1;color:var(--main)}
+.rep-list{max-height:48vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin:2px 0 0;padding-right:2px}
+.rep-li{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px dashed #E5E7EB}
+.rep-li:last-child{border-bottom:0}
+.rep-li .nm{flex:1;min-width:0;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rep-sel{font-size:12.5px;padding:5px 6px;border:1px solid #E2E8F0;border-radius:8px;background:var(--card);max-width:106px;font-family:inherit}
+.rep-txt{font-size:12.5px;padding:6px 8px;border:1px solid #E2E8F0;border-radius:8px;width:112px;font-family:inherit}
+.rep-ck{width:18px;height:18px;flex:0 0 auto;accent-color:var(--main)}
 .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
 .modal-mask.show{display:flex}
 .modal{background:var(--card);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.2)}
@@ -445,10 +457,11 @@ var RECOVERED={};
 var ENC_ON=false,CK=null,MEM={};
 var HAS_SUBTLE=!!(typeof crypto!=='undefined'&&crypto.subtle);
 var VER_TOKEN='__wb_ftloop_ok__';
-var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead','marketHot','marketHotDay','marketHotLog'];
+var PERSIST_KEYS=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','ramadanDate','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead','marketHot','marketHotDay','marketHotLog'];
 var S={
  view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
  lang:load('lang','zh'),
+ ramadanDate:load('ramadanDate',''),
  me:load('me',{name:'',company:'',years:'',product:'',market:'',whatsapp:''}),
  mails:load('mails',[]),
  leads:load('leads',[]),trash:load('trash',[]),
@@ -561,6 +574,7 @@ function buildState(){
  S={
   view:(function(){var v=load('view','cust');return v==='home'?'cust':v;})(),
   lang:load('lang','zh'),
+  ramadanDate:load('ramadanDate',''),
   me:load('me',{name:'',company:'',years:'',product:'',market:'',whatsapp:''}),
   mails:load('mails',[]),
   leads:load('leads',[]),trash:load('trash',[]),
@@ -3375,7 +3389,8 @@ function holidayYears(){var nowY=new Date().getFullYear();var f=S._holFilter||{}
 function holidayItems(cc,y){var c=HOLIDAYS[cc];if(!c)return [];var out=[];(c.items||[]).forEach(function(it){var md=holidayMd(y,it);if(!md)return;out.push({cc:cc,country:c.name,region:c.region,d:y+'-'+md,t:it.t,te:it.te||'',c:it.c||'n',est:!!(it.is||it.lk||it.ea!=null)});});return out;}
 function holidayAll(y,flt){var rows=[];Object.keys(HOLIDAYS).forEach(function(cc){holidayItems(cc,y).forEach(function(r){if(flt&&!flt(r))return;rows.push(r);});});rows.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});return rows;}
 function holidayMissing(y){var n=0;Object.keys(HOLIDAYS).forEach(function(cc){HOLIDAYS[cc].items.forEach(function(it){if(!holidayMd(y,it))n++;});});return n;}
-function nextRamadan(){var y=new Date().getFullYear();for(var i=0;i<6;i++){var md=hIslMd(y+i,'ramadan');if(md){var d=(y+i)+'-'+md;if(d>=todayStr())return d;}}var md2=hIslMd(y,'ramadan');return md2?(y+'-'+md2):todayStr();}
+function ramadanAuto(){var y=new Date().getFullYear();for(var i=0;i<6;i++){var md=hIslMd(y+i,'ramadan');if(md){var d=(y+i)+'-'+md;if(d>=todayStr())return d;}}var md2=hIslMd(y,'ramadan');return md2?(y+'-'+md2):todayStr();}
+function nextRamadan(){return (typeof S!=='undefined'&&S&&S.ramadanDate)?S.ramadanDate:ramadanAuto();}
 function holYear(y){S._holFilter=S._holFilter||{};S._holFilter.year=parseInt(y,10)||0;S._holFilter.country='';save('_holFilter',S._holFilter);refreshAll();}
 function holClear(){S._holFilter={region:'',country:'',q:'',year:0};save('_holFilter',S._holFilter);refreshAll();toast(TX('已重置节假日筛选','Filters reset'));}
 function holidayFilterBar(){
@@ -3453,20 +3468,80 @@ function leadCardBtns(l,extra){
  h+=(extra||'');
  h+='</div>';return h;
 }
+function reachOf(l){return !!l&&(mailCount(l.id)>0||!!l.contactDone);}
+function repKpiAll(on){Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-ck'),function(ck){if(ck.disabled)return;ck.checked=!!on;});}
+function repRamReset(){S.ramadanDate='';save('ramadanDate','');refreshAll();repKpi('ramadan');toast(TX('已恢复自动推算','Reset to auto'));}
+function repKpiOut(id){var l=S.leads.find(function(x){return x.id===id;});if(!l)return;snapLeads();l.stage='已回复';if(!l.last||todayStr()<l.last)l.last=todayStr();save('leads',S.leads);refreshAll();repKpi('clients');toast(TX('已移出返单池','Moved out of reorder pool'));}
+function repKpi(k){
+ var deals=(S.leads||[]).filter(function(l){return l.stage==='成交';});
+ var reached=deals.filter(reachOf).length;var todo=deals.length-reached;
+ var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
+ if(k==='ramadan'){
+  var auto=ramadanAuto();var cur=S.ramadanDate||'';
+  var b='<div class="hint" style="margin:0 0 10px">'+TX('自动推算下次斋月：','Auto next Ramadan: ')+'<b>'+auto+'</b>'+TX('（距今 ',' (in ')+d8+TX(' 天）。各国/教派起始日可能差 1-2 天，可在此校准，全站统一生效。',' days). Dates may differ 1-2 days by country - adjust here to apply everywhere.')+'</div>';
+  b+='<div class="modal-form"><label>'+TX('斋月起始日期','Ramadan start date')+'<input type="date" id="repRam" value="'+escAttr(cur||auto)+'"></label></div>';
+  b+='<div class="row" style="justify-content:space-between;margin-top:14px;gap:8px"><button class="btn ghost mini" data-action="repRamReset">'+TX('恢复自动','Reset auto')+'</button><span style="flex:1"></span><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="repRamSave">'+TX('保存','Save')+'</button></div>';
+  $('modalBody').innerHTML='<h3>'+TX('距下次斋月(天)','Days to Ramadan')+'</h3>'+b;
+  $('modal').classList.add('show');
+  $('repRamSave').onclick=function(){var v=$('repRam').value;S.ramadanDate=v||'';save('ramadanDate',S.ramadanDate);refreshAll();closeModal();toast(TX('已更新斋月起始日','Ramadan date updated'));};
+  return;
+ }
+ if(k==='reached'||k==='todo'){
+  var list=(k==='todo')?deals.filter(function(l){return !reachOf(l);}):deals;
+  var b2='<div class="hint" style="margin:0 0 8px">'+TX('勾选 = 已触达（手动标记，与邮件记录一起统计）。有邮件记录的客户自动计入，不可取消。','Tick = reached (manual, counted with email records). Clients with email records count automatically and cannot be unticked.')+'</div>';
+  if(!list.length){b2+='<div class="muted" style="padding:16px 0;text-align:center">'+(k==='todo'?TX('老客已全部触达','All clients reached'):TX('暂无成交老客','No closed clients yet'))+'</div>';}
+  else{
+   b2+='<div class="rep-list">';
+   list.forEach(function(l){var mc=mailCount(l.id);var on=reachOf(l);
+    b2+='<div class="rep-li"><label style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer"><input type="checkbox" class="rep-ck" data-lid="'+l.id+'"'+(on?' checked':'')+(mc?' disabled':'')+'><span class="nm">'+esc(l.name||'—')+'</span>'+(mc?'<span class="tag g" style="font-size:11px">'+TX('邮件','Mail')+' '+mc+'</span>':'')+'</label></div>';
+   });
+   b2+='</div>';
+   b2+='<div class="row" style="justify-content:space-between;margin-top:12px;gap:8px"><span><button class="btn ghost mini" data-action="repKpiAll" data-on="1">'+TX('全部标记','Mark all')+'</button> <button class="btn ghost mini" data-action="repKpiAll" data-on="0">'+TX('全部取消','Clear all')+'</button></span><span style="flex:1"></span><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="repReachSave">'+TX('保存','Save')+'</button></div>';
+  }
+  $('modalBody').innerHTML='<h3>'+(k==='todo'?TX('待触达客户','To reach'):TX('已触达标记','Mark reached'))+'</h3>'+b2;
+  $('modal').classList.add('show');
+  var sv=$('repReachSave');
+  if(sv)sv.onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-ck'),function(ck){var l=S.leads.find(function(x){return x.id===ck.dataset.lid;});if(!l)return;if(mailCount(l.id)>0)return;l.contactDone=!!ck.checked;});snapLeads();save('leads',S.leads);refreshAll();closeModal();toast(TX('已更新触达标记','Reach marks updated'));};
+  return;
+ }
+ var b3='<div class="hint" style="margin:0 0 8px">'+TX('共 '+deals.length+' 位成交老客（老客数 = 成交客户数）。可直接改返单状态/备注，或把客户「移出」返单池。',''+deals.length+' closed clients (= Old clients). Edit reorder status/note inline, or move a client out of the pool.')+'</div>';
+ if(!deals.length){b3+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('暂无成交老客：把在谈客户的阶段改成「成交」即可进入返单池。','No closed clients yet - set a client stage to Closed to join the pool.')+'</div>';}
+ else{
+  b3+='<div class="rep-list">';
+  deals.forEach(function(l){
+   b3+='<div class="rep-li"><span class="nm" title="'+escAttr(l.name||'')+'">'+esc(l.name||'—')+'</span>'
+    +'<select class="rep-sel" data-lid="'+l.id+'">'+REPEAT_STATUS.map(function(s2){return '<option'+(s2===(l.repeatStatus||REPEAT_STATUS[0])?' selected':'')+'>'+s2+'</option>';}).join('')+'</select>'
+    +'<input class="rep-txt" data-lid="'+l.id+'" value="'+escAttr(l.repeatNote||'')+'" placeholder="'+escAttr(TX('备注','Note'))+'">'
+    +'<button class="btn ghost mini" data-action="repKpiOut" data-id="'+l.id+'" title="'+TX('移出返单池','Move out')+'">'+TX('移出','Out')+'</button>'
+    +'</div>';
+  });
+  b3+='</div>';
+  b3+='<div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="repClientSave">'+TX('保存','Save')+'</button></div>';
+ }
+ $('modalBody').innerHTML='<h3>'+TX('老客台账（'+deals.length+' 位）','Closed clients ('+deals.length+')')+'</h3>'+b3;
+ $('modal').classList.add('show');
+ var sc=$('repClientSave');
+ if(sc)sc.onclick=function(){
+  Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-sel'),function(se){var l=S.leads.find(function(x){return x.id===se.dataset.lid;});if(l)l.repeatStatus=se.value;});
+  Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-txt'),function(ti){var l=S.leads.find(function(x){return x.id===ti.dataset.lid;});if(l)l.repeatNote=ti.value;});
+  snapLeads();save('leads',S.leads);refreshAll();closeModal();toast(TX('已保存老客台账','Client list saved'));
+ };
+}
+
 var _repDealsOpen=true;
 function repeatDealsPanel(){
  var all=(S.leads||[]);
  var deals=all.filter(function(l){return l.stage==='成交';});
  var cands=all.filter(function(l){return l.stage!=='成交'&&['报价','试样','已联系','已回复'].indexOf(l.stage)>=0;});
- var reached=deals.filter(function(l){return mailCount(l.id)>0;}).length;
+ var reached=deals.filter(reachOf).length;
  var todo=deals.length-reached;var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
  var h='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 6px;font-size:15px">'+TX('老客返单机会（已成交客户）','Reorder opportunities (closed deals)')+'</h3>';
- h+='<div class="hint" style="margin:0 0 10px">'+TX('每个客户卡都可操作：点蓝色虚线胶囊可直接改（返单状态是下拉、备注可输入），点按钮可打开「客户360」或「编辑」。','Every card is actionable: tap a dashed chip to edit inline (status = dropdown, note = text), or use the buttons to open 360 / Edit.')+'</div>';
+ h+='<div class="hint" style="margin:0 0 10px">'+TX('上方 4 个数字都可点击编辑（老客台账 / 触达标记 / 斋月校准）；每个客户卡也可操作：点蓝色虚线胶囊可直接改（返单状态是下拉、备注可输入），点按钮可打开「客户360」或「编辑」。','The 4 numbers above are tappable to edit (client list / reach marks / Ramadan date). Every card is actionable too: tap a dashed chip to edit inline (status = dropdown, note = text), or use the buttons to open 360 / Edit.')+'</div>';
  h+='<div class="grid g4" style="gap:10px;margin-bottom:10px">';
- h+='<div class="stat"><div class="v">'+deals.length+'</div><div class="k">'+TX('老客数','Old clients')+'</div></div>';
- h+='<div class="stat"><div class="v">'+reached+'</div><div class="k">'+TX('已触达','Reached')+'</div></div>';
- h+='<div class="stat"><div class="v" style="color:var(--red)">'+todo+'</div><div class="k">'+TX('待触达','To reach')+'</div></div>';
- h+='<div class="stat"><div class="v">'+d8+'</div><div class="k">'+TX('距下次斋月(天)','Days to Ramadan')+'</div></div></div>';
+ h+='<div class="stat tap" data-action="repKpi" data-k="clients" title="'+TX('点击：打开老客台账（改返单状态/备注、移出返单池）','Tap: manage closed clients (status / note / move out)')+'"><div class="v">'+deals.length+'</div><div class="k">'+TX('老客数','Old clients')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="repKpi" data-k="reached" title="'+TX('点击：勾选标记哪些老客已触达','Tap: tick which clients you have reached')+'"><div class="v">'+reached+'</div><div class="k">'+TX('已触达','Reached')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="repKpi" data-k="todo" title="'+TX('点击：查看待触达老客并一键标记','Tap: view / clear pending clients')+'"><div class="v" style="color:var(--red)">'+todo+'</div><div class="k">'+TX('待触达','To reach')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="repKpi" data-k="ramadan" title="'+TX('点击：校准斋月起始日期（全站统一）','Tap: adjust Ramadan start date (applies everywhere)')+'"><div class="v">'+d8+'</div><div class="k">'+TX('距下次斋月(天)','Days to Ramadan')+'</div><span class="tap-pen">'+pencilIco()+'</span></div></div>';
  if(deals.length){
   h+='<details id="repDealsBox"'+(_repDealsOpen?' open':'')+' ontoggle="_repDealsOpen=this.open"><summary class="fold-sum">'
 +'<span class="tag '+(todo?'r':'g')+'">'+(todo?TX('待触达','To reach')+' '+todo:TX('全部已触达','All reached'))+'</span>'
@@ -3478,7 +3553,7 @@ function repeatDealsPanel(){
    var days=Math.round((new Date(todayStr())-new Date(l.last))/864e5);var mc=mailCount(l.id);var isME=isMidEast(l.market)||isSEA(l.market);
    h+='<div class="card" style="padding:12px">';
    h+=leadCardHead(l);
-   h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'+(l.country||l.market||'')+' · '+(mc?TX('已触达','reached')+' '+mc:TX('未触达','not reached'))+' · '+(days>=0?days+TX('天前','d ago'):(-days)+TX('天后','d later'))+'</div>';
+   h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'+(l.country||l.market||'')+' · '+(mc?TX('已触达','reached')+' '+mc:(l.contactDone?TX('已触达(手动)','reached (manual)'):TX('未触达','not reached')))+' · '+(days>=0?days+TX('天前','d ago'):(-days)+TX('天后','d later'))+'</div>';
    if(isME)h+='<div class="muted" style="font-size:12.5px;color:var(--red)">'+TX('斋月窗口','Ramadan window')+': '+d8+TX(' 天','d')+'</div>';
    h+='<div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">';
    h+=chipEdit('repeatStatus',l.id,TX('返单状态：','Reorder: ')+(l.repeatStatus||REPEAT_STATUS[0]),TX('点击选择返单状态','Pick reorder status'));
@@ -4597,7 +4672,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v108</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v109</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4789,7 +4864,7 @@ document.addEventListener('click',function(e){
  else if(a==='leadTouch'){leadTouch(el.dataset.id);}else if(a==='callLog'){callLog(el.dataset.id);}else if(a==='callLogSave'){callLogSave(el.dataset.id);}
  else if(a==='leadDel'){leadDel(el.dataset.id);}
  else if(a==='leadEdit'){leadEdit(el.dataset.id);}
- else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}else if(a==='leadKeyTgl'){leadKeyTgl(el.dataset.id);}else if(a==='mcOpen'){multiContactEdit(el.dataset.id);}else if(a==='mcSave'){mcSave(el.dataset.id);}
+ else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}else if(a==='repKpi'){repKpi(el.dataset.k);}else if(a==='repKpiOut'){repKpiOut(el.dataset.id);}else if(a==='repKpiAll'){repKpiAll(el.dataset.on==='1');}else if(a==='repRamReset'){repRamReset();}else if(a==='leadKeyTgl'){leadKeyTgl(el.dataset.id);}else if(a==='mcOpen'){multiContactEdit(el.dataset.id);}else if(a==='mcSave'){mcSave(el.dataset.id);}
  else if(a==='leadNew'){leadNew();}else if(a==='leadNewRef'){leadNewRef();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}else if(a==='leadSite'){leadSite(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
