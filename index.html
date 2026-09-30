@@ -308,6 +308,22 @@ h1 svg:not([width]),h2 svg:not([width]),h3 svg:not([width]),h4 svg:not([width]){
 .rep-sel{font-size:12.5px;padding:5px 6px;border:1px solid #E2E8F0;border-radius:8px;background:var(--card);max-width:106px;font-family:inherit}
 .rep-txt{font-size:12.5px;padding:6px 8px;border:1px solid #E2E8F0;border-radius:8px;width:112px;font-family:inherit}
 .rep-ck{width:18px;height:18px;flex:0 0 auto;accent-color:var(--main)}
+.ref-flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(37,99,235,.045)}
+.ref-steps{display:flex;flex:1 1 400px;flex-wrap:wrap}
+.ref-step{flex:1 1 130px;min-width:118px;padding:1px 9px;display:flex;flex-direction:column;gap:3px}
+.ref-step+.ref-step{border-left:1px dashed var(--line)}
+.ref-step b{font-size:12.5px;line-height:1.45;display:flex;align-items:center;gap:5px;color:var(--sub)}
+.ref-step b i{width:16px;height:16px;border-radius:50%;background:var(--line);color:var(--sub);font-size:10.5px;font-style:normal;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.ref-step.on b{color:var(--text)}
+.ref-step.on b i{background:var(--main);color:#fff}
+.ref-step span{font-size:11.5px;color:var(--sub);line-height:1.5}
+.ref-step u{font-style:normal;text-decoration:none;font-weight:700;color:var(--main);font-size:13px}
+.ref-cta{display:flex;align-items:center;flex:none}
+.lane-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;font-weight:700;color:var(--sub);margin:8px 0 4px;padding-top:6px;border-top:1px dashed var(--line)}
+.lane-h:first-child{border-top:0;margin-top:2px;padding-top:0}
+.lane-empty{font-size:12px;color:var(--sub);padding:2px 2px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ref-next{background:rgba(37,99,235,.10);border-color:var(--main);color:var(--main);font-weight:700}
+@media(max-width:640px){.ref-step+.ref-step{border-left:0;border-top:1px dashed var(--line);padding-top:7px}}
 .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
 .modal-mask.show{display:flex}
 .modal{background:var(--card);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.2)}
@@ -2711,12 +2727,13 @@ function custCellEdit(id,field){
  else if(field==='source')ed='<select id="ce_val">'+SOURCES.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
  else if(field==='cat')ed='<input id="ce_val" list="ce_cat_list" value="'+esc(cur)+'">';
  else if(field==='repeatStatus')ed='<select id="ce_val">'+REPEAT_STATUS.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
+ else if(field==='referrer')ed='<input id="ce_val" list="ce_ref_list" value="'+escAttr(cur)+'">';
  else if(field==='referralStatus')ed='<select id="ce_val">'+REFERRAL_STATUS.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>';
  else if(field==='amount')ed='<input id="ce_val" type="number" value="'+esc(cur)+'">';
  else if(field==='qty')ed='<input id="ce_val" type="number" value="'+esc(cur)+'">';
  else if(field==='last')ed='<input id="ce_val" type="date" value="'+esc(cur)+'">';
  else if(field==='key')ed='<label class="cokey" style="margin:0"><input type="checkbox" id="ce_val"'+(cur?' checked':'')+'></label>';else ed='<input id="ce_val" value="'+esc(cur)+'">';
- var body='<div class="modal-form"><label>'+T[field]+ed+'</label><datalist id="ce_cat_list">'+catDatalist()+'</datalist><datalist id="ce_mkt_list">'+mktDatalist()+'</datalist></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
+ var body='<div class="modal-form"><label>'+T[field]+ed+'</label><datalist id="ce_cat_list">'+catDatalist()+'</datalist><datalist id="ce_mkt_list">'+mktDatalist()+'</datalist><datalist id="ce_ref_list">'+refNameList()+'</datalist></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="ceSave">'+TX('保存','Save')+'</button></div>';
  $('modalBody').innerHTML='<h3>'+TX('修改：','Edit: ')+esc(T[field])+'</h3>'+body;
  $('modal').classList.add('show');
  $('ceSave').onclick=function(){
@@ -2729,7 +2746,7 @@ function custCellEdit(id,field){
  };
 }
 function leadNew(){var l={id:uid(),name:'',company:'',position:'',country:'',market:MARKETS[0],wa:'',email:'',website:'',other:'',others:[],cat:'',product:'',stage:PIPE[0],source:SOURCES[0],key:false,amount:0,qty:0,last:todayStr(),note:'',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
-function leadNewRef(){var l={id:uid(),name:'',company:'',position:'',country:'',market:MARKETS[0],wa:'',email:'',website:'',other:'',others:[],cat:'',product:'',stage:PIPE[0],source:'转介绍',key:false,amount:0,last:todayStr(),note:'',referrer:'',referralNote:'',referralStatus:'待开口',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
+function leadNewRef(){var l={id:uid(),name:'',company:'',position:'',country:'',market:MARKETS[0],wa:'',email:'',website:'',other:'',others:[],cat:'',product:'',stage:PIPE[0],source:'转介绍',refKind:'guest',key:false,amount:0,last:todayStr(),note:'',referrer:'',referralNote:'',referralStatus:'待开口',logs:[]};S.leads.unshift(l);save('leads',S.leads);leadEdit(l.id);}
 function viewCust(){
  var ins=custInsight();
  var mode=S._custView||'card';
@@ -3590,35 +3607,214 @@ function repeatDealsPanel(){
  h+='</div>';return h;
 }
 var _refOpen=true;
+function refRoleOf(l){return (l&&l.refKind)||((l&&l.stage==='成交')?'host':'guest');}
+function refPool(f){return (S.leads||[]).filter(function(l){return (l.source||'')==='转介绍'&&(!f||refRoleOf(l)===f);});}
+function refStatusOf(l){return (l&&l.referralStatus)||REFERRAL_STATUS[0];}
+function refHostOf(l){
+ if(!l||!l.referrer)return null;
+ var nm=String(l.referrer).trim();if(!nm)return null;
+ return (S.leads||[]).find(function(x){return x.id!==l.id&&String(x.name||'').trim()===nm;})||null;
+}
+function refNameList(){
+ var seen={};var out=[];
+ (S.leads||[]).forEach(function(l){
+  var n=String(l.name||'').trim();if(!n||seen[n])return;seen[n]=1;
+  var tag=(l.stage==='成交')?TX('成交老客','closed'):((l.source||'')==='转介绍'?TX('转介绍','referral'):'');
+  out.push('<option value="'+escAttr(n)+'">'+esc(n+(tag?' · '+tag:''))+'</option>');
+ });
+ return out.join('');
+}
+function refCands(){return (S.leads||[]).filter(function(l){return l.stage==='成交'&&(l.source||'')!=='转介绍';});}
+function refHasName(l){return !!String((l&&l.name)||'').trim();}
+function refNextMeta(l){
+ var st=refStatusOf(l);
+ if(!refHasName(l))return {t:TX('先补客户名','Add the name'),a:'edit',tip:TX('这位客户还没有名字，补全后才能继续推进','No name yet - add it first')};
+ if(l.stage==='成交')return {t:TX('再要一次转介绍','Ask again'),a:'ask',tip:TX('已成交 = 信任最高，趁热再要一位转介绍','Closed = highest trust; ask for one more')};
+ if(refRoleOf(l)==='host'){
+  if(st==='已开口'||st==='已加样')return {t:TX('记录这次介绍','Log the intro'),a:'adv',tip:TX('把开口/加样的进展记到客户360，别断跟进','Log the intro progress in Client 360')};
+  return {t:TX('去开口要转介绍','Ask for an intro'),a:'ask',tip:TX('打开「转介绍话术」，客户与市场自动预填','Open the referral script, pre-filled')};
+ }
+ if(l.stage==='报价'||l.stage==='试样')return {t:TX('推进到成交','Move to closed'),a:'deal',tip:TX('谈到这一步了，直接标为成交','Close it now')};
+ return {t:TX('去跟进这位新客','Follow up'),a:'adv',tip:TX('打开客户360，按外贸流程继续推进','Open Client 360 and keep pushing')};
+}
+function refAsk(id){
+ var l=(S.leads||[]).find(function(x){return x.id===id;});if(!l)return;
+ S._activeClient=l.id;S._festCtx={sel:'referral',client:l.name||'',country:l.country||l.market||''};
+ S.view='repeat';save('view',S.view);refreshAll();
+ toast(TX('已打开「转介绍话术」——开头按该客户预填，照着念即可','Opened the referral script, pre-filled for this client'));
+}
+function refNext(id){
+ var l=(S.leads||[]).find(function(x){return x.id===id;});if(!l)return;
+ var m=refNextMeta(l);
+ if(m.a==='edit'){S._activeClient=id;leadEdit(id);return;}
+ if(m.a==='ask'){refAsk(id);return;}
+ if(m.a==='deal'){leadToDeal(id);return;}
+ custJump('cust360',id);
+}
+function refKpiOut(id){
+ var l=(S.leads||[]).find(function(x){return x.id===id;});if(!l)return;
+ snapLeads();l.source='其他';l.refKind='';l.referralStatus='';save('leads',S.leads);
+ refreshAll();refKpi('refs');toast(TX('已取消转介绍标记，退回普通客户','Referral flag removed'));
+}
+function refKpiAll(on){Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-ck'),function(ck){ck.checked=!!on;});}
+function refKpi(k){
+ var refs=refPool('');
+ if(k==='closed'||k==='rate'){
+  var g0=refPool('guest');var gc0=g0.filter(function(l){return l.stage==='成交';}).length;
+  var rate0=g0.length?Math.round(gc0/g0.length*100):0;
+  reviewDrill('ref');
+  toast(k==='rate'?(TX('转化率 = 被推荐已成交 ','Rate = closed ')+gc0+TX(' / 被推荐共 ',' / referred ')+g0.length+' = '+rate0+'%'):TX('已按「来源 = 转介绍」筛出客户明细','Filtered: source = referral'));
+  return;
+ }
+ if(k==='pending'){
+  var list=refs.filter(function(l){return refStatusOf(l)==='待开口';});
+  var b='<div class="hint" style="margin:0 0 8px">'+TX('勾选 = 已经跟这位客户开口要过介绍了（保存后状态变「已开口」）。','Tick = you have already asked this client (status becomes Asked).')+'</div>';
+  if(!list.length){b+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('没有待开口的客户：转介绍客户都已开口或已完成。','Nothing pending - all referral clients have been asked.')+'</div>';}
+  else{
+   b+='<div class="rep-list">';
+   list.forEach(function(l){
+    b+='<div class="rep-li"><label style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer"><input type="checkbox" class="rep-ck" data-lid="'+l.id+'"><span class="nm">'+esc(refHasName(l)?l.name:TX('（未命名）','(untitled)'))+'</span><span class="tag" style="font-size:11px">'+esc(refRoleOf(l)==='host'?TX('介绍人','Referrer'):TX('被推荐客户','Referred'))+'</span></label></div>';
+   });
+   b+='</div>';
+   b+='<div class="row" style="justify-content:space-between;margin-top:12px;gap:8px"><span><button class="btn ghost mini" data-action="refKpiAll" data-on="1">'+TX('全部勾选','Tick all')+'</button> <button class="btn ghost mini" data-action="refKpiAll" data-on="0">'+TX('全部取消','Clear')+'</button></span><span style="flex:1"></span><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="refPendSave">'+TX('保存','Save')+'</button></div>';
+  }
+  $('modalBody').innerHTML='<h3>'+TX('待开口的转介绍客户','Pending referral asks')+'</h3>'+b;
+  $('modal').classList.add('show');
+  var sv=$('refPendSave');
+  if(sv)sv.onclick=function(){
+   Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-ck'),function(ck){var l=S.leads.find(function(x){return x.id===ck.dataset.lid;});if(!l)return;if(ck.checked)l.referralStatus='已开口';});
+   snapLeads();save('leads',S.leads);refreshAll();closeModal();toast(TX('已更新转介绍进度','Referral progress updated'));
+  };
+  return;
+ }
+ var b3='<div class="hint" style="margin:0 0 8px">'+TX('共 '+refs.length+' 位转介绍相关客户（介绍人 + 被推荐客户）。可直接改转介绍状态 / 备注；「移出」把客户退回普通客户。',''+refs.length+' referral clients (referrers + referred). Edit status / note inline; Move out returns the client to a normal lead.')+'</div>';
+ if(!refs.length){b3+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('还没有转介绍客户','No referral clients yet')+'</div>';}
+ else{
+  b3+='<div class="rep-list">';
+  refs.forEach(function(l){
+   b3+='<div class="rep-li"><span class="nm" title="'+escAttr(l.name||'')+'">'+esc(refHasName(l)?l.name:'—')+'</span>'
+    +'<span class="tag" style="font-size:11px">'+esc(refRoleOf(l)==='host'?TX('介绍人','Referrer'):TX('被推荐客户','Referred'))+'</span>'
+    +'<select class="rep-sel" data-lid="'+l.id+'">'+REFERRAL_STATUS.map(function(s2){return '<option'+(s2===refStatusOf(l)?' selected':'')+'>'+s2+'</option>';}).join('')+'</select>'
+    +'<input class="rep-txt" data-lid="'+l.id+'" value="'+escAttr(l.referralNote||'')+'" placeholder="'+escAttr(TX('备注','Note'))+'">'
+    +'<button class="btn ghost mini" data-action="refKpiOut" data-id="'+l.id+'" title="'+TX('移出转介绍（退回普通客户）','Move out (back to normal lead)')+'">'+TX('移出','Out')+'</button>'
+    +'</div>';
+  });
+  b3+='</div>';
+  b3+='<div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px"><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="refLedgerSave">'+TX('保存','Save')+'</button></div>';
+ }
+ $('modalBody').innerHTML='<h3>'+TX('转介绍台账（'+refs.length+' 位）','Referral list ('+refs.length+')')+'</h3>'+b3;
+ $('modal').classList.add('show');
+ var sc=$('refLedgerSave');
+ if(sc)sc.onclick=function(){
+  Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-sel'),function(se){var l=S.leads.find(function(x){return x.id===se.dataset.lid;});if(l)l.referralStatus=se.value;});
+  Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-txt'),function(ti){var l=S.leads.find(function(x){return x.id===ti.dataset.lid;});if(l)l.referralNote=ti.value;});
+  snapLeads();save('leads',S.leads);refreshAll();closeModal();toast(TX('已保存转介绍台账','Referral list saved'));
+ };
+}
+function refPick(){
+ var pool=refCands();
+ var b='<div class="hint" style="margin:0 0 8px">'+TX('挑一位信任最高的成交老客，点「要转介绍」——他会进转介绍池，并跳到「转介绍话术」（客户 / 市场自动预填）。','Pick your most trusted closed client and tap Ask intro - they join the referral pool and the script opens pre-filled.')+'</div>';
+ if(!pool.length){b+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('暂时没有可开口的成交老客：先把在谈客户推进到「成交」。','No closed clients to ask yet - close a deal first.')+'</div>';}
+ else{
+  b+='<div class="rep-list">';
+  pool.forEach(function(l){
+   var mc=mailCount(l.id);
+   b+='<div class="rep-li"><span class="nm">'+esc(l.name||'—')+'</span><span class="muted" style="font-size:11.5px">'+esc(l.market||'')+(mc?' · '+TX('已联系','contacted'):'')+'</span><button class="btn amber mini" data-action="askReferral" data-id="'+l.id+'">'+TX('要转介绍','Ask intro')+'</button></div>';
+  });
+  b+='</div>';
+ }
+ b+='<div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-action="closeModal">'+TX('关闭','Close')+'</button></div>';
+ $('modalBody').innerHTML='<h3>'+TX('找谁要转介绍？','Who to ask?')+'</h3>'+b;
+ $('modal').classList.add('show');
+}
+function refStep(n,on,t,d,num,suffix){
+ return '<div class="ref-step'+(on?' on':'')+'"><b><i>'+n+'</i>'+esc(t)+'</b><span><u>'+num+'</u>'+esc(suffix)+'</span><span>'+esc(d)+'</span></div>';
+}
+function refFlowBar(){
+ var refs=refPool(''),hosts=refPool('host'),guests=refPool('guest'),cands=refCands();
+ var opened=hosts.filter(function(l){return refStatusOf(l)!=='待开口';}).length;
+ var pend=refs.filter(function(l){return refStatusOf(l)==='待开口';}).length;
+ var gc=guests.filter(function(l){return l.stage==='成交';}).length;
+ var rate=guests.length?Math.round(gc/guests.length*100):0;
+ var step=1;
+ if(hosts.length&&!guests.length)step=2;else if(guests.length)step=3;
+ var cta;
+ if(!cands.length&&!hosts.length)cta={t:TX('先去推进成交','Close a deal first'),a:'nav',v:'cust'};
+ else if(!hosts.length)cta={t:TX('去要转介绍','Ask for an intro'),a:'refPick'};
+ else if(!guests.length)cta={t:TX('录入被推荐客户','Add referred client'),a:'leadNewRef'};
+ else if(pend)cta={t:TX('标记已开口','Mark as asked'),a:'refKpi',k:'pending'};
+ else cta={t:TX('＋ 新增转介绍客户','Add referral'),a:'leadNewRef'};
+ var btn;
+ if(cta.a==='nav')btn='<button class="btn" data-action="nav" data-view="'+cta.v+'">'+esc(cta.t)+' →</button>';
+ else if(cta.a==='refPick')btn='<button class="btn" data-action="refPick">'+esc(cta.t)+' →</button>';
+ else if(cta.a==='refKpi')btn='<button class="btn" data-action="refKpi" data-k="'+cta.k+'">'+esc(cta.t)+' →</button>';
+ else btn='<button class="btn" data-action="leadNewRef">'+esc(cta.t)+' →</button>';
+ var h='<div class="ref-flow"><div class="ref-steps">';
+ h+=refStep(1,step===1,TX('找介绍人','Find a referrer'),TX('从成交老客里挑一位，开口要介绍','Pick a closed client and ask for an intro'),cands.length+hosts.length,TX(' 位可开口',' to ask'));
+ h+=refStep(2,step===2,TX('拿到介绍','Get the intro'),TX('录入被推荐的新客户，并填「推荐人」','Add the new buyer + set the Referrer'),opened,TX(' 位已开口 · ',' asked · ')+pend+TX(' 位待开口',' pending'));
+ h+=refStep(3,step===3,TX('推进成交','Close the referral'),TX('被推荐客户走完销售流程到成交','Run referred clients through the sales flow'),guests.length,TX(' 位被推荐 · 已成交 ',' referred · closed ')+gc+' · '+rate+'%');
+ h+='</div><div class="ref-cta">'+btn+'</div></div>';
+ return h;
+}
+function refCard(l){
+ var role=refRoleOf(l);var m=refNextMeta(l);
+ var h='<div class="card" style="padding:12px">';
+ if(refHasName(l))h+=leadCardHead(l);
+ else h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><span class="chip-edit" data-action="leadEdit" data-id="'+l.id+'" title="'+escAttr(TX('这位客户还没有名字，点这里补全','No name yet - tap to add'))+'">'+pencilIco()+'<span>'+TX('先填客户名…','Add client name…')+'</span></span>'+(l.market?' <span class="tag b" style="background:#EDE9FE;color:#5B21B6">'+esc(l.market)+'</span>':'')+'</div>';
+ if(!refHasName(l))h+='<div class="muted" style="font-size:12px;margin:4px 0;color:var(--red)">'+TX('这张卡还没有客户名：点上面补全，或点「编辑」一起把公司/国家/联系方式填了。','No name on this card yet - tap above, or Edit to fill company / country / contacts.')+'</div>';
+ h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'
+  +'<span class="tag" style="font-size:11px;background:'+(role==='host'?'#FEF3C7':'#DBEAFE')+';color:'+(role==='host'?'#92400E':'#1E40AF')+'">'+(role==='host'?TX('介绍人','Referrer'):TX('被推荐客户','Referred'))+'</span> '
+  +esc(l.country||l.market||'')+' · '+TX('阶段','Stage')+': '+esc(l.stage||'')+'</div>';
+ var host=refHostOf(l);
+ if(host)h+='<div class="muted" style="font-size:12.5px;margin:0 0 4px">'+TX('由 ','From ')+'<a href="javascript:void(0)" data-action="custJump" data-where="cust360" data-id="'+host.id+'" style="color:var(--main);font-weight:700">'+esc(host.name)+'</a>'+TX(' 介绍 ›',' introduced ›')+'</div>';
+ h+='<div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">';
+ h+=chipEdit('referralStatus',l.id,TX('状态：','Status: ')+refStatusOf(l),TX('选择转介绍进度','Pick referral status'));
+ h+=chipEdit('referrer',l.id,TX('推荐人：','From: ')+(l.referrer||TX('待填','+ add')),TX('填写推荐人（可直接选你的成交老客）','Add referrer (pick one of your closed clients)'));
+ h+='</div>';
+ h+='<div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center">';
+ h+=chipEdit('referralNote',l.id,(l.referralNote||TX('写备注…','Add note…')),TX('点击填写备注','Add a note'));
+ h+='</div>';
+ h+=leadCardBtns(l,'<button class="btn mini ref-next" data-action="refNext" data-id="'+l.id+'" title="'+escAttr(m.tip||'')+'">'+esc(m.t)+' →</button>'+(role==='guest'&&l.stage!=='成交'?'<button class="btn amber mini" data-action="leadToDeal" data-id="'+l.id+'">'+TX('标为成交','Mark closed')+'</button>':''));
+ h+='</div>';
+ return h;
+}
 function referralPanel(){
- var refs=(S.leads||[]).filter(function(l){return (l.source||'')==='转介绍';});
+ var refs=refPool('');var hosts=refPool('host');var guests=refPool('guest');
  var closed=refs.filter(function(l){return l.stage==='成交';}).length;
+ var pend=refs.filter(function(l){return refStatusOf(l)==='待开口';}).length;
+ var gc=guests.filter(function(l){return l.stage==='成交';}).length;
+ var rate=guests.length?Math.round(gc/guests.length*100):0;
  var deals=(S.leads||[]).filter(function(l){return l.stage==='成交'&&(l.source||'')!=='转介绍';});
  var h='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0;font-size:15px">'+TX('转介绍（口碑裂变）','Referrals (word-of-mouth)')+'</h3><button class="btn amber mini" data-action="leadNewRef">＋ '+TX('新增转介绍客户','Add referral')+'</button></div>';
- h+='<div class="hint" style="margin:0 0 10px">'+TX('点蓝色虚线胶囊可直接改「状态 / 推荐人 / 备注」；点按钮可打开「客户360」或「编辑」。','Tap dashed chips to edit status / referrer / note; buttons open 360 or Edit.')+'</div>';
- h+='<div class="grid g4" style="gap:10px;margin:0 0 10px"><div class="stat"><div class="v">'+refs.length+'</div><div class="k">'+TX('转介绍来源客户','Referred clients')+'</div></div><div class="stat"><div class="v">'+closed+'</div><div class="k">'+TX('其中已成交','Closed')+'</div></div></div>';
+ h+='<div class="hint" style="margin:0 0 10px">'+TX('转介绍是外贸里最便宜的获客：让成交老客帮你背书，把新买家带进你的销售流程。照下面 3 步走就行；点蓝色虚线胶囊可直接改「状态 / 推荐人 / 备注」；点按钮可打开「客户360」或「编辑」。','Referrals are the cheapest source in foreign trade: closed clients vouch for you and bring new buyers into your pipeline. Follow the 3 steps below; tap dashed chips to edit status / referrer / note, buttons open 360 or Edit.')+'</div>';
+ h+=refFlowBar();
+ h+='<div class="grid g4" style="gap:10px;margin:0 0 10px">';
+ h+='<div class="stat tap" data-action="refKpi" data-k="refs" title="'+TX('点击：打开转介绍台账（改状态/备注、移出转介绍）','Tap: manage referrals (status / note / move out)')+'"><div class="v">'+refs.length+'</div><div class="k">'+TX('转介绍来源客户','Referred clients')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="refKpi" data-k="pending" title="'+TX('点击：勾选标记哪些客户已经开口要过介绍','Tap: tick the clients you have already asked')+'"><div class="v" style="color:var(--red)">'+pend+'</div><div class="k">'+TX('待开口','To ask')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="refKpi" data-k="closed" title="'+TX('点击：看已成交明细（按来源=转介绍筛选）','Tap: see closed ones (filter source = referral)')+'"><div class="v">'+closed+'</div><div class="k">'+TX('其中已成交','Closed')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="refKpi" data-k="rate" title="'+TX('点击：转化率 = 被推荐客户中已成交 ÷ 被推荐客户总数','Tap: rate = closed referred / all referred')+'"><div class="v">'+rate+'%</div><div class="k">'+TX('转介绍转化率','Referral rate')+'</div><span class="tap-pen">'+pencilIco()+'</span></div></div>';
  if(refs.length){
   h+='<details id="referralBox"'+(_refOpen?' open':'')+' ontoggle="_refOpen=this.open"><summary class="fold-sum">'
 +'<span class="tag '+(closed?'g':'a')+'">'+(closed?TX('已成交','Closed')+' '+closed:TX('转介绍来源','Referred')+' '+refs.length)+'</span>'
 +'<b>'+refs.length+TX(' 位转介绍客户，',' referral clients, ')+Math.min(12,refs.length)+TX(' 张卡',' cards')+'</b>'
 +'<span class="muted" style="font-size:12px">'+TX('点此展开/收起','tap to expand')+'</span>'
 +'</summary><div class="fold-body">';
-  h+='<div class="cust-grid">';
-  refs.slice(0,12).forEach(function(l){
-   h+='<div class="card" style="padding:12px">';
-   h+=leadCardHead(l);
-   h+='<div class="muted" style="font-size:12.5px;margin:4px 0">'+(l.country||l.market||'')+' · '+TX('阶段','Stage')+': '+esc(l.stage||'')+'</div>';
-   h+='<div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">';
-   h+=chipEdit('referralStatus',l.id,TX('状态：','Status: ')+(l.referralStatus||REFERRAL_STATUS[0]),TX('选择转介绍进度','Pick referral status'));
-   h+=chipEdit('referrer',l.id,TX('推荐人：','From: ')+(l.referrer||TX('待填','+ add')),TX('填写推荐人','Add referrer'));
+  h+='<div class="lane-h">'+TX('① 介绍人 · 成交老客，帮你开口带新客','① Referrers · closed clients who bring buyers')+'<span class="tag b">'+hosts.length+'</span>'+(hosts.length?'<span class="muted" style="font-weight:400">'+TX('点卡片「下一步 →」去开口','Tap Next on a card')+'</span>':'')+'</div>';
+  if(hosts.length){
+   h+='<div class="cust-grid">';
+   hosts.slice(0,12).forEach(function(l){h+=refCard(l);});
    h+='</div>';
-   h+='<div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center">';
-   h+=chipEdit('referralNote',l.id,(l.referralNote||TX('写备注…','Add note…')),TX('点击填写备注','Add a note'));
+  }else{
+   h+='<div class="lane-empty">'+TX('还没有介绍人 —— 先挑一位成交老客开口，他就会进这一列。','No referrers yet - ask a closed client and they land here.')+'<button class="btn ghost mini" data-action="refPick">'+TX('挑一位要转介绍','Pick one')+'</button></div>';
+  }
+  h+='<div class="lane-h">'+TX('② 被推荐客户 · 走销售流程到成交','② Referred clients · run the sales flow')+'<span class="tag b">'+guests.length+'</span><button class="btn ghost mini" data-action="leadNewRef" style="margin-left:auto">＋ '+TX('录入被推荐客户','Add referred')+'</button></div>';
+  if(guests.length){
+   h+='<div class="cust-grid">';
+   guests.slice(0,12).forEach(function(l){h+=refCard(l);});
    h+='</div>';
-   h+=leadCardBtns(l,'');
-   h+='</div>';
-  });
-  h+='</div>';
+  }else{
+   h+='<div class="lane-empty">'+TX('还没有被推荐客户 —— 老客开口后，把新买家的联系方式「＋ 录入被推荐客户」记下来，并填上「推荐人」。','No referred clients yet - when a client introduces someone, add the buyer and set the Referrer.')+'</div>';
+  }
   if(refs.length>Math.min(12,refs.length))h+='<div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost mini" data-action="reviewDrill" data-kind="ref">'+TX('查看全部 '+refs.length+' 位转介绍客户','See all '+refs.length+' referral clients')+'</button></div>';
   h+='</div></div></details>';
  } else if(deals.length){
@@ -3649,8 +3845,8 @@ function leadToDeal(id){
 }
 function askReferral(id){
  var l=(S.leads||[]).find(function(x){return String(x.id)===String(id);});if(!l)return;
- snapLeads();l.source='转介绍';if(!l.referralStatus)l.referralStatus=REFERRAL_STATUS[0];
- save('leads',S.leads);
+ snapLeads();l.source='转介绍';l.refKind='host';if(!l.referralStatus)l.referralStatus=REFERRAL_STATUS[0];
+ save('leads',S.leads);closeModal();
  S._activeClient=l.id;S._festCtx={sel:'referral',client:l.name||'',country:l.country||l.market||''};
  S.view='repeat';save('view',S.view);refreshAll();
  toast(TX('已标为转介绍来源，并预填转介绍话术','Flagged as referral; script pre-filled'));
@@ -4672,7 +4868,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v109</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v110</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -4864,7 +5060,7 @@ document.addEventListener('click',function(e){
  else if(a==='leadTouch'){leadTouch(el.dataset.id);}else if(a==='callLog'){callLog(el.dataset.id);}else if(a==='callLogSave'){callLogSave(el.dataset.id);}
  else if(a==='leadDel'){leadDel(el.dataset.id);}
  else if(a==='leadEdit'){leadEdit(el.dataset.id);}
- else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}else if(a==='repKpi'){repKpi(el.dataset.k);}else if(a==='repKpiOut'){repKpiOut(el.dataset.id);}else if(a==='repKpiAll'){repKpiAll(el.dataset.on==='1');}else if(a==='repRamReset'){repRamReset();}else if(a==='leadKeyTgl'){leadKeyTgl(el.dataset.id);}else if(a==='mcOpen'){multiContactEdit(el.dataset.id);}else if(a==='mcSave'){mcSave(el.dataset.id);}
+ else if(a==='custCellEdit'){custCellEdit(el.dataset.id, el.dataset.field);}else if(a==='repKpi'){repKpi(el.dataset.k);}else if(a==='repKpiOut'){repKpiOut(el.dataset.id);}else if(a==='repKpiAll'){repKpiAll(el.dataset.on==='1');}else if(a==='repRamReset'){repRamReset();}else if(a==='refKpi'){refKpi(el.dataset.k);}else if(a==='refKpiOut'){refKpiOut(el.dataset.id);}else if(a==='refKpiAll'){refKpiAll(el.dataset.on==='1');}else if(a==='refNext'){refNext(el.dataset.id);}else if(a==='refAsk'){refAsk(el.dataset.id);}else if(a==='refPick'){refPick();}else if(a==='leadKeyTgl'){leadKeyTgl(el.dataset.id);}else if(a==='mcOpen'){multiContactEdit(el.dataset.id);}else if(a==='mcSave'){mcSave(el.dataset.id);}
  else if(a==='leadNew'){leadNew();}else if(a==='leadNewRef'){leadNewRef();}
  else if(a==='leadWa'){leadWa(el.dataset.id);}else if(a==='leadEmail'){leadEmail(el.dataset.id);}else if(a==='leadSite'){leadSite(el.dataset.id);}
  else if(a==='trashToggle'){trashToggle();}
