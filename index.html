@@ -4891,6 +4891,28 @@ function demoStep(n,title,sub,what,out,ai,jump,extra){
  var ex=extra?extra:'';
  return '<div class="demo-step"><div class="dh"><span class="num">'+n+'</span><div><b style="font-size:15px">'+title+'</b> <span class="muted">· '+sub+'</span></div></div><div class="act">'+TX('这一步做什么','What this step does')+'</div><div class="muted" style="font-size:13.5px">'+what+'</div><div class="act">'+TX('工具实际产出','What the tool outputs')+'</div><div class="out" style="font-size:13px">'+esc(out)+'</div><div class="ai"><b>AI '+TX('自我复盘','self-review')+' · </b>'+ai+'</div>'+(jb||ex?('<div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px">'+jb+(jb&&ex?' ':'' )+ex+'</div>'):'')+'</div>';
 }
+/* ==== R115 闭环演示：小导航 + 限定高度内部上下滑动（复用 R110/R112/R113/R114 范式，CSS 零新增） ==== */
+var _demoScrollT=null;
+function demoNavBar(){
+ return '<div class="lead-nav doc-nav" id="demoNav"><span class="muted" style="font-size:12px;font-weight:700">'+TX('内容导航','Nav')+'</span><button class="btn ghost mini sbtn" data-action="demoNavUp">▲ '+TX('上一屏','Up')+'</button><button class="btn ghost mini sbtn" data-action="demoNavDn">▼ '+TX('下一屏','Down')+'</button><b class="pos" id="demoNavPos">'+TX('共 — 步','— steps')+'</b><span style="flex:1"></span><button class="btn ghost mini sbtn" data-action="demoNavTop">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="demoNavBot">⤓ '+TX('底部','Bottom')+'</button></div>';
+}
+function demoNavSync(){
+ var sc=$('demoScroll'),p=$('demoNavPos');if(!sc||!p)return;
+ var items=sc.querySelectorAll('.demo-step');var n=items.length;if(!n)return;
+ if(sc.scrollHeight<=sc.clientHeight+2){p.textContent=TX('共 '+n+' 步 · 无需翻页',''+n+' steps · no scroll');return;}
+ var top=0;try{top=sc.getBoundingClientRect().top+6;}catch(e){}
+ var i=1;
+ for(var j=0;j<n;j++){var r;try{r=items[j].getBoundingClientRect();}catch(e){continue;}if(r.bottom>top){i=j+1;break;}i=j+1;}
+ p.textContent=TX('第 '+i+' / '+n+' 步',''+i+' / '+n);
+}
+function demoNavBy(d){var sc=$('demoScroll');if(!sc)return;var step=Math.max(120,Math.round(sc.clientHeight*0.8));sc.scrollTop=(sc.scrollTop||0)+d*step;demoNavSync();}
+function demoNavEdge(b){var sc=$('demoScroll');if(!sc)return;sc.scrollTop=b?sc.scrollHeight:0;demoNavSync();}
+function demoNavAfter(){try{demoNavSync();}catch(e){}}
+try{document.addEventListener('scroll',function(e){
+ if(!e.target||e.target.id!=='demoScroll')return;
+ if(_demoScrollT)return;
+ _demoScrollT=setTimeout(function(){_demoScrollT=null;try{demoNavSync();}catch(e){}},120);
+},true);}catch(e){}
 function viewDemo(){
  var me=demoMe();
  var d8=Math.max(0,daysBetween(todayStr(),nextRamadan()));
@@ -4918,6 +4940,7 @@ function viewDemo(){
   revAi=TX('原版"复购数"是空的。自我完善：指标全算真值 + 加 AI 洞察（转化率/瓶颈/加权预测/节期窗口），复盘从"填模板"变"出决策"。现在更进一步——直接读你的真实客户库。','Old "reorder count" was blank. Improved: all metrics real + AI insights turn review into decisions. Now it even reads your real leads.');
  }
  var h='<div class="card" style="margin-bottom:16px"><div class="shead" style="margin:0"><div class="ic">'+ICON.demo+'</div><div><h2>'+TX('闭环演示 · 用 Ahmed 跑通全流程','Loop Demo · run the full loop with Ahmed')+'</h2><p>'+TX('以一个真实买家（UAE 的 Ahmed，穆斯林礼品进口商）为例，看八段怎么一环扣一环转起来。每一步都展示工具真实产出的内容（不是写死的），可点「去实操」进对应的真实模块；第 2 步还能把 Ahmed 直接加进你的客户库，打通后续跟进/单据。','A real buyer (Ahmed from UAE, Muslim-gift importer) shows how the 8 stages chain. Each step shows REAL tool output (not hardcoded) with a "Do it" jump to the real module; step 2 can add Ahmed to your leads, unlocking cadence & docs.')+'</p></div></div></div>';
+ h+=demoNavBar();h+='<div class="doc-scroll" id="demoScroll">';
  h+=demoStep(1,TX('定位选品','Positioning'),TX('确定卖什么、怎么分层','what to sell & how to tier'),
   TX('在「定位选品」点"生成定位卡"——下方便是工具真实产出的分层卡（同格式、带你的署名与市场）。','In Positioning, click "Generate card" — the panel shows the real tier card (same format, with your name & market).'),
   posOut,
@@ -4952,6 +4975,7 @@ function viewDemo(){
   revAi,'review');
  h+='<div class="card" style="margin-top:16px;background:#eff6ff"><h3 style="margin:0 0 6px;font-size:15px">'+TX('怎么用这套跑你自己的闭环','How to run your own loop')+'</h3><ol class="keypts" style="margin:0;background:none;border:none;padding:0"><li>'+TX('先填「我的资料」→ 所有话术自动署名。','Fill My Profile → scripts auto-sign.')+'</li><li>'+TX('每天打开看「今天要处理」→ 逾期/预警一键处理。','Open "To handle today" → one-tap overdue/alert.')+'</li><li>'+TX('新客户进「找客户」→ AI 评分排优先级 → 用「AI 跟进序列」自动排程。','New lead → Find Leads (AI score) → AI cadence auto-schedules.')+'</li><li>'+TX('卡住就用「教练诊断」给别人做体检，顺带练手。','Stuck? Use Coach to diagnose others and practice.')+'</li><li>'+TX('月底进「复盘增长」看 AI 洞察，定下月重点。','Month-end: Review AI insights set next month’s focus.')+'</li></ol></div>';
  h+='<div class="card" style="margin-top:14px;background:#ecfdf5"><h3 style="margin:0 0 6px;font-size:15px">'+TX('闭环验证：演示买家 → 真实客户','Close the loop: demo buyer → real lead')+'</h3><p class="muted" style="margin:0 0 10px">'+TX('点第 2 步「把 Ahmed 加进我的客户」后，去首页「外贸增长飞轮」选客户生成 AI 跟进序列、在「客户汇总」看他的 AI 评分与单证进度、在「外贸单据」为他建交易备齐 27 套单证——演示到真实业务，一步打通。','After "Add Ahmed as a real lead", go to Home → pick him to generate the AI cadence, see his score & doc progress in Customer Hub, prepare his 27 docs in Trade Documents — demo to real business, one tap.')+'</p><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-action="demoAddLead">'+TX('＋ 现在就把 Ahmed 加进我的客户','+ Add Ahmed now')+'</button><button class="btn ghost" data-action="nav" data-view="home">'+TX('▸ 去外贸增长飞轮','▸ Growth Flywheel')+'</button></div></div>';
+ h+='</div>';
  return h;
 }
 /* ============ 今日待处理 ============ */
@@ -4987,7 +5011,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v116</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v117</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -5095,6 +5119,7 @@ function refreshAll(){
  try{if(S.view==='docs'){docNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='mails'){mailNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='deliver'){deliverNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='demo'){demoNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat'||S.view==='deliver')renderSceneFields();}catch(e){try{console.error('[render]',e);}catch(_e){}}
  applyGlossary();
 }
@@ -5253,6 +5278,10 @@ document.addEventListener('click',function(e){
  else if(a==='insNavDn'){insNavBy(1);}
  else if(a==='insNavTop'){insNavEdge(false);}
  else if(a==='insNavBot'){insNavEdge(true);}
+ else if(a==='demoNavUp'){demoNavBy(-1);}
+ else if(a==='demoNavDn'){demoNavBy(1);}
+ else if(a==='demoNavTop'){demoNavEdge(false);}
+ else if(a==='demoNavBot'){demoNavEdge(true);}
  else if(a==='marketHotImport'){marketHotImport();}
  else if(a==='mhCloudAdd'){marketHotAddName({name:el.dataset.name,ind:el.dataset.ind,price:el.dataset.price,src:el.dataset.src,note:''});}else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}else if(a==='marketHotLogClear'){marketHotLogClear();}
  else if(a==='marketHotClear'){marketHotClear();}
