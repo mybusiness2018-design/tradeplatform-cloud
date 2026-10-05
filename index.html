@@ -4940,7 +4940,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v113</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v114</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -5046,6 +5046,7 @@ function refreshAll(){
  try{if(S.view==='review'){renderIns();renderRvDraft();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='cust'){custNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='docs'){docNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='mails'){mailNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='reach'||S.view==='trust'||S.view==='deal'||S.view==='repeat'||S.view==='deliver')renderSceneFields();}catch(e){try{console.error('[render]',e);}catch(_e){}}
  applyGlossary();
 }
@@ -5192,6 +5193,10 @@ document.addEventListener('click',function(e){
  else if(a==='docNavDn'){docNavBy(el.dataset.cat,1);}
  else if(a==='docNavTop'){docNavEdge(el.dataset.cat,false);}
  else if(a==='docNavBot'){docNavEdge(el.dataset.cat,true);}
+ else if(a==='mailNavUp'){mailNavBy(-1);}
+ else if(a==='mailNavDn'){mailNavBy(1);}
+ else if(a==='mailNavTop'){mailNavEdge(false);}
+ else if(a==='mailNavBot'){mailNavEdge(true);}
  else if(a==='marketHotImport'){marketHotImport();}
  else if(a==='mhCloudAdd'){marketHotAddName({name:el.dataset.name,ind:el.dataset.ind,price:el.dataset.price,src:el.dataset.src,note:''});}else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}else if(a==='marketHotLogClear'){marketHotLogClear();}
  else if(a==='marketHotClear'){marketHotClear();}
@@ -6224,6 +6229,28 @@ function mailKpi(k){
   toast(n?(TX('已关联 ','Linked ')+n+TX(' 条记录',' records')):TX('未做改动','No change'));
  };
 }
+/* ==== R112 邮件发送记录：小导航 + 限定高度内部上下滑动（复用 R110/R109 范式，CSS 零新增） ==== */
+var _mailScrollT=null;
+function mailNavBar(n){
+ return '<div class="lead-nav doc-nav" id="mailNav"><span class="muted" style="font-size:12px;font-weight:700">'+TX('记录导航','Log nav')+'</span><button class="btn ghost mini sbtn" data-action="mailNavUp">▲ '+TX('上一屏','Up')+'</button><button class="btn ghost mini sbtn" data-action="mailNavDn">▼ '+TX('下一屏','Down')+'</button><b class="pos" id="mailNavPos">'+TX('共 '+n+' 条',''+n+' items')+'</b><span style="flex:1"></span><button class="btn ghost mini sbtn" data-action="mailNavTop">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="mailNavBot">⤓ '+TX('底部','Bottom')+'</button></div>';
+}
+function mailNavSync(){
+ var sc=$('mailScroll'),p=$('mailNavPos');if(!sc||!p)return;
+ var items=sc.querySelectorAll('.card');var n=items.length;if(!n)return;
+ if(sc.scrollHeight<=sc.clientHeight+2){p.textContent=TX('共 '+n+' 条 · 无需翻页',''+n+' items · no scroll');return;}
+ var top=0;try{top=sc.getBoundingClientRect().top+6;}catch(e){}
+ var i=1;
+ for(var j=0;j<n;j++){var r;try{r=items[j].getBoundingClientRect();}catch(e){continue;}if(r.bottom>top){i=j+1;break;}i=j+1;}
+ p.textContent=TX('第 '+i+' / '+n+' 条',''+i+' / '+n);
+}
+function mailNavBy(d){var sc=$('mailScroll');if(!sc)return;var step=Math.max(120,Math.round(sc.clientHeight*0.8));sc.scrollTop=(sc.scrollTop||0)+d*step;mailNavSync();}
+function mailNavEdge(b){var sc=$('mailScroll');if(!sc)return;sc.scrollTop=b?sc.scrollHeight:0;mailNavSync();}
+function mailNavAfter(){try{mailNavSync();}catch(e){}}
+try{document.addEventListener('scroll',function(e){
+ if(!e.target||e.target.id!=='mailScroll')return;
+ if(_mailScrollT)return;
+ _mailScrollT=setTimeout(function(){_mailScrollT=null;try{mailNavSync();}catch(e){}},120);
+},true);}catch(e){}
 function viewMails(){
  var h=shead('mails',TX('所有发出去的邮件 / WhatsApp 都会留痕在这里。点「重发」可一键再次调取原内容发送——适合跟进、催单、节期问候的重复触达。','Every sent email / WhatsApp is logged here. Hit “Re-send” to pull the original content and send again — great for follow-ups, balance chasing and festival greetings.'));
  var list=S.mails||[];
@@ -6251,7 +6278,7 @@ function viewMails(){
  h+='<div class="row" style="align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap"><span class="hint" style="margin:0">'+TX('查看','View')+'</span><select id="mailFilter" onchange="mailFilterSet(this.value)" style="min-width:210px">'+opt+'</select><span style="flex:1"></span><button class="btn amber mini" data-action="bulkOpen">'+TX('群发助手','Bulk send')+'</button><button class="btn ghost mini" data-action="mailClear">'+TX('清空记录','Clear all')+'</button></div></div>';
  var shown=mailFiltered(list);
  if(!shown.length){h+='<div class="card muted" style="text-align:center;padding:22px">'+TX('该筛选下没有记录。','No records under this filter.')+'</div>';}
- else h+='<div id="mailWrap">'+mailListHTML(shown)+'</div>';
+ else {h+=mailNavBar(shown.length);h+='<div class="doc-scroll" id="mailScroll"><div id="mailWrap">'+mailListHTML(shown)+'</div></div>';}
  h+='<div class="hint" style="margin-top:8px">'+TX('发送记录与「找客户」的跟进时间线、客户360、以及客户驾驶舱的「已发送」指标是同一份数据：在这里重发一次，客户的最后跟进日会同步刷新。','This log shares one dataset with the lead timeline, Client 360 and the Customer Hub “Sent” KPI — re-sending here also refreshes the client’s last-contact date.')+'</div>';
  return h;
 }
