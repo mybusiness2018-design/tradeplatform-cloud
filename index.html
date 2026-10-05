@@ -4381,6 +4381,28 @@ function rvToTask(){
  save('tasks',S.tasks);
  refreshAll();toast(TX('已排入待办（7 天后到期）','Added to to-dos (due in 7 days)'));
 }
+/* ==== R114 AI 复盘洞察：小导航 + 限定高度内部上下滑动（复用 R110/R112/R113 范式，CSS 零新增） ==== */
+var _insScrollT=null;
+function insNavBar(){
+ return '<div class="lead-nav doc-nav" id="insNav"><span class="muted" style="font-size:12px;font-weight:700">'+TX('内容导航','Nav')+'</span><button class="btn ghost mini sbtn" data-action="insNavUp">▲ '+TX('上一屏','Up')+'</button><button class="btn ghost mini sbtn" data-action="insNavDn">▼ '+TX('下一屏','Down')+'</button><b class="pos" id="insNavPos">'+TX('共 — 条','— lines')+'</b><span style="flex:1"></span><button class="btn ghost mini sbtn" data-action="insNavTop">⤒ '+TX('顶部','Top')+'</button><button class="btn ghost mini sbtn" data-action="insNavBot">⤓ '+TX('底部','Bottom')+'</button></div>';
+}
+function insNavSync(){
+ var sc=$('insScroll'),p=$('insNavPos');if(!sc||!p)return;
+ var items=sc.querySelectorAll('.insight');var n=items.length;if(!n)return;
+ if(sc.scrollHeight<=sc.clientHeight+2){p.textContent=TX('共 '+n+' 条 · 无需翻页',''+n+' insights · no scroll');return;}
+ var top=0;try{top=sc.getBoundingClientRect().top+6;}catch(e){}
+ var i=1;
+ for(var j=0;j<n;j++){var r;try{r=items[j].getBoundingClientRect();}catch(e){continue;}if(r.bottom>top){i=j+1;break;}i=j+1;}
+ p.textContent=TX('第 '+i+' / '+n+' 条',''+i+' / '+n);
+}
+function insNavBy(d){var sc=$('insScroll');if(!sc)return;var step=Math.max(120,Math.round(sc.clientHeight*0.8));sc.scrollTop=(sc.scrollTop||0)+d*step;insNavSync();}
+function insNavEdge(b){var sc=$('insScroll');if(!sc)return;sc.scrollTop=b?sc.scrollHeight:0;insNavSync();}
+function insNavAfter(){try{insNavSync();}catch(e){}}
+try{document.addEventListener('scroll',function(e){
+ if(!e.target||e.target.id!=='insScroll')return;
+ if(_insScrollT)return;
+ _insScrollT=setTimeout(function(){_insScrollT=null;try{insNavSync();}catch(e){}},120);
+},true);}catch(e){}
 function viewReview(){
  var c=rvCtx();
  var h=shead('review',TX('周/月复盘 + AI 洞察。看转化率与复购率，别只看流水。','Weekly/monthly review + AI insights. Watch conversion & repurchase rate, not just revenue.')+'');
@@ -4397,7 +4419,7 @@ function viewReview(){
  h+=stat('reorder',c.rr+'%',TX('复购率','Reorder'),false);
  h+='</div><div class="hint">'+TX('转化率=成交/线索；复购率=已成交客户中，有后续邮件/WA 触达记录的比例；「从未触达」=在谈但一封邮件/WA 都没发过。点任意格可跳到「找客户」或「邮件发送记录」看明细。','Conv=deals/leads; Reorder=deals with follow-up on record; “Never contacted”=in pipeline but zero email/WA. Click any cell to drill in.')+'</div></div>';
  h+=custFunnel(c);
-h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">AI '+TX('复盘洞察','Insights')+' <span class="muted" style="font-size:12px;font-weight:400">'+TX('（每条都可点开行动）','every line is clickable')+'</span></h3><div id="insBox"></div></div>';
+h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">AI '+TX('复盘洞察','Insights')+' <span class="muted" style="font-size:12px;font-weight:400">'+TX('（每条都可点开行动）','every line is clickable')+'</span></h3>'+insNavBar()+'<div class="doc-scroll" id="insScroll"><div id="insBox"></div></div></div>';
  h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px;font-size:15px">'+TX('周复盘模板（已按真实数据预填）','Weekly review (auto-filled)')+'</h3>';
  var d0=S.rvDraft||{};
  h+='<div class="muted" style="font-size:12.5px;margin-bottom:8px">'+TX('上半部分按你本机真实数据自动生成；下面两条可以直接在这里写，自动保存在本机。写完点「存档本期复盘」，下周打开就能对比。','The top is auto-filled from your local data. Write the last two in place — saved on this machine. Hit “Archive” to compare next week.')+'</div>';
@@ -4965,7 +4987,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v115</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v116</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -5068,7 +5090,7 @@ function refreshAll(){
  for(var _i=0;_i<_rf.length;_i++){try{_rf[_i]();}catch(e){try{console.error('[render]',e);}catch(_e){}}}
  try{if(S.view==='find'){renderLeads();renderPrio();rcNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='repeat'){renderFest();renderHolidays();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
- try{if(S.view==='review'){renderIns();renderRvDraft();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
+ try{if(S.view==='review'){renderIns();renderRvDraft();insNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='cust'){custNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='docs'){docNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
  try{if(S.view==='mails'){mailNavAfter();}}catch(e){try{console.error('[render]',e);}catch(_e){}}
@@ -5227,6 +5249,10 @@ document.addEventListener('click',function(e){
  else if(a==='deliverNavDn'){deliverNavBy(1);}
  else if(a==='deliverNavTop'){deliverNavEdge(false);}
  else if(a==='deliverNavBot'){deliverNavEdge(true);}
+ else if(a==='insNavUp'){insNavBy(-1);}
+ else if(a==='insNavDn'){insNavBy(1);}
+ else if(a==='insNavTop'){insNavEdge(false);}
+ else if(a==='insNavBot'){insNavEdge(true);}
  else if(a==='marketHotImport'){marketHotImport();}
  else if(a==='mhCloudAdd'){marketHotAddName({name:el.dataset.name,ind:el.dataset.ind,price:el.dataset.price,src:el.dataset.src,note:''});}else if(a==='mhAdd'){marketHotAdd(el.dataset.k);}else if(a==='marketHotLogClear'){marketHotLogClear();}
  else if(a==='marketHotClear'){marketHotClear();}
