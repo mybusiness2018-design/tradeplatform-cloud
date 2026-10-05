@@ -4940,7 +4940,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v112</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v113</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -5177,7 +5177,7 @@ document.addEventListener('click',function(e){
  else if(a==='docToggle'){docToggle(el.dataset.id);}
  else if(a==='docGen'){docGen(el.dataset.id);}else if(a==='docExport'){docExport(el.dataset.id);}else if(a==='docExportAll'){docExportAll();}else if(a==='docPrint'){docPrint();}
  else if(a==='genScene'){genScene();}else if(a==='sceneSend'){var _t=($('sc_en')?$('sc_en').textContent:'');var _pid=$('sc_pick')?$('sc_pick').value:'';var _c=_pid?S.leads.find(function(x){return x.id===_pid;}):(S._activeClient?S.leads.find(function(x){return x.id===S._activeClient;}):null);if(!_c){toast(TX('请先在「发送给」里选择客户','Select a client in “Send to” first'));return;}sendTo(_c,_t,el.dataset.ch);}else if(a==='cadenceSend'){var _cid=$('cad_lead')?$('cad_lead').value:'';var _cl=_cid?S.leads.find(function(x){return x.id===_cid;}):null;var _ct=$('cadOut')?$('cadOut').textContent:'';if(!_ct||!_ct.trim()){toast(TX('请先生成序列','Generate the cadence first'));return;}if(!_cl){toast(TX('请先在上方下拉框选择客户','Select a client in the dropdown first'));return;}sendTo(_cl,_ct,el.dataset.ch);}
- else if(a==='saveScene'){saveScene();}else if(a==='mailEdit'){mailEdit(el.dataset.id);}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='mailOf'){mailOf(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
+ else if(a==='saveScene'){saveScene();}else if(a==='mailKpi'){mailKpi(el.dataset.k);}else if(a==='mailKpiGo'){mailKpiGo(el.dataset.id);}else if(a==='mailEdit'){mailEdit(el.dataset.id);}else if(a==='mailDel'){mailDel(el.dataset.id);}else if(a==='mailOf'){mailOf(el.dataset.id);}else if(a==='resendMail'){resendMail(el.dataset.id);}else if(a==='mailClear'){mailClear();}else if(a==='bulkOpen'){bulkOpen();}else if(a==='bulkToggleAll'){bulkToggleAll();}else if(a==='bulkStart'){bulkStart();}else if(a==='bulkNext'){bulkNext();}else if(a==='bulkSkip'){bulkSkip();}
  else if(a==='taskDone'){taskDone(el.dataset.id);}
  else if(a==='todayDel'){todayDel(el.dataset.type, el.dataset.id);}
  else if(a==='todayEdit'){todayEdit(el.dataset.type, el.dataset.id);}
@@ -6144,6 +6144,86 @@ function logSend(id,channel,text){var l=S.leads.find(function(x){return x.id===i
 function recordMail(leadId,to,subject,body,channel){try{S.mails=S.mails||[];var lead=(S.leads||[]).find(function(x){return x.id===leadId;});S.mails.unshift({id:uid(),leadId:leadId||'',toName:(lead&&lead.name)?lead.name:(to||''),to:to||'',subject:subject||'',body:body||'',channel:channel||'email',date:todayStr()});save('mails',S.mails);}catch(e){}}
 function mailCount(leadId){if(!leadId)return 0;var n=0;(S.mails||[]).forEach(function(m){if(m.leadId&&String(m.leadId)===String(leadId))n++;});return n;}
 function mailStats(){var l=S.mails||[],c7=iso(new Date(),-6),c30=iso(new Date(),-29);var s={total:l.length,w7:0,w30:0,cli:0,wa:0,unlinked:0};var seen={};l.forEach(function(m){if(m.date>=c7)s.w7++;if(m.date>=c30)s.w30++;if(m.channel==='wa')s.wa++;if(m.leadId){if(!seen[m.leadId]){seen[m.leadId]=1;s.cli++;}}else s.unlinked++;});return s;}
+/* ============ R111 邮件发送记录 4 个 KPI 可点击（打开清单 / 就地编辑 / 补绑客户） ============ */
+function mailKpiGo(id){closeModal();mailOf(id);}
+function mailKpi(k){
+ var list=S.mails||[];
+ var c7=iso(new Date(),-6);
+ if(k==='total'||k==='w7'){
+  var ls=(k==='w7')?list.filter(function(m){return m.date>=c7;}):list.slice();
+  var b='<div class="hint" style="margin:0 0 8px">'+TX('每条记录都可「编辑 / 重发 / 删除」；未关联客户的记录会标注「未关联」，可去「未关联客户」栏补绑。','Every record can be Edited / Re-sent / Deleted; unlinked ones are tagged and can be linked from the “Not linked” tile.')+'</div>';
+  if(!ls.length)b+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('没有记录','No records')+'</div>';
+  else{
+   b+='<div class="rep-list">';
+   ls.forEach(function(m){
+    var sub=enText(m.subject)||TX('（无主题）','（no subject）');
+    var ld=m.leadId?((S.leads||[]).find(function(x){return String(x.id)===String(m.leadId);})):null;
+    b+='<div class="rep-li" style="align-items:flex-start;flex-wrap:wrap"><span class="nm" style="white-space:normal"><b>'+esc(m.date||'')+'</b> · '+esc(sub)+'<br><span class="muted" style="font-size:12px">'+esc(m.toName||'')+' &lt;'+esc(m.to||'')+'&gt; · '+esc(m.channel==='wa'?'WhatsApp':TX('邮件','Email'))+(ld?(' · '+esc(ld.name||'')):(' · '+TX('未关联客户','Not linked')))+'</span></span>'
+      +'<button class="btn amber mini" data-action="resendMail" data-id="'+m.id+'">'+TX('重发','Re')+'</button>'
+      +'<button class="btn ghost mini" data-action="mailEdit" data-id="'+m.id+'">'+TX('编辑','Edit')+'</button>'
+      +'<button class="btn ghost mini" data-action="mailDel" data-id="'+m.id+'" style="color:var(--red)">'+TX('删除','Del')+'</button>'
+      +'</div>';
+   });
+   b+='</div>';
+  }
+  $('modalBody').innerHTML='<h3>'+(k==='w7'?TX('近 7 天发送记录','Last 7 days')+'（'+ls.length+'）':TX('全部发送记录','All sent records')+'（'+ls.length+'）')+'</h3>'+b
+   +'<div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px"><button class="btn" data-action="closeModal">'+TX('关闭','Close')+'</button></div>';
+  $('modal').classList.add('show');
+  return;
+ }
+ if(k==='cli'){
+  var map={},names=[];
+  list.forEach(function(m){if(m.leadId){if(!map[m.leadId]){map[m.leadId]=0;names.push(m.leadId);}map[m.leadId]++;}});
+  var b2='<div class="hint" style="margin:0 0 8px">'+TX('共 '+names.length+' 位客户有发送记录。点「查看记录」筛出该客户全部邮件，或打开「客户360」。',''+names.length+' clients have sent records. Tap View to filter their emails, or open Client 360.')+'</div>';
+  if(!names.length)b2+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('还没有关联到客户的记录','No records linked to clients yet')+'</div>';
+  else{
+   b2+='<div class="rep-list">';
+   names.forEach(function(id){
+    var l=(S.leads||[]).find(function(x){return String(x.id)===String(id);});
+    b2+='<div class="rep-li"><span class="nm" title="'+escAttr((l&&l.name)||String(id))+'">'+esc((l&&l.name)||TX('（客户已删除）','(deleted client)'))+'</span><span class="tag b" style="font-size:11px">'+map[id]+TX(' 封',' msgs')+'</span>'
+      +'<button class="btn ghost mini" data-action="mailKpiGo" data-id="'+escAttr(String(id))+'">'+TX('查看记录','View')+'</button>'
+      +(l?'<button class="btn mini" data-action="lead360" data-id="'+escAttr(String(id))+'">'+TX('客户360','360')+'</button>':'')
+      +'</div>';
+   });
+   b2+='</div>';
+  }
+  $('modalBody').innerHTML='<h3>'+TX('已覆盖客户','Clients reached')+'（'+names.length+'）</h3>'+b2
+   +'<div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px"><button class="btn" data-action="closeModal">'+TX('关闭','Close')+'</button></div>';
+  $('modal').classList.add('show');
+  return;
+ }
+ var un=list.filter(function(m){return !m.leadId;});
+ var opts=(S.leads||[]).map(function(l){return '<option value="'+escAttr(String(l.id))+'">'+esc(l.name||'—')+'</option>';}).join('');
+ var b3='<div class="hint" style="margin:0 0 8px">'+TX('这些记录还没有绑定客户。用下拉选一位客户即可补上归属（保存后「覆盖客户」计数会同步增加），也可编辑或删除。','These records are not linked to any client. Pick a client to link (the Clients-reached count updates), or Edit / Delete.')+'</div>';
+ if(!un.length)b3+='<div class="muted" style="padding:16px 0;text-align:center">'+TX('没有未关联的记录，很棒！','No unlinked records — nice!')+'</div>';
+ else{
+  b3+='<div class="rep-list">';
+  un.forEach(function(m){
+   var sub=enText(m.subject)||TX('（无主题）','（no subject）');
+   b3+='<div class="rep-li" style="align-items:flex-start;flex-wrap:wrap"><span class="nm" style="white-space:normal"><b>'+esc(m.date||'')+'</b> · '+esc(sub)+'<br><span class="muted" style="font-size:12px">'+esc(m.toName||'')+' &lt;'+esc(m.to||'')+'&gt;</span></span>'
+     +'<select class="rep-sel" data-mid="'+escAttr(m.id)+'" style="max-width:150px"><option value="">'+TX('选择客户…','Link to…')+'</option>'+opts+'</select>'
+     +'<button class="btn ghost mini" data-action="mailEdit" data-id="'+escAttr(m.id)+'">'+TX('编辑','Edit')+'</button>'
+     +'<button class="btn ghost mini" data-action="mailDel" data-id="'+escAttr(m.id)+'" style="color:var(--red)">'+TX('删除','Del')+'</button>'
+     +'</div>';
+  });
+  b3+='</div>';
+  b3+='<div class="row" style="justify-content:flex-start;margin-top:12px;gap:8px"><span class="hint" style="margin:0">'+TX('选好客户后点「保存归属」','Pick clients, then tap Save links')+'</span><span style="flex:1"></span><button class="btn ghost" data-action="closeModal">'+TX('取消','Cancel')+'</button><button class="btn" id="mailLinkSave">'+TX('保存归属','Save links')+'</button></div>';
+ }
+ $('modalBody').innerHTML='<h3>'+TX('未关联客户的记录','Not linked to a client')+'（'+un.length+'）</h3>'+b3;
+ $('modal').classList.add('show');
+ var sv=$('mailLinkSave');
+ if(sv)sv.onclick=function(){
+  var n=0;
+  Array.prototype.forEach.call(document.querySelectorAll('#modalBody .rep-sel[data-mid]'),function(se){
+   var v=se.value;if(!v)return;
+   var m=(S.mails||[]).find(function(x){return x.id===se.dataset.mid;});if(!m)return;
+   var l=(S.leads||[]).find(function(x){return String(x.id)===String(v);});
+   m.leadId=String(v);if(l&&!m.toName)m.toName=l.name||'';n++;
+  });
+  save('mails',S.mails);refreshAll();closeModal();
+  toast(n?(TX('已关联 ','Linked ')+n+TX(' 条记录',' records')):TX('未做改动','No change'));
+ };
+}
 function viewMails(){
  var h=shead('mails',TX('所有发出去的邮件 / WhatsApp 都会留痕在这里。点「重发」可一键再次调取原内容发送——适合跟进、催单、节期问候的重复触达。','Every sent email / WhatsApp is logged here. Hit “Re-send” to pull the original content and send again — great for follow-ups, balance chasing and festival greetings.'));
  var list=S.mails||[];
@@ -6156,11 +6236,12 @@ function viewMails(){
  }
  var st=mailStats();
  h+='<div class="card" style="margin-bottom:12px"><div class="grid g4" style="gap:10px">';
- h+='<div class="stat"><div class="v">'+st.total+'</div><div class="k">'+TX('累计发送','Total sent')+'</div></div>';
- h+='<div class="stat"><div class="v">'+st.w7+'</div><div class="k">'+TX('近7天','Last 7 days')+'</div></div>';
- h+='<div class="stat"><div class="v">'+st.cli+'</div><div class="k">'+TX('覆盖客户','Clients reached')+'</div></div>';
- h+='<div class="stat"><div class="v"'+(st.unlinked?' style="color:#b45309"':'')+'>'+st.unlinked+'</div><div class="k">'+TX('未关联客户','Not linked')+'</div></div>';
+ h+='<div class="stat tap" data-action="mailKpi" data-k="total" title="'+TX('点击：查看并逐条编辑 / 重发 / 删除全部发送记录','Tap: view, edit, re-send or delete every sent record')+'"><div class="v">'+st.total+'</div><div class="k">'+TX('累计发送','Total sent')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="mailKpi" data-k="w7" title="'+TX('点击：查看近 7 天记录并编辑 / 重发','Tap: view, edit or re-send last-7-day records')+'"><div class="v">'+st.w7+'</div><div class="k">'+TX('近7天','Last 7 days')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="mailKpi" data-k="cli" title="'+TX('点击：查看已覆盖客户，跳转其记录或客户360','Tap: view reached clients, jump to records / Client 360')+'"><div class="v">'+st.cli+'</div><div class="k">'+TX('覆盖客户','Clients reached')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
+ h+='<div class="stat tap" data-action="mailKpi" data-k="unlinked" title="'+TX('点击：给未关联记录补上客户归属（可编辑）','Tap: link unlinked records to a client (editable)')+'"><div class="v"'+(st.unlinked?' style="color:#b45309"':'')+'>'+st.unlinked+'</div><div class="k">'+TX('未关联客户','Not linked')+'</div><span class="tap-pen">'+pencilIco()+'</span></div>';
  h+='</div>';
+ h+='<div class="hint" style="margin:8px 0 0">'+TX('4 个数字都可点击：累计发送 / 近7天 → 查看并逐条编辑、重发、删除；覆盖客户 → 按客户跳转记录或客户360；未关联客户 → 下拉补绑客户归属。','All 4 are tappable: Total / Last 7 days → view & edit, re-send or delete each record; Clients reached → jump per client; Not linked → link records to a client.')+'</div>';
  var mf=S._mailFilter||'all';
  var opt='<option value="all"'+(mf==='all'?' selected':'')+'>'+TX('全部记录','All records')+'</option>';
  opt+='<option value="unlinked"'+(mf==='unlinked'?' selected':'')+'>'+TX('未关联客户的记录','Not linked to a client')+'</option>';
