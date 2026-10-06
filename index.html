@@ -533,7 +533,7 @@ function save(k,v){
  try{SYNC_DIRTY=true;}catch(e){}
 }
 /* ---- 加密：优先 Web Crypto AES-GCM；file:// 无 subtle 时降级为混淆锁（仅防随手翻看） ---- */
-function b64enc(buf){return btoa(String.fromCharCode.apply(null,new Uint8Array(buf)));}
+function b64enc(buf){var u=new Uint8Array(buf),CH=0x8000,out='';for(var i=0;i<u.length;i+=CH){out+=String.fromCharCode.apply(null,u.subarray(i,i+CH));}return btoa(out);}
 function b64dec(s){var b=atob(s);var u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
 function fbKeystream(pw,len){var h=2166136261;for(var i=0;i<pw.length;i++){h^=pw.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}var out=[],s=h||1;for(var i=0;i<len;i++){s=(Math.imul(s,1103515245)+12345)&0x7fffffff;out.push(s&0xff);}return out;}
 function xorBytes(bytes,pw){var ks=fbKeystream(pw,bytes.length);var o=new Uint8Array(bytes.length);for(var i=0;i<bytes.length;i++)o[i]=bytes[i]^ks[i];return o;}
@@ -5013,7 +5013,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v118</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v119</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
