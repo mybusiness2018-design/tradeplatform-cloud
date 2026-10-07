@@ -935,14 +935,19 @@ function viewPos(){
  var h=shead('pos',TX('用定价即产品（公理5）：引流款与利润款价差 10 倍才是两台机器，不是两个报价。','Pricing is the product: drain vs profit tiers at 10x gap = two machines, not two quotes.'));
  h+='<div style="margin:10px 0 0"><button class="btn" data-action="cpJump">'+TX('↓ 每日竞品分析 / 每日竞品查询','↓ Daily Competitor Scan')+'</button><span class="hint" style="margin-left:8px">'+TX('每天 5 分钟：查清单 → 记价格 → 看价格带','5 min a day: check list -> log price -> read band')+'</span></div>';
  h+='<div class="keypts"><b>'+TX('最小必要知识','Minimal knowledge')+'</b><ul><li>'+TX('只报一个价 = 把利润款客户也用低价喂了，利润漏给比价客。','One price feeds profit-tier buyers at bargain price — leaking margin.')+'</li><li>'+TX('分层：引流款走量养信任，利润款吃肉；价差 5-15 倍（最好10倍）。','Tiers: drain builds trust, profit eats margin; 5-15x gap (10x best).')+'</li><li>'+TX('利润款不是"更贵的同款"，是"不同的产品"（材质/礼盒/刺绣/品牌感）。','Profit tier is a different product (material/gift/embroidery/brand), not a pricier twin.')+'</li></ul></div>';
- h+='<div class="grid g2">';
- h+='<div class="card"><h3 style="margin:0 0 10px;font-size:15px">'+TX('产品分层卡','Product Tier Card')+'</h3>';
- h+='<div class="field"><label>'+TX('引流款（走量）','Drain tier')+'</label><input id="f_drain" placeholder="'+TX('如 基础蓝款 prayer pillow $2','e.g. blue prayer pillow $2')+'"></div>';
- h+='<div class="field"><label>'+TX('利润款 A（品质）','Profit A (quality)')+'</label><input id="f_proA" placeholder="'+TX('如 绣金款 $10','e.g. embroidered $10')+'"></div>';
- h+='<div class="field"><label>'+TX('利润款 B（礼赠）','Profit B (gift)')+'</label><input id="f_proB" placeholder="'+TX('如 斋月/朝觐礼盒装 $20','e.g. Ramadan/Hajj gift box $20')+'"></div>';
- h+='<div class="field"><label>'+TX('主打市场','Main market')+'</label><input id="f_mkt" placeholder="'+TX('中东/东南亚/欧美/非洲','Mid-East/SEA/EU-US/Africa')+'" value="'+esc(m.market)+'"></div>';
- h+='<button class="btn" data-action="genPos">'+TX('生成定位卡','Generate card')+'</button><div class="hint">'+TX('生成后可一键复制，发给客户或团队。','Copy with one tap, send to clients or team.')+'</div></div>';
- h+='<div class="card"><h3 style="margin:0 0 10px;font-size:15px">'+TX('定位卡预览','Card preview')+'</h3><div class="out" id="posOut">'+TX('填写左侧并点"生成定位卡"。','Fill left and click Generate.')+'</div><button class="btn ghost mini" data-action="copy" data-copy="posOut" style="margin-top:10px">'+TX('复制定位卡','Copy card')+'</button></div>';
+ h+='<div class="grid">';
+ h+='<div class="card" style="border-left:4px solid var(--main)">';
+ h+='<h3 style="margin:0 0 6px;font-size:15.5px">'+TX('产品分层卡：3 分钟想清「先卖哪款、赚钱靠哪款」','Product Tier Card: 3 min to fix what pulls and what earns')+'</h3>';
+ h+='<p class="hint" style="margin:0 0 6px;line-height:1.7">'+TX('它不考你，只问你一句话：你打算先拿哪一款去交朋友，再拿哪一款赚钱？想清楚这个，报价才不会心虚，也不会被一个超低价单子拖住一整年。','It asks one question: which item wins the friend, and which one earns? Nail it and you quote with confidence all year.')+'</p>';
+ h+='<p class="hint" style="margin:0 0 14px;line-height:1.7">'+TX('📍 它在整套系统里的位置：在这里定完层 →「找客户」你就知道主推哪款 →「报价 / 成交」你心里有底线价 → 首页成长飞轮的「定位选品」这一格会自动点亮。','📍 Where it sits: finish this → Find Leads knows what to pitch → quoting knows your floor → the Positioning stage on home lights up.')+'</p>';
+ h+='<div class="field"><label>'+TX('① 拉客户用的便宜款（行话叫「引流款」，不指望它赚钱）','1) The cheap item that pulls buyers in (the drain tier)')+'</label><input id="f_drain" placeholder="'+TX('如 基础蓝款 prayer pillow $2','e.g. blue prayer pillow $2')+'"><div class="hint" style="margin-top:4px;line-height:1.65">'+TX('它的任务不是赚钱，是让客户敢下第一单、先试你一次。填一个你愿意「交个朋友」的价。','Its job is not profit — it gets them to try you once. Put a price you would pay to make a friend.')+'</div></div>';
+ h+='<div class="field"><label>'+TX('② 你真正赚钱的主力款（行话叫「利润款 A」）','2) The one that actually earns (the profit A tier)')+'</label><input id="f_proA" placeholder="'+TX('如 绣金款 prayer pillow $10','e.g. embroidered prayer pillow $10')+'"><div class="hint" style="margin-top:4px;line-height:1.65">'+TX('客户觉得你靠谱之后，才会问「有没有更好的」。这格就填那个更好的——材质、做工、包装要明显不一样，价格一般是①的 5~15 倍。','Once they trust you they ask for something better. Put that one here — visibly better material, workmanship or packaging, usually 5-15x the drain price.')+'</div></div>';
+ h+='<div class="field"><label>'+TX('③ 送礼、过节用的款（行话叫「利润款 B」）','3) The gift and festive item (the profit B tier)')+'</label><input id="f_proB" placeholder="'+TX('如 斋月/朝觐礼盒装 $20','e.g. Ramadan/Hajj gift box $20')+'"><div class="hint" style="margin-top:4px;line-height:1.65">'+TX('斋月、朝觐、婚礼、公司年会……这种场合客户要的是「体面」，不是「便宜」。礼盒、套装、刻字定制都可以填。','Ramadan, Hajj, weddings, corporate gifts — here buyers want presentable, not cheap. Gift boxes, sets and engraving all count.')+'</div></div>';
+ h+='<div class="field"><label>'+TX('④ 这批货主要卖给谁（主打市场）','4) Who you mainly sell to (your main market)')+'</label><input id="f_mkt" placeholder="'+TX('如 中东、东南亚、欧洲、北美','e.g. Mid-East, SE Asia, Europe, N America')+'" value="'+esc(m.market)+'"><div class="hint" style="margin-top:4px;line-height:1.65">'+TX('填你手上客户最多的那个地区就行，不用全填。生成时会写进卡片，也会让首页「定位选品」那一格亮起来。','Just the region where most of your buyers are. It goes on the card and lights up the Positioning stage on home.')+'</div></div>';
+ h+='<div class="row" style="margin-top:2px"><button class="btn ghost" data-action="posDemo">'+TX('先给我填个例子','Fill an example for me')+'</button><button class="btn" data-action="genPos">'+TX('生成定位卡','Generate card')+'</button></div>';
+ h+='<div class="hint" style="line-height:1.65">'+TX('没想好？先点「给我填个例子」，看看长什么样，再照着改成你自己的。生成后可一键复制，直接发给客户或团队。','Not sure? Tap Fill an example to see the shape, then adjust. Copy it with one tap and send.')+'</div>';
+ h+='</div>';
+ h+='<div class="card"><h3 style="margin:0 0 10px;font-size:15px">'+TX('生成结果（可直接复制发出去）','Result (ready to copy and send)')+'</h3><div class="out" id="posOut">'+TX('还没生成。上面填完点「生成定位卡」；或者先点「给我填个例子」看看效果。','Nothing yet. Fill above and hit Generate — or tap Fill an example first.')+'</div><div class="row" style="margin-top:10px"><button class="btn ghost mini" data-action="copy" data-copy="posOut">'+TX('复制这张卡','Copy this card')+'</button><button class="btn ghost mini" data-action="nav" data-view="find">'+TX('定好了，去找客户 →','Done — go find leads →')+'</button></div></div>';
  h+='</div>';
  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 6px;font-size:16px;color:var(--main)">'+TX('外贸产品供应链知识','Supply Chain 101')+'</h3>';
  h+='<p class="hint" style="margin:0 0 12px">'+TX('从卖什么到货到客户手里的全链路。先有定位选品，才有供应链；供应链决定你的成本、交期和信任——它是把定位选品、找客户、客户驾驶舱三块连起来的引擎。','From what to sell to goods in hand. Supply chain decides cost, lead time and trust.')+'</p>';
@@ -974,9 +979,23 @@ function scOpen(i){
  $('modal').classList.add('show');
 }
 function genPos(){
+ S.me=S.me||{};
+ if(!$('f_drain'))return;
  var v={drain:$('f_drain').value,proA:$('f_proA').value,proB:$('f_proB').value,mkt:$('f_mkt').value};
- var txt='【'+TX('定位卡','Positioning Card')+'】\n'+TX('产品','Product')+'：Muslim prayer pillow（'+ (S.me.product||TX('蓝款','blue')) +'）\n'+TX('市场','Market')+'：'+(v.mkt||'—')+'\n\n'+TX('三层结构','Three tiers')+'：\n· '+TX('引流款','Drain')+'：'+(v.drain||'—')+'（'+TX('走量、养信任','volume, trust')+'）\n· '+TX('利润款A','Profit A')+'：'+(v.proA||'—')+'（'+TX('品质溢价','quality premium')+'）\n· '+TX('利润款B','Profit B')+'：'+(v.proB||'—')+'（'+TX('节期礼赠','festival gift')+'）\n\n'+TX('一句话','One-liner')+'：'+TX('不只卖便宜那一种，用确定感换利润。','Don’t just sell the cheap one — trade certainty for margin.')+(S.me.whatsapp?('\n\n'+TX('联系','Contact')+'：WhatsApp '+S.me.whatsapp):'')+'';
- $('posOut').textContent=txt;toast(TX('已生成','Generated'));
+ var txt='【'+TX('定位卡','Positioning Card')+'】\n'+TX('产品','Product')+'：'+(S.me.product||TX('我的主打产品','my main product'))+'\n'+TX('市场','Market')+'：'+(v.mkt||'—')+'\n\n'+TX('三层结构（先说清「哪款交朋友、哪款赚钱」）','Three tiers (which wins the friend, which earns)')+'：\n· '+TX('引流款 · 拉客户','Drain · pulls buyers')+'：'+(v.drain||'—')+'（'+TX('不指望它赚钱，让人敢试你一次','not for profit, gets them to try once')+'）\n· '+TX('利润款 A · 赚钱主力','Profit A · main earner')+'：'+(v.proA||'—')+'（'+TX('靠品质收溢价，约引流款的 5~15 倍','quality premium, about 5-15x the drain')+'）\n· '+TX('利润款 B · 送礼过节','Profit B · gifts and festivals')+'：'+(v.proB||'—')+'（'+TX('越隆重的场合，越看重体面','the grander the occasion, the more it is about class')+'）\n\n'+TX('一句话','One-liner')+'：'+TX('不只卖便宜那一种，用确定感换利润。','Don’t just sell the cheap one — trade certainty for margin.')+(S.me.whatsapp?('\n\n'+TX('联系','Contact')+'：WhatsApp '+S.me.whatsapp):'');
+ var o=$('posOut');if(o)o.textContent=txt;
+ if(v.mkt&&S.me.market!==v.mkt){S.me.market=v.mkt;save('me',S.me);}
+ toast(TX('已生成 ✓ 首页「定位选品」这一格已点亮','Generated ✓ Positioning stage on home lit up'));
+}
+function posDemo(){
+ var d=$('f_drain'),a=$('f_proA'),b=$('f_proB'),mk=$('f_mkt');
+ var filled=0;
+ if(d&&!d.value){d.value=TX('基础蓝款 prayer pillow $2','Blue prayer pillow $2');filled++;}
+ if(a&&!a.value){a.value=TX('绣金款 prayer pillow $10','Embroidered prayer pillow $10');filled++;}
+ if(b&&!b.value){b.value=TX('斋月/朝觐礼盒装 $20','Ramadan/Hajj gift box $20');filled++;}
+ if(mk&&!mk.value){mk.value=TX('中东、东南亚','Mid-East, SE Asia');filled++;}
+ genPos();
+ if(filled<4)toast(TX('已保留你填的内容，只补空了的位置','Kept what you typed — filled only the blanks'));
 }
 /* ============ 每日竞品分析 ============ */
 
@@ -5013,7 +5032,7 @@ function renderNav(){
  h+='<div style="margin-top:6px"><button class="btn ghost mini '+(S.hidden.length?'':'dim')+'" style="width:100%" '+(S.hidden.length?'':'disabled')+' data-action="navShowAll">'+TX('恢复全部模块','Restore all modules')+'</button></div>';
  var _sc=syncLoadCfg();var _sstat=(!_sc.url||!_sc.key||!_sc.syncKey)?TX('未配置','Not set'):(SYNC_AUTO?TX('自动同步中','Auto on'):TX('已就绪','Ready'));
  h+='<div style="margin-top:8px"><button class="btn ghost mini" style="width:100%" data-action="syncOpen">☁ '+TX('云同步','Cloud sync')+'：'+_sstat+'</button></div>';
- h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v119</div>';
+ h+='<div style="margin-top:12px;text-align:center;font-size:11px;color:var(--sub);opacity:.85" title="'+TX('界面版本号；界面与线上不一致说明浏览器缓存了旧版，请按 Ctrl+F5 强刷','Build stamp — if not the latest vNN, hard-refresh with Ctrl+F5')+'">v120</div>';
  $('nav').innerHTML=h;
 }
 function viewTasks(){
@@ -5145,7 +5164,7 @@ document.addEventListener('click',function(e){
  else if(a==='navShowAll'){S.hidden=[];save('hidden',S.hidden);refreshAll();}
  else if(a==='toggleNav'){toggleNav();}
  else if(a==='langToggle'){langToggle();}
- else if(a==='genPos'){genPos();}
+ else if(a==='genPos'){genPos();}  else if(a==='posDemo'){posDemo();}
  else if(a==='findHelp'){S._findHelp=!S._findHelp;refreshAll();}
  else if(a==='loadDemo'){loadDemoConfirm();}
  else if(a==='cpGen'){cpGen();}
