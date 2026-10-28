@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>云同步 · 数据体检</title>
+<style>
+ *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+ body{font-family:-apple-system,BlinkMacSystemFont,system-ui,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:18px 14px 40px;color:#1f2937;line-height:1.65;background:#fff;font-size:16px}
+ h1{font-size:21px;margin:0 0 4px}
+ .sub{color:#64748b;font-size:13.5px;margin:0 0 16px}
+ .card{border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;margin:12px 0;background:#f8fafc}
+ .card h3{margin:0 0 10px;font-size:15.5px;display:flex;align-items:center;gap:7px}
+ .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px dashed #e6ebf2;font-size:14.5px}
+ .row:last-child{border-bottom:0}
+ .row b{font-weight:600;color:#0f172a;text-align:right;word-break:break-all}
+ .ok{color:#15803d;font-weight:800}
+ .bad{color:#b91c1c;font-weight:800}
+ .warn{color:#b45309;font-weight:800}
+ .muted{color:#64748b;font-size:13px;margin-top:8px}
+ code{background:#eef2f7;padding:2px 7px;border-radius:6px;font-size:13px;word-break:break-all}
+ button{font-size:16px;padding:13px 18px;border-radius:12px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;margin:9px 8px 0 0;font-weight:600;color:#0f172a}
+ button.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+ button.ghost{background:#f1f5f9}
+ button:active{transform:scale(.985)}
+ pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:auto;font-size:12.5px;white-space:pre-wrap;line-height:1.6}
+ .big{font-size:30px;font-weight:800;color:#0f172a;line-height:1.1}
+ .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+ .tile{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;text-align:center}
+ .tile .l{font-size:12.5px;color:#64748b;margin-bottom:2px}
+ @media(max-width:420px){.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<h1>云同步 · 数据体检</h1>
+<p class="sub">一次性读清楚：这台设备里有没有客户数据、云同步配置对不对、后端还能不能连上。<b>数据只在本机读取，不上传任何地方</b>（除了下面那个联网探测）。</p>
+
+<div class="card">
+  <h3>① 这台设备里有多少数据</h3>
+  <div class="grid" id="tiles"><div class="tile"><div class="l">读取中…</div></div></div>
+  <div class="muted" id="originLine"></div>
+</div>
+
+<div class="card">
+  <h3>② 云同步配置</h3>
+  <div id="cfgRows"><div class="muted">读取中…</div></div>
+</div>
+
+<div class="card">
+  <h3>③ 后端连通性实测</h3>
+  <div id="probeRows"><div class="muted">点下面按钮开始测（约 10 秒）</div></div>
+  <button class="primary" id="btnProbe">开始联网测试</button>
+</div>
+
+<div class="card">
+  <h3>④ 把数据救出来</h3>
+  <p class="muted" style="margin:0 0 6px">如果上面显示客户数 &gt; 0，说明<b>数据还在这个设备上</b>，先导出存好，再去常用设备「⬆ 恢复」导入。</p>
+  <button class="primary" id="btnBackup">导出备份文件（JSON）</button>
+  <button class="ghost" id="btnCopy">复制诊断报告</button>
+  <pre id="log" style="display:none"></pre>
+</div>
+
+<script>
+var PREFIX='wb_ftloop_';
+var PERSIST=['view','lang','me','mails','leads','trash','tasks','scripts','coach','docs','deals','ext','_extType','docDefaults','ramadanDate','_dealId','_custView','_custSheet','_activeClient','hidden','comp','_cpKw','cpq','_hotInd','hotFav','_cpqOpen','_hotQ','_wsHist','_fcHist','_libQ','_libTab','_hotUser','_hotAuto','_hotLastDate','_hotSeen','_mailFilter','_holFilter','_festCtx','rvDraft','rvLog','_coachStep','_coachAns','_coachDone','_reconLead','marketHot','marketHotDay','marketHotLog'];
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* 扫描所有 wb_ftloop_* 键（兼容 wb_ftloop_<uid>_ 变体） */
+function scan(){
+  var raw={}, n=0;
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(!k||k.indexOf(PREFIX)!==0)continue;
+      n++;
+      var rest=k.slice(PREFIX.length);
+      /* 去掉可能的 uid 前缀：wb_ftloop_xxx_leads */
+      for(var j=0;j<PERSIST.length;j++){
+        if(rest===PERSIST[j]||rest.slice(-(PERSIST[j].length+1))===('_'+PERSIST[j])){
+          raw[PERSIST[j]]=localStorage.getItem(k);break;
+        }
+      }
+    }
+  }catch(e){}
+  var parsed={};
+  Object.keys(raw).forEach(function(k){
+    try{parsed[k]=JSON.parse(raw[k]);}catch(e){parsed[k]=raw[k];}
+  });
+  return {count:n,raw:raw,data:parsed};
+}
+function len(x){return Array.isArray(x)?x.length:0;}
+
+var SNAP=scan();
+(function renderTiles(){
+  var d=SNAP.data;
+  var leads=len(d.leads), deals=len(d.deals), tasks=len(d.tasks), docs=len(d.docs);
+  var html=''
+   +'<div class="tile"><div class="l">客户</div><div class="big '+(leads?'ok':'bad')+'">'+leads+'</div></div>'
+   +'<div class="tile"><div class="l">交易单</div><div class="big '+(deals?'ok':'')+'">'+deals+'</div></div>'
+   +'<div class="tile"><div class="l">任务</div><div class="big">'+tasks+'</div></div>'
+   +'<div class="tile"><div class="l">单据/报价</div><div class="big">'+docs+'</div></div>';
+  $('tiles').innerHTML=html;
+  var names=(d.leads||[]).map(function(x){return x&&(x.name||x.company||x.contact)||''}).filter(Boolean).slice(0,30);
+  var extra=names.length?('<div class="muted">识别到的客户：'+names.map(esc).join('、')+(leads>30?' …':'')+'</div>'):'';
+  $('originLine').innerHTML='当前打开方式（origin）：<code>'+esc(location.origin)+'</code><br>本机共找到 <b>'+SNAP.count+'</b> 个工作台存储键'+(leads?'　<span class="ok">数据在！</span>':'　<span class="bad">这个方式下没有客户</span>')+extra;
+})();
+
+function readCfg(){
+  try{return JSON.parse(localStorage.getItem('wb_sync_cfg_v1')||'{}');}catch(e){return {};}
+}
+var CFG=readCfg();
+(function renderCfg(){
+  var rows=[];
+  function row(k,v,cls){rows.push('<div class="row"><span>'+k+'</span><b class="'+(cls||'')+'">'+v+'</b></div>');}
+  row('Supabase 地址', CFG.url?('<code>'+esc(CFG.url)+'</code>'):'<span class="bad">未填</span>');
+  row('Anon Key', CFG.key?('<span class="ok">已填（'+CFG.key.length+' 字符）</span>'):'<span class="bad">未填</span>');
+  row('同步密钥', CFG.syncKey?('<span class="ok">已填（'+CFG.syncKey.length+' 字符）</span>'):'<span class="bad">未填</span>');
+  row('自动同步', CFG.auto?'<span class="ok">已开启</span>':'<span class="warn">未开启</span>');
+  var host='';
+  try{host=CFG.url?new URL(CFG.url).host:'';}catch(e){host='';}
+  row('后端主机', host?('<code>'+esc(host)+'</code>'):'—');
+  $('cfgRows').innerHTML=rows.join('');
+})();
+
+var REPORT=[];
+function logline(s){REPORT.push(s);}
+
+async function probe(){
+  var btn=$('btnProbe'); btn.disabled=true; btn.textContent='测试中…';
+  var box=$('probeRows');
+  var out=[];
+  function row(k,v,cls){out.push('<div class="row"><span>'+k+'</span><b class="'+(cls||'')+'">'+v+'</b></div>');}
+
+  if(!CFG.url||!CFG.key){
+    box.innerHTML='<div class="row"><span>结果</span><b class="bad">配置不全，无法测试</b></div>';
+    btn.disabled=false; btn.textContent='开始联网测试'; return;
+  }
+  var base=CFG.url.replace(/\/+$/,'');
+  var url=base+'/rest/v1/app_sync?select=id&limit=1';
+
+  /* 1) DNS/域名可达性：直接请求根路径 */
+  var dnsOK=null, dnsMsg='';
+  try{
+    var t0=Date.now();
+    var c1=new AbortController(); var tm1=setTimeout(function(){c1.abort();},9000);
+    var r1=await fetch(base+'/',{method:'GET',signal:c1.signal,cache:'no-store'});
+    clearTimeout(tm1);
+    dnsOK=true; dnsMsg='HTTP '+r1.status+'（'+(Date.now()-t0)+'ms）';
+  }catch(e){
+    dnsOK=false; dnsMsg=(e&&e.name==='AbortError')?'超时（9 秒无响应）':((e&&e.message)||String(e));
+  }
+  row('域名可达', dnsOK?'<span class="ok">'+esc(dnsMsg)+'</span>':'<span class="bad">'+esc(dnsMsg)+'</span>');
+  logline('域名可达: '+(dnsOK?'OK ':'FAIL ')+dnsMsg);
+
+  /* 2) 带 key 读 app_sync */
+  var st=null,body='',err='',ms=0;
+  try{
+    var t1=Date.now();
+    var c2=new AbortController(); var tm2=setTimeout(function(){c2.abort();},12000);
+    var r2=await fetch(url,{headers:{apikey:CFG.key,Authorization:'Bearer '+CFG.key},signal:c2.signal,cache:'no-store'});
+    clearTimeout(tm2); ms=Date.now()-t1;
+    st=r2.status; body=(await r2.text()).slice(0,260);
+  }catch(e){
+    err=(e&&e.name==='AbortError')?'超时（12 秒无响应）':((e&&e.message)||String(e));
+  }
+  if(err){
+    row('读 app_sync','<span class="bad">失败：'+esc(err)+'</span>');
+    logline('读 app_sync: FAIL '+err);
+  }else{
+    var okk=(st>=200&&st<300);
+    row('读 app_sync',(okk?'<span class="ok">':'<span class="bad">')+'HTTP '+st+'（'+ms+'ms）</span>');
+    logline('读 app_sync: HTTP '+st+' '+body);
+  }
+
+  /* 3) 结论 */
+  var verdict='',vcls='';
+  if(err && /Failed to fetch|NetworkError|Load failed/i.test(err)){
+    verdict='这台设备<b>连不上</b>这个后端域名（DNS 解析不到或连接被拦）。这基本就是云同步失效的原因——不是按钮坏了，是服务器地址访问不通。';
+    vcls='bad';
+  }else if(!err && st===401){
+    verdict='域名通，但 <b>Anon Key 被拒</b>（401）。需要换新的 key。';vcls='warn';
+  }else if(!err && st===403){
+    verdict='域名通、key 有效，但<b>权限被拒</b>（403/RLS）：Supabase 里 app_sync 表没放行 anon 读写。';vcls='warn';
+  }else if(!err && st===404){
+    verdict='域名通，但<b>表 app_sync 不存在</b>（404）。';vcls='warn';
+  }else if(!err && st>=200&&st<300){
+    verdict='后端<b>完全正常</b>，能读到 app_sync。同步不通就不是服务器问题，而是两端配置/密钥不一致。';vcls='ok';
+  }else{
+    verdict='返回了异常状态，看上面明细。';vcls='warn';
+  }
+  out.push('<div class="row" style="display:block;border:0;padding-top:10px"><span class="'+vcls+'">'+verdict+'</span></div>');
+  box.innerHTML=out.join('');
+  logline('结论: '+verdict.replace(/<[^>]+>/g,''));
+  window.__probe={dnsOK:dnsOK,dnsMsg:dnsMsg,st:st,body:body,err:err,ms:ms};
+  btn.disabled=false; btn.textContent='重新测试';
+}
+
+$('btnProbe').addEventListener('click',probe);
+
+/* 导出为工作台可导入的格式 */
+function buildBackup(){
+  var out={};
+  Object.keys(SNAP.raw).forEach(function(k){
+    try{out[k]=JSON.parse(SNAP.raw[k]);}catch(e){out[k]=SNAP.raw[k];}
+  });
+  out.view='cust';
+  return out;
+}
+$('btnBackup').addEventListener('click',function(){
+  var data=JSON.stringify(buildBackup(),null,1);
+  var d=new Date();
+  var pad=function(n){return (n<10?'0':'')+n;};
+  var name='外贸工作台_备份_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes())+'.json';
+  var blob=new Blob([data],{type:'application/json;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+  var pre=$('log'); pre.style.display='block';
+  pre.textContent='已导出：'+name+'\n大小：'+Math.round(data.length/1024)+' KB\n客户：'+len(SNAP.data.leads)+' 个\n\n把这个文件发到电脑（微信文件传输助手/邮件），在工作台顶部点「⬆ 恢复」导入。';
+});
+
+$('btnCopy').addEventListener('click',async function(){
+  var t=['【云同步诊断】','时间: '+new Date().toLocaleString(),'origin: '+location.origin,'UA: '+navigator.userAgent,'存储键数: '+SNAP.count,'客户: '+len(SNAP.data.leads),'交易: '+len(SNAP.data.deals),'任务: '+len(SNAP.data.tasks),'Supabase URL: '+(CFG.url||'未填'),'AnonKey 长度: '+(CFG.key?CFG.key.length:0),'同步密钥长度: '+(CFG.syncKey?CFG.syncKey.length:0),'自动同步: '+(CFG.auto?'开':'关')].concat(REPORT).join('\n');
+  try{await navigator.clipboard.writeText(t);this.textContent='已复制 ✅';}
+  catch(e){var pre=$('log');pre.style.display='block';pre.textContent=t;this.textContent='已显示，手动复制';}
+  var self=this; setTimeout(function(){self.textContent='复制诊断报告';},2200);
+});
+
+/* 自动跑一次探测 */
+probe();
+</script>
+</body>
+</html>
