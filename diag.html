@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>客户数据诊断器（线上版）</title>
+<style>
+ *{box-sizing:border-box}
+ body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;max-width:720px;margin:22px auto;padding:0 16px;color:#1f2937;line-height:1.6}
+ h1{font-size:21px;margin:0 0 4px}
+ .sub{color:#64748b;font-size:13.5px;margin:0 0 14px}
+ .card{border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin:12px 0;background:#f8fafc}
+ .card h3{margin:0 0 8px;font-size:15px}
+ .ok{color:#16a34a;font-weight:700}
+ .warn{color:#dc2626;font-weight:700}
+ .muted{color:#64748b;font-size:13px}
+ code{background:#eef2f7;padding:2px 7px;border-radius:6px;font-size:12.5px;word-break:break-all}
+ .names{font-size:14px;margin-top:6px}
+ button{font-size:15px;padding:11px 18px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;margin:8px 8px 0 0}
+ button.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+ button:active{transform:translateY(1px)}
+ pre{white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-size:12px;max-height:260px;overflow:auto;margin-top:10px}
+ ol{padding-left:20px;margin:8px 0}
+ li{margin:4px 0}
+</style>
+</head>
+<body>
+<h1>客户数据诊断器（线上版）</h1>
+<p class="sub">本页只读取你<strong>当前浏览器、当前线上链接</strong>下的工作台数据，不上传任何内容。用你平时打开工作台的同一个浏览器打开本页即可。</p>
+
+<div class="card" id="info"></div>
+<div class="card" id="leads"></div>
+<div class="card" id="keys"></div>
+
+<button class="primary" id="exp">导出备份（若当前方式有数据）</button>
+<button id="cop">复制诊断信息</button>
+
+<div class="card">
+ <h3>说明</h3>
+ <p class="muted">线上链接（https）和桌面双击（file://）是两个互不相通的存储区；不同浏览器、手机、无痕模式之间也不互通。如果本页显示 0 个键，说明数据不在"当前这个浏览器 + 线上链接"组合下——请改用桌面双击的诊断器、或换浏览器/手机打开本页再查。</p>
+</div>
+
+<pre id="raw"></pre>
+
+<script>
+(function(){
+  var PREFIX='wb_ftloop_';
+  var info=document.getElementById('info');
+  var leadsBox=document.getElementById('leads');
+  var keysBox=document.getElementById('keys');
+  var raw=document.getElementById('raw');
+
+  var origin=location.protocol+'//'+location.host+(location.pathname||'');
+  info.innerHTML='<h3>当前来源 (origin)</h3><code>'+origin+'</code>';
+
+  var found={};
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(k&&k.indexOf(PREFIX)===0){found[k]=localStorage.getItem(k);}
+  }
+  var keys=Object.keys(found);
+  var hasStore=!!found[PREFIX+'store'];
+
+  if(keys.length===0){
+    keysBox.innerHTML='<h3>数据键</h3><span class="warn">当前线上链接 + 当前浏览器下没有任何工作台数据（0 个键）。客户不在这里。</span>';
+    leadsBox.innerHTML='<h3>客户 (leads)</h3><span class="warn">没有客户数据。</span>';
+  } else {
+    keysBox.innerHTML='<h3>数据键</h3><span class="ok">当前有 '+keys.length+' 个数据键：</span><br><code>'+
+      keys.map(function(k){return k.replace(PREFIX,'');}).join('</code> <code>')+'</code>'+
+      (hasStore?'<br><span class="muted">检测到加密存储(store)，若为加密模式需密码解密，本诊断器只读明文键。</span>':'');
+    var rawLeads=found[PREFIX+'leads'];
+    if(rawLeads){
+      try{
+        var arr=JSON.parse(rawLeads);
+        var names=arr.map(function(l){return (l.name||'?')+'（'+(l.country||'')+'·'+(l.stage||'')+'）';});
+        leadsBox.innerHTML='<h3>客户 (leads)</h3><span class="ok">找到客户 '+arr.length+' 个：</span><div class="names">'+names.join('、')+'</div>';
+      }catch(e){leadsBox.innerHTML='<h3>客户 (leads)</h3><span class="warn">leads 存在但解析失败：'+e.message+'</span>';}
+    } else {
+      leadsBox.innerHTML='<h3>客户 (leads)</h3><span class="warn">有数据键，但没有 leads（客户）键。</span>';
+    }
+  }
+  raw.textContent=JSON.stringify(found,null,1);
+
+  document.getElementById('exp').onclick=function(){
+    if(keys.length===0){alert('当前方式下没有数据可导出。');return;}
+    var out={};
+    keys.forEach(function(k){
+      try{out[k.replace(PREFIX,'')]=JSON.parse(found[k]);}catch(e){out[k.replace(PREFIX,'')]=found[k];}
+    });
+    out.view='cust';
+    var str=JSON.stringify(out,null,1);
+    var a=document.createElement('a');
+    a.download='外贸工作台_恢复备份_'+new Date().toISOString().slice(0,10)+'.json';
+    a.href=URL.createObjectURL(new Blob([str],{type:'application/json'}));
+    a.click();
+  };
+  document.getElementById('cop').onclick=function(){
+    var txt='origin: '+origin+'\n数据键数: '+keys.length+'\n'+raw.textContent;
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);alert('已复制诊断信息，可发给我帮你判断');}
+    else{alert('复制失败，请手动截图本页');}
+  };
+})();
+</script>
+</body>
+</html>
